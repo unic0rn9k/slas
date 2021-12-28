@@ -1,3 +1,13 @@
+//! Static Linear Algebra System. A object oriented expansion of blas/blis, that allow for statically allocated cow (Copy On Write) vectors, matricies and tensors.
+//!
+//! # Example
+//! ```rust
+//! use slas::prelude::*;
+//! let a = moo![f32: 1., 2., 3.];
+//! let b = moo![f32: 3., 4., 5.];
+//! println!("Dot product of {:?} and {:?} is {:?}", a, b, a.dot(&b));
+//! ```
+
 #![allow(incomplete_features)]
 #![feature(adt_const_params, test, generic_const_exprs)]
 
@@ -10,7 +20,7 @@ pub use matrix_stable::matrix;
 pub mod prelude;
 
 use num::*;
-use std::{convert::TryInto, hint::unreachable_unchecked, ops::*};
+use std::{convert::TryInto, fmt::Write, hint::unreachable_unchecked, ops::*};
 extern crate blas_src;
 extern crate cblas_sys;
 
@@ -122,6 +132,25 @@ impl<'a, T: NumCast + Copy, const LEN: usize> From<&'a [T]> for StaticCowVec<'a,
     }
 }
 
+impl<'a, T: NumCast + Copy + std::fmt::Debug, const LEN: usize> std::fmt::Debug
+    for StaticCowVec<'a, T, LEN>
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_char(if self.is_borrowed() { '&' } else { ' ' })?;
+        f.debug_list().entries(self.iter()).finish()
+    }
+}
+
+#[macro_export]
+macro_rules! moo {
+    ($t: ty: $($v: expr),* $(,)?) => {{
+        StaticCowVec::from([$($v as $t),*])
+    }};
+    ($($v: tt)*) => {{
+        StaticCowVec::from([$($v)*])
+    }};
+}
+
 #[cfg(test)]
 mod tests {
     use crate::*;
@@ -130,22 +159,24 @@ mod tests {
     #[test]
     fn mutations() {
         let mut t = StaticCowVec::<f32, 3>::from(&[3f32, 2., 3.][..]);
+        assert!(t.is_borrowed());
         t[0] = 1.;
-        assert!(&t[..] == &[1., 2., 3.], "{:?}", &t[..])
+        assert!(t.is_owned());
+        assert_eq!(&t[..], &[1., 2., 3.])
     }
 
     #[test]
     fn dot() {
-        let a = StaticCowVec::from([0f32, 1., 2., 3.]);
-        let b = StaticCowVec::from(&[0., -1., -2., 3.]);
-        assert!(a.dot(&b) == 4., "{} == {}", a.dot(&b), 4.)
+        let a = moo![f32: 0i8, 1, 2, 3];
+        let b = StaticCowVec::from(&[0f32, -1., -2., 3.]);
+        assert_eq!(a.dot(&b), 4.)
     }
 
     #[test]
     fn dot_complex() {
         let c = Complex::<f32> { re: 1., im: 2. };
-        let a = StaticCowVec::from([c; 5]);
-        let b = StaticCowVec::from([c; 5]);
-        assert!(a.dot(&b) == Complex { re: -15., im: 20. },)
+        let a = moo![c; 5];
+        let b = moo![c; 5];
+        assert_eq!(a.dot(&b), Complex { re: -15., im: 20. })
     }
 }
