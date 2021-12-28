@@ -5,7 +5,7 @@ Static Linear Algebra System. A object oriented expansion of blas/blis, that all
 ## Example
 ```rust
 use slas::prelude::*;
-let a = moo![f32: 1., 2., 3.];
-let b = moo![f32: 3., 4., 5.];
+let a = moo![f32: 1, 2, 3.2];
+let b = moo![f32: 3, 0.4, 5];
 println!("Dot product of {:?} and {:?} is {:?}", a, b, a.dot(&b));
 ```
