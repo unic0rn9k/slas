@@ -1,0 +1,23 @@
+[package]
+name = "slas"
+version = "0.1.0"
+edition = "2018"
+
+[dependencies]
+blas-src = { version = "0.8.0", features = ["blis"] }
+cblas-sys = { version = "0.1.4" }
+num = "0.4.0"
+
+#[dev-dependencies]
+#beef = "0.5.1"
+#firestorm = { version="0.5", features=["enable_system_time"] }
+#iai = "0.1.1"
+#libc = "0.2.101"
+#ndarray = {version = "0.15.3", features = ["blas"]}
+
+#[profile.bench]
+#debug = true
+
+#[[bench]]
+#name = "ndarray"
+#harness = false
