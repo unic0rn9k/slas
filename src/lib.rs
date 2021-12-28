@@ -3,13 +3,13 @@
 //! # Example
 //! ```rust
 //! use slas::prelude::*;
-//! let a = moo![f32: 1., 2., 3.];
-//! let b = moo![f32: 3., 4., 5.];
+//! let a = moo![f32: 1, 2, 3.2];
+//! let b = moo![f32: 3, 0.4, 5];
 //! println!("Dot product of {:?} and {:?} is {:?}", a, b, a.dot(&b));
 //! ```
 
 #![allow(incomplete_features)]
-#![feature(adt_const_params, test, generic_const_exprs)]
+#![feature(adt_const_params, generic_const_exprs)]
 
 //mod experimental {
 //    mod matrix;
@@ -48,6 +48,14 @@ impl<'a, T: NumCast + Copy, const LEN: usize> StaticCowVec<'a, T, LEN> {
 
     pub fn is_owned(&self) -> bool {
         !self.is_borrowed()
+    }
+
+    pub fn norm(&mut self)
+    where
+        T: Float + std::iter::Sum,
+    {
+        let len = self.iter().map(|n| n.powi(2)).sum::<T>().sqrt();
+        self.iter_mut().for_each(|n| *n = *n / len);
     }
 }
 
@@ -136,7 +144,9 @@ impl<'a, T: NumCast + Copy + std::fmt::Debug, const LEN: usize> std::fmt::Debug
     for StaticCowVec<'a, T, LEN>
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_char(if self.is_borrowed() { '&' } else { ' ' })?;
+        if self.is_borrowed() {
+            f.write_char('&')?;
+        }
         f.debug_list().entries(self.iter()).finish()
     }
 }
@@ -149,34 +159,4 @@ macro_rules! moo {
     ($($v: tt)*) => {{
         StaticCowVec::from([$($v)*])
     }};
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::*;
-    use num::Complex;
-
-    #[test]
-    fn mutations() {
-        let mut t = StaticCowVec::<f32, 3>::from(&[3f32, 2., 3.][..]);
-        assert!(t.is_borrowed());
-        t[0] = 1.;
-        assert!(t.is_owned());
-        assert_eq!(&t[..], &[1., 2., 3.])
-    }
-
-    #[test]
-    fn dot() {
-        let a = moo![f32: 0i8, 1, 2, 3];
-        let b = StaticCowVec::from(&[0f32, -1., -2., 3.]);
-        assert_eq!(a.dot(&b), 4.)
-    }
-
-    #[test]
-    fn dot_complex() {
-        let c = Complex::<f32> { re: 1., im: 2. };
-        let a = moo![c; 5];
-        let b = moo![c; 5];
-        assert_eq!(a.dot(&b), Complex { re: -15., im: 20. })
-    }
 }
