@@ -11,9 +11,9 @@
 //! ```
 //!
 //! ## Todo before publishing 🎉
-//! - [  ] Move ./experimental to other branch
-//! - [  ] Implement stable tensors, perhabs for predefined dimensions with a macro
-//! - [  ] Implement Debug for matrix
+//! - Move ./experimental to other branch
+//! - Implement stable tensors, perhabs for predefined dimensions with a macro
+//! - Implement Debug for matrix
 
 #![allow(incomplete_features)]
 #![feature(adt_const_params, generic_const_exprs)]
