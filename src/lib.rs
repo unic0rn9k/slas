@@ -153,8 +153,21 @@ impl<'a, T: NumCast + Copy + std::fmt::Debug, const LEN: usize> std::fmt::Debug
 
 #[macro_export]
 macro_rules! moo {
+    (_ $($v: tt)*) => {{
+        StaticCowVec::from($($v)*)
+    }};
+    ($t: ty: $a: literal .. $b: literal) => {{
+        let mut tmp = StaticCowVec::from([0 as $t; $b - $a]);
+        tmp.iter_mut().zip($a..$b).for_each(|(o, i)| *o = i as $t);
+        tmp
+    }};
+    ($t: ty: $a: literal ..= $b: literal) => {{
+        let mut tmp = StaticCowVec::from([0 as $t; $b - $a+1]);
+        tmp.iter_mut().zip($a..=$b).for_each(|(o, i)| *o = i as $t);
+        tmp
+    }};
     ($t: ty: $($v: expr),* $(,)?) => {{
-        StaticCowVec::from([$($v as $t),*])
+        StaticCowVec::from([$({$v} as $t),*])
     }};
     ($($v: tt)*) => {{
         StaticCowVec::from([$($v)*])

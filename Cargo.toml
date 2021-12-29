@@ -14,17 +14,3 @@ members = ["tests"]
 [profile.release]
 lto = true
 opt-level = 3
-
-#[dev-dependencies]
-#beef = "0.5.1"
-#firestorm = { version="0.5", features=["enable_system_time"] }
-#iai = "0.1.1"
-#libc = "0.2.101"
-#ndarray = {version = "0.15.3", features = ["blas"]}
-
-#[profile.bench]
-#debug = true
-
-#[[bench]]
-#name = "ndarray"
-#harness = false

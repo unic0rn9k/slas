@@ -1,5 +1,4 @@
 use crate::prelude::*;
-use cblas_sys::cblas_sgemm;
 use num::NumCast;
 use std::ops::*;
 
@@ -124,37 +123,45 @@ impl<'a, T: Copy + NumCast, const K: usize, const M: usize> From<[T; K * M]>
     }
 }
 
-impl<'a, 'b, const M: usize, const N: usize, const K: usize> Mul<Matrix<'b, f32, N, K>>
-    for Matrix<'a, f32, K, M>
-where
-    StaticCowVec<'a, f32, { K * M }>: Sized,
-    StaticCowVec<'a, f32, { N * K }>: Sized,
-    StaticCowVec<'a, f32, { N * M }>: Sized,
-{
-    type Output = Matrix<'static, f32, N, M>;
-    fn mul(self, other: Matrix<'b, f32, N, K>) -> Self::Output {
-        let mut buffer = Self::Output::zeros();
-        unsafe {
-            cblas_sgemm(
-                cblas_sys::CBLAS_LAYOUT::CblasRowMajor,
-                cblas_sys::CBLAS_TRANSPOSE::CblasNoTrans,
-                cblas_sys::CBLAS_TRANSPOSE::CblasNoTrans,
-                M as i32,
-                N as i32,
-                K as i32,
-                1.,
-                self.as_ptr(),
-                K as i32,
-                other.as_ptr(),
-                N as i32,
-                0.,
-                buffer.as_mut_ptr(),
-                N as i32,
-            )
+macro_rules! impl_gemm {
+    ($t: ty, $f: ident) => {
+        impl<'a, 'b, const M: usize, const N: usize, const K: usize> Mul<Matrix<'b, $t, N, K>>
+            for Matrix<'a, $t, K, M>
+        where
+            StaticCowVec<'a, $t, { K * M }>: Sized,
+            StaticCowVec<'a, $t, { N * K }>: Sized,
+            StaticCowVec<'a, $t, { N * M }>: Sized,
+        {
+            type Output = Matrix<'static, $t, N, M>;
+            fn mul(self, other: Matrix<'b, $t, N, K>) -> Self::Output {
+                let mut buffer = Self::Output::zeros();
+                unsafe {
+                    // TODO: gemv should be used here when other's dimensions are a transpose of self.
+                    cblas_sys::$f(
+                        cblas_sys::CBLAS_LAYOUT::CblasRowMajor,
+                        cblas_sys::CBLAS_TRANSPOSE::CblasNoTrans,
+                        cblas_sys::CBLAS_TRANSPOSE::CblasNoTrans,
+                        M as i32,
+                        N as i32,
+                        K as i32,
+                        1.,
+                        self.as_ptr(),
+                        K as i32,
+                        other.as_ptr(),
+                        N as i32,
+                        0.,
+                        buffer.as_mut_ptr(),
+                        N as i32,
+                    )
+                }
+                buffer
+            }
         }
-        buffer
-    }
+    };
 }
+
+impl_gemm!(f32, cblas_sgemm);
+impl_gemm!(f64, cblas_dgemm);
 
 pub mod matrix {
     pub use super::Matrix;

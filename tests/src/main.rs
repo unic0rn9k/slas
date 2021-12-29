@@ -4,9 +4,17 @@
 use slas::prelude::*;
 
 fn main() {
-    let a = StaticCowVec::from(&[1f32, 2., 3.2]);
-    let mut b = moo![f32: 3, 0.4, 5];
+    let a_vec: Vec<f32> = vec![1., 2., 3.2];
+    let a = moo![_ a_vec.as_slice()];
+
+    // a_vec[1] = 3.; // Borrow checker won't let us do this. This is pratical because it also means a won't unexpectedly change value.
+    // a[0] = 3.; // You can however still mutate a.
+    // assert_eq!(a_vec, vec![1., 3., 3.2]);
+    // assert_eq!(*a, [3., 3., 3.2]);
+
+    let mut b = moo![f32: 1..4]; // moo![f32: 1..=3]; works too.
     b.norm();
+
     println!("Dot product of {:?} and {:?} is {:?}", a, b, a.dot(&b));
 }
 
