@@ -1,6 +1,7 @@
 # slas
 
 [![Workflow Status](https://github.com/unic0rn9k/slas/actions/workflows/rust.yml/badge.svg)](https://github.com/unic0rn9k/slas/actions/workflows/rust.yml)
+
 Static Linear Algebra System. A object oriented expansion of blas/blis, that allow for statically allocated cow (Copy On Write) vectors, matricies and tensors.
 
 ### Example
