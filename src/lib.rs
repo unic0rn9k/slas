@@ -1,6 +1,9 @@
 //! Static Linear Algebra System. A object oriented expansion of blas/blis, that allow for statically allocated cow (Copy On Write) vectors, matricies and tensors.
 //!
-//! # Example
+//! ## Status
+//! [![Rust](https://github.com/unic0rn9k/slas/actions/workflows/rust.yml/badge.svg)](https://github.com/unic0rn9k/slas/actions/workflows/rust.yml)
+//!
+//! ## Example
 //! ```rust
 //! use slas::prelude::*;
 //! let a = moo![f32: 1, 2, 3.2];
