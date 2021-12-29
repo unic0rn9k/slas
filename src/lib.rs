@@ -11,11 +11,13 @@
 //! let b = moo![f32: 3, 0.4, 5];
 //! println!("Dot product of {:?} and {:?} is {:?}", a, b, a.dot(&b));
 //! ```
+//! [More example code here.](https://github.com/unic0rn9k/slas/blob/master/tests/src/main.rs)
 //!
 //! ## Todo before publishing 🎉
 //! - Move ./experimental to other branch
 //! - Implement stable tensors, perhabs for predefined dimensions with a macro
 //! - Implement Debug for matrix
+//! - Fix matrix api (Column and row specification is weird)
 
 #![allow(incomplete_features)]
 #![feature(adt_const_params, generic_const_exprs)]
