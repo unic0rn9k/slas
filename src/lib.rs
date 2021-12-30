@@ -32,14 +32,11 @@
 //! - Fix matrix api (Column and row specification is weird)
 //! - Write documentation
 //! - Benchmark against ndarray (and maybe others?)
+//! - Allow for use on stable channel, perhabs with a stable feature
 
 #![allow(incomplete_features)]
-#![feature(adt_const_params, generic_const_exprs)]
+#![feature(generic_const_exprs)]
 
-//mod experimental {
-//    mod matrix;
-//    mod tensor;
-//}
 mod matrix_stable;
 pub use matrix_stable::matrix;
 pub mod prelude;
