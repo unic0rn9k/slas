@@ -1,8 +1,15 @@
-//! [![Workflow Status](https://github.com/unic0rn9k/slas/actions/workflows/rust.yml/badge.svg)](https://github.com/unic0rn9k/slas/actions/workflows/rust.yml)
+//! <div align="center">
+//!
+//! # SLAS
+//!
+//! ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/unic0rn9k/slas/Tests?label=tests&style=flat-square)
+//! [![Donate on paypal](https://img.shields.io/badge/paypal-donate-1?style=flat-square&logo=paypal&color=blue)](https://www.paypal.com/paypalme/unic0rn9k/5usd)
+//!
+//! </div>
 //!
 //! Static Linear Algebra System.
 //!
-//! Provides statically allocated vector, matrix and tensor structs for interfacing with blas/blis, in a performant manor, using cows (Copy On Write).
+//! Provides statically allocated vector, matrix and tensor structs, for interfacing with blas/blis, in a performant manor, using cows (Copy On Write).
 //!
 //! ## Example
 //! ```rust
@@ -13,11 +20,18 @@
 //! ```
 //! [More example code here.](https://github.com/unic0rn9k/slas/blob/master/tests/src/main.rs)
 //!
+//! ## Test and Benchmark it yourself!
+//! You can get benchmark results and tests by running
+//! `cargo test -p tests` and `cargo bench -p tests`
+//! in the root of the repository.
+//!
 //! ## Todo before publishing 🎉
 //! - Move ./experimental to other branch
 //! - Implement stable tensors, perhabs for predefined dimensions with a macro
 //! - Implement Debug for matrix
 //! - Fix matrix api (Column and row specification is weird)
+//! - Write documentation
+//! - Benchmark against ndarray (and maybe others?)
 
 #![allow(incomplete_features)]
 #![feature(adt_const_params, generic_const_exprs)]
@@ -35,6 +49,8 @@ use std::{convert::TryInto, fmt::Write, hint::unreachable_unchecked, ops::*};
 extern crate blas_src;
 extern crate cblas_sys;
 
+/// Statically allocated copy-on-write vector struct.
+/// This is the backbone of the crate, and is also the type used inside of matricies and tensors.
 #[derive(Clone, Copy)]
 pub enum StaticCowVec<'a, T: NumCast + Copy, const LEN: usize> {
     Owned([T; LEN]),
@@ -61,10 +77,12 @@ impl<'a, T: NumCast + Copy, const LEN: usize> StaticCowVec<'a, T, LEN> {
         !self.is_borrowed()
     }
 
+    /// Slow quick and dirty norm function, which normalizes a vector.
     pub fn norm(&mut self)
     where
         T: Float + std::iter::Sum,
     {
+        // TODO: Use blas
         let len = self.iter().map(|n| n.powi(2)).sum::<T>().sqrt();
         self.iter_mut().for_each(|n| *n = *n / len);
     }
@@ -82,6 +100,7 @@ macro_rules! impl_dot {
 macro_rules! impl_dot_complex {
     ($float: ty, $blas_fn: ident) => {
         impl<'a, const LEN: usize> StaticCowVec<'a, Complex<$float>, LEN> {
+            /// Dot product for two vectors of same length using blas.
             pub fn dot<'b>(&self, other: &Self) -> Complex<$float> {
                 let mut tmp: [$float; 2] = [0.; 2];
                 unsafe {
@@ -162,6 +181,16 @@ impl<'a, T: NumCast + Copy + std::fmt::Debug, const LEN: usize> std::fmt::Debug
     }
 }
 
+/// Macro for creating [`StaticCowVec`]'s
+///
+/// ## Example
+/// ```rust
+/// moo![f32: 1, 2, 3.5];
+/// moo![f32: 1..4];
+/// moo![f32: 1..=3];
+/// moo![0f32; 4];
+/// moo![_ source.as_slice()];
+/// ```
 #[macro_export]
 macro_rules! moo {
     (_ $($v: tt)*) => {{
