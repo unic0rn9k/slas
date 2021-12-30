@@ -2,7 +2,7 @@
 
 ## SLAS
 
-![GitHub Workflow Status](https://img.shields.io/github/workflow/status/unic0rn9k/slas/Tests?label=tests&style=flat-square)
+[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/unic0rn9k/slas/Tests?label=tests&style=flat-square)](https://github.com/unic0rn9k/slas/actions/workflows/rust.yml)
 [![Donate on paypal](https://img.shields.io/badge/paypal-donate-1?style=flat-square&logo=paypal&color=blue)](https://www.paypal.com/paypalme/unic0rn9k/5usd)
 
 </div>
@@ -26,9 +26,10 @@ You can get benchmark results and tests by running
 in the root of the repository.
 
 ### Todo before publishing 🎉
-- Move ./experimental to other branch
+- ~~Move ./experimental to other branch~~
 - Implement stable tensors, perhabs for predefined dimensions with a macro
 - Implement Debug for matrix
 - Fix matrix api (Column and row specification is weird)
 - Write documentation
 - Benchmark against ndarray (and maybe others?)
+- Allow for use on stable channel, perhabs with a stable feature
