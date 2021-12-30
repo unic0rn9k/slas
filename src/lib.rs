@@ -36,10 +36,10 @@
 #![allow(incomplete_features)]
 #![feature(adt_const_params, generic_const_exprs)]
 
-//mod experimental {
-//    mod matrix;
-//    mod tensor;
-//}
+mod experimental {
+    mod matrix;
+    mod tensor;
+}
 mod matrix_stable;
 pub use matrix_stable::matrix;
 pub mod prelude;
