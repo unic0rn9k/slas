@@ -76,8 +76,8 @@ mod matrix {
     fn zero() {
         let m = Matrix::<f32, 2, 2>::zeros();
         let n: Matrix<f32, 2, 2> = [0.; 4].into();
-        assert!(m[[0, 0]] == 0.);
-        assert!(**m == **n)
+        assert_eq!(m[[0, 0]], 0.);
+        assert_eq!(**m, **n)
     }
 
     #[test]

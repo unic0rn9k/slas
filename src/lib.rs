@@ -2,7 +2,7 @@
 //!
 //! # SLAS
 //!
-//! ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/unic0rn9k/slas/Tests?label=tests&style=flat-square)
+//! [![GitHub Workflow Status](https://img.shields.io/github/workflow/status/unic0rn9k/slas/Tests?label=tests&style=flat-square)](https://github.com/unic0rn9k/slas/actions/workflows/rust.yml)
 //! [![Donate on paypal](https://img.shields.io/badge/paypal-donate-1?style=flat-square&logo=paypal&color=blue)](https://www.paypal.com/paypalme/unic0rn9k/5usd)
 //!
 //! </div>
@@ -91,6 +91,7 @@ impl<'a, T: NumCast + Copy, const LEN: usize> StaticCowVec<'a, T, LEN> {
 macro_rules! impl_dot {
     ($float: ty, $blas_fn: ident) => {
         impl<'a, const LEN: usize> StaticCowVec<'a, $float, LEN> {
+            /// Dot product for two vectors of same length using blas.
             pub fn dot<'b>(&self, other: &Self) -> $float {
                 unsafe { cblas_sys::$blas_fn(LEN as i32, self.as_ptr(), 1, other.as_ptr(), 1) }
             }
@@ -100,7 +101,7 @@ macro_rules! impl_dot {
 macro_rules! impl_dot_complex {
     ($float: ty, $blas_fn: ident) => {
         impl<'a, const LEN: usize> StaticCowVec<'a, Complex<$float>, LEN> {
-            /// Dot product for two vectors of same length using blas.
+            /// Dot product for two complex vectors of same length using blas.
             pub fn dot<'b>(&self, other: &Self) -> Complex<$float> {
                 let mut tmp: [$float; 2] = [0.; 2];
                 unsafe {
@@ -165,7 +166,7 @@ impl<'a, T: NumCast + Copy, const LEN: usize> From<&'a [T; LEN]> for StaticCowVe
 }
 impl<'a, T: NumCast + Copy, const LEN: usize> From<&'a [T]> for StaticCowVec<'a, T, LEN> {
     fn from(s: &'a [T]) -> Self {
-        assert!(s.len() == LEN);
+        assert_eq!(s.len(), LEN);
         Self::Borrowed(s)
     }
 }
