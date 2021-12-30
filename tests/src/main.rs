@@ -71,6 +71,30 @@ mod moo {
         let b = moo![c; 5];
         assert_eq!(a.dot(&b), Complex { re: -15., im: 20. })
     }
+
+    #[test]
+    fn unsafe_mutations() {
+        let mut a: Vec<f32> = vec![1., 2., 3.2];
+        let mut b = unsafe { StaticCowVec::<f32, 3>::from_ptr(a.as_ptr()) };
+        b[0] = 2.;
+        a[0] = 3.;
+        assert_eq!(a, vec![3., 2., 3.2]);
+        assert_eq!(*b, [2., 2., 3.2]);
+    }
+
+    #[test]
+    fn from_readme() {
+        let mut source: Vec<f32> = vec![1., 2., 3.];
+        let mut v = unsafe { StaticCowVec::<f32, 3>::from_ptr(source.as_ptr()) };
+
+        // Here we can mutate source, because v was created from a raw pointer.
+        source[1] = 3.;
+        v[0] = 0.;
+        source[2] = 4.;
+
+        assert_eq!(*v, [0., 3., 3.]);
+        assert_eq!(source, vec![1., 3., 4.]);
+    }
 }
 
 #[cfg(test)]
