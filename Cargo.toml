@@ -5,7 +5,7 @@ edition = "2018"
 
 [dependencies]
 blas-src = { version = "0.8.0", features = ["blis"] }
-cblas-sys = { version = "0.1.4" }
+cblas-sys = "0.1.4"
 num = "0.4.0"
 
 [workspace]

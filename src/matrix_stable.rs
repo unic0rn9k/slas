@@ -3,13 +3,13 @@ use num::NumCast;
 use std::ops::*;
 
 #[derive(Copy, Clone)]
-pub struct Matrix<'a, T: NumCast + Copy, const K: usize, const M: usize>(
+pub struct Matrix<'a, T: NumCast + Copy, const M: usize, const K: usize>(
     StaticCowVec<'a, T, { K * M }>,
 )
 where
     StaticCowVec<'a, T, { K * M }>: Sized;
 
-impl<'a, T: NumCast + Copy, const K: usize, const M: usize> Matrix<'a, T, K, M>
+impl<'a, T: NumCast + Copy, const M: usize, const K: usize> Matrix<'a, T, M, K>
 where
     StaticCowVec<'a, T, { K * M }>: Sized,
 {
@@ -32,11 +32,11 @@ where
         self.0.get_unchecked(n[0] + n[1] * K)
     }
 
-    pub fn transpose(&self) -> Matrix<T, M, K>
+    pub fn transpose(&self) -> Matrix<T, K, M>
     where
         StaticCowVec<'a, T, { M * K }>: Sized,
     {
-        let mut buffer = Matrix::<T, M, K>::zeros();
+        let mut buffer = Matrix::<T, K, M>::zeros();
         for x in 0..K {
             for y in 0..M {
                 unsafe { *buffer.get_unchecked_mut([y, x]) = *self.get_unchecked([x, y]) }
@@ -46,7 +46,7 @@ where
     }
 }
 
-impl<'a, T: NumCast + Copy, const K: usize, const M: usize> Deref for Matrix<'a, T, K, M>
+impl<'a, T: NumCast + Copy, const M: usize, const K: usize> Deref for Matrix<'a, T, M, K>
 where
     StaticCowVec<'a, T, { K * M }>: Sized,
 {
@@ -57,7 +57,7 @@ where
     }
 }
 
-impl<'a, T: NumCast + Copy, const K: usize, const M: usize> DerefMut for Matrix<'a, T, K, M>
+impl<'a, T: NumCast + Copy, const M: usize, const K: usize> DerefMut for Matrix<'a, T, M, K>
 where
     StaticCowVec<'a, T, { K * M }>: Sized,
 {
@@ -66,8 +66,8 @@ where
     }
 }
 
-impl<'a, T: NumCast + Copy, const K: usize, const M: usize> Index<[usize; 2]>
-    for Matrix<'a, T, K, M>
+impl<'a, T: NumCast + Copy, const M: usize, const K: usize> Index<[usize; 2]>
+    for Matrix<'a, T, M, K>
 where
     StaticCowVec<'a, T, { K * M }>: Sized,
 {
@@ -83,8 +83,8 @@ where
     }
 }
 
-impl<'a, T: NumCast + Copy, const K: usize, const M: usize> IndexMut<[usize; 2]>
-    for Matrix<'a, T, K, M>
+impl<'a, T: NumCast + Copy, const M: usize, const K: usize> IndexMut<[usize; 2]>
+    for Matrix<'a, T, M, K>
 where
     StaticCowVec<'a, T, { K * M }>: Sized,
 {
@@ -99,41 +99,64 @@ where
     }
 }
 
-impl<'a, T: Copy + NumCast, const K: usize, const M: usize> From<StaticCowVec<'a, T, { K * M }>>
-    for Matrix<'a, T, K, M>
+impl<'a, T: Copy + NumCast, const M: usize, const K: usize> From<StaticCowVec<'a, T, { K * M }>>
+    for Matrix<'a, T, M, K>
 {
     fn from(v: StaticCowVec<'a, T, { K * M }>) -> Self {
         Matrix(v)
     }
 }
 
-impl<'a, T: Copy + NumCast, const K: usize, const M: usize> From<&'a [T; K * M]>
-    for Matrix<'a, T, K, M>
+impl<'a, T: Copy + NumCast, const M: usize, const K: usize> From<&'a [T; K * M]>
+    for Matrix<'a, T, M, K>
 {
     fn from(v: &'a [T; K * M]) -> Self {
         Matrix(v.into())
     }
 }
 
-impl<'a, T: Copy + NumCast, const K: usize, const M: usize> From<[T; K * M]>
-    for Matrix<'a, T, K, M>
+impl<'a, T: Copy + NumCast, const M: usize, const K: usize> From<[T; K * M]>
+    for Matrix<'a, T, M, K>
 {
     fn from(v: [T; K * M]) -> Self {
         Matrix(v.into())
     }
 }
 
+impl<'a, T: Copy + NumCast + std::fmt::Debug, const M: usize, const K: usize> std::fmt::Debug
+    for Matrix<'a, T, M, K>
+where
+    StaticCowVec<'a, T, { K * M }>: Sized,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        use std::fmt::Write;
+        if self.is_borrowed() {
+            f.write_char('&')?;
+        }
+        f.write_str("[\n")?;
+        for n in 0..M {
+            f.write_str("   ")?;
+            f.debug_list()
+                .entries(self.0[n * K..(n + 1) * K].iter())
+                .finish()?;
+            f.write_str(",\n")?;
+        }
+        f.write_str("]")?;
+        Ok(())
+    }
+}
+
 macro_rules! impl_gemm {
     ($t: ty, $f: ident) => {
-        impl<'a, 'b, const M: usize, const N: usize, const K: usize> Mul<Matrix<'b, $t, N, K>>
-            for Matrix<'a, $t, K, M>
+        impl<'a, 'b, const M: usize, const N: usize, const K: usize> Mul<Matrix<'b, $t, K, N>>
+            for Matrix<'a, $t, M, K>
         where
             StaticCowVec<'a, $t, { K * M }>: Sized,
             StaticCowVec<'a, $t, { N * K }>: Sized,
             StaticCowVec<'a, $t, { N * M }>: Sized,
         {
-            type Output = Matrix<'static, $t, N, M>;
-            fn mul(self, other: Matrix<'b, $t, N, K>) -> Self::Output {
+            type Output = Matrix<'static, $t, M, N>;
+            fn mul(self, other: Matrix<'b, $t, K, N>) -> Self::Output {
                 let mut buffer = Self::Output::zeros();
                 unsafe {
                     // TODO: gemv should be used here when other's dimensions are a transpose of self.

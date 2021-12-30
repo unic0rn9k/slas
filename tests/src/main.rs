@@ -16,6 +16,11 @@ fn main() {
     b.norm();
 
     println!("Dot product of {:?} and {:?} is {:?}", a, b, a.dot(&b));
+
+    use slas::matrix::Matrix;
+    let m: Matrix<f32, 2, 3> = moo![f32: 1..7].into();
+
+    println!("matrix = {:?}; You get?", m);
 }
 
 #[cfg(test)]
@@ -82,8 +87,8 @@ mod matrix {
 
     #[test]
     fn mul() {
-        let m: Matrix<f32, 3, 2> = [1., 2., 3., 4., 5., 6.].into();
-        let n: Matrix<f32, 2, 3> = [10., 11., 20., 21., 30., 31.].into();
+        let m: Matrix<f32, 2, 3> = [1., 2., 3., 4., 5., 6.].into();
+        let n: Matrix<f32, 3, 2> = [10., 11., 20., 21., 30., 31.].into();
         let k = [140., 146., 320., 335.];
 
         assert_eq!(**(m * n), k);
@@ -91,8 +96,8 @@ mod matrix {
 
     #[test]
     fn mul2() {
-        let m: Matrix<f32, 3, 4> = [1., 2., 3., 4., 5., 6., 7., 8., 9., 10., 11., 12.].into();
-        let n: Matrix<f32, 2, 3> = [3., 6., 8., 10., 9., 17.].into();
+        let m: Matrix<f32, 4, 3> = [1., 2., 3., 4., 5., 6., 7., 8., 9., 10., 11., 12.].into();
+        let n: Matrix<f32, 3, 2> = [3., 6., 8., 10., 9., 17.].into();
         let k = [46., 77., 106., 176., 166., 275., 226., 374.];
         assert_eq!(**(m * n), k);
     }

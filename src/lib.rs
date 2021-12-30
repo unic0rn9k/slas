@@ -28,8 +28,8 @@
 //! ## Todo before publishing 🎉
 //! - ~~Move ./experimental to other branch~~
 //! - Implement stable tensors, perhabs for predefined dimensions with a macro
-//! - Implement Debug for matrix
-//! - Fix matrix api (Column and row specification is weird)
+//! - ~~Implement Debug for matrix~~
+//! - ~~Fix matrix api (Column and row specification is weird)~~
 //! - Write documentation
 //! - Benchmark against ndarray (and maybe others?)
 //! - Allow for use on stable channel, perhabs with a stable feature
@@ -42,7 +42,7 @@ pub use matrix_stable::matrix;
 pub mod prelude;
 
 use num::*;
-use std::{convert::TryInto, fmt::Write, hint::unreachable_unchecked, ops::*};
+use std::{convert::TryInto, hint::unreachable_unchecked, ops::*};
 extern crate blas_src;
 extern crate cblas_sys;
 
@@ -172,6 +172,7 @@ impl<'a, T: NumCast + Copy + std::fmt::Debug, const LEN: usize> std::fmt::Debug
     for StaticCowVec<'a, T, LEN>
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        use std::fmt::Write;
         if self.is_borrowed() {
             f.write_char('&')?;
         }
