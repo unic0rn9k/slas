@@ -13,7 +13,7 @@
 Provides statically allocated vector, matrix and tensor types, for interfacing with blas/blis, in a performant manor, using cows (Copy On Write).
 
 ### Example
-**General note:** The `StaticCowVec` type implements `deref` and `deref_mut`, so any method implemented for `[T; LEN]` is also implemented for `StaticCowVec`.
+**General note:** The `StaticCowVec` type implements `deref` and `deref_mut`, so any method implemented for `[T;LEN]` is also implemented for `StaticCowVec`.
 
 ```rust
 use slas::prelude::*;
