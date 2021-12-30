@@ -2,16 +2,19 @@
 //!
 //! # SLAS
 //!
+//! *Static Linear Algebra System.*
+//!
 //! [![GitHub Workflow Status](https://img.shields.io/github/workflow/status/unic0rn9k/slas/Tests?label=tests&style=flat-square)](https://github.com/unic0rn9k/slas/actions/workflows/rust.yml)
 //! [![Donate on paypal](https://img.shields.io/badge/paypal-donate-1?style=flat-square&logo=paypal&color=blue)](https://www.paypal.com/paypalme/unic0rn9k/5usd)
 //!
 //! </div>
 //!
-//! Static Linear Algebra System.
 //!
-//! Provides statically allocated vector, matrix and tensor structs, for interfacing with blas/blis, in a performant manor, using cows (Copy On Write).
+//! Provides statically allocated vector, matrix and tensor types, for interfacing with blas/blis, in a performant manor, using cows (Copy On Write).
 //!
 //! ## Example
+//! **General note:** The `StaticCowVec` type implements `deref` and `deref_mut`, so any method implemented for `[T; LEN]` is also implemented for `StaticCowVec`.
+//!
 //! ```rust
 //! use slas::prelude::*;
 //! let a = moo![f32: 1, 2, 3.2];
@@ -24,7 +27,7 @@
 //! The copy-on-write functionality is inspired by [std::borrow::cow](https://doc.rust-lang.org/std/borrow/enum.Cow.html).
 //! The idea is simply that its easier to figure out when its most performant to copy vs referencing at runtime.
 //!
-//! ### How it work in practise?
+//! ### In code...
 //! ```rust
 //! let source: Vec<f32> = vec![1., 2., 3.];
 //! let mut v = moo![_ source.as_slice()];
@@ -60,14 +63,21 @@
 //! `cargo test -p tests` and `cargo bench -p tests`
 //! in the root of the repository.
 //!
-//! ## Todo before publishing 🎉
+//! ## TODO: before publishing 🎉
 //! - ~~Move ./experimental to other branch~~
-//! - Implement stable tensors, perhabs for predefined dimensions with a macro
 //! - ~~Implement Debug for matrix~~
 //! - ~~Fix matrix api (Column and row specification is weird)~~
 //! - Write documentation
-//! - Benchmark against ndarray (and maybe others?)
-//! - Allow for use on stable channel, perhabs with a stable feature
+//! - Benchmark against ndarray - and maybe others? numpy?
+//!
+//! ## TODO: after publish
+//! - Feature support for conversion between [ndarray](lib.rs/ndarray) types
+//! - Allow for use on stable channel - perhabs with a stable feature
+//! - Implement stable tensors - perhabs for predefined dimensions with a macro
+//! - Make StaticCowVec backed by a union -so that vectors that are always owned can also be supported (useful for memory critical systems, fx. embeded devices).
+//!
+//! ## TODO: Long term
+//! - GPU support - maybe with cublas
 
 #![allow(incomplete_features)]
 #![feature(generic_const_exprs)]
@@ -109,12 +119,12 @@ impl<'a, T: NumCast + Copy, const LEN: usize> StaticCowVec<'a, T, LEN> {
         !self.is_borrowed()
     }
 
-    /// Slow quick and dirty norm function, which normalizes a vector.
+    /// Slow, quick and dirty norm function, which normalizes a vector.
     pub fn norm(&mut self)
     where
         T: Float + std::iter::Sum,
     {
-        // TODO: Use blas
+        // TODO: Make me fast. Use blas.
         let len = self.iter().map(|n| n.powi(2)).sum::<T>().sqrt();
         self.iter_mut().for_each(|n| *n = *n / len);
     }
@@ -202,7 +212,7 @@ impl<'a, T: NumCast + Copy, const LEN: usize> From<&'a [T; LEN]> for StaticCowVe
 }
 impl<'a, T: NumCast + Copy, const LEN: usize> From<&'a [T]> for StaticCowVec<'a, T, LEN> {
     fn from(s: &'a [T]) -> Self {
-        assert_eq!(s.len(), LEN);
+        assert_eq!(s.len(), LEN); // TODO: Unchecked version of this...
         Self::Borrowed(s)
     }
 }
