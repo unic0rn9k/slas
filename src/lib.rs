@@ -26,7 +26,7 @@
 //! in the root of the repository.
 //!
 //! ## Todo before publishing 🎉
-//! - Move ./experimental to other branch
+//! - ~~Move ./experimental to other branch~~
 //! - Implement stable tensors, perhabs for predefined dimensions with a macro
 //! - Implement Debug for matrix
 //! - Fix matrix api (Column and row specification is weird)
