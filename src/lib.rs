@@ -3,7 +3,9 @@
 //! # SLAS
 //! *Static Linear Algebra System*
 //!
-//! [![GitHub Workflow Status](https://img.shields.io/github/workflow/status/unic0rn9k/slas/Tests?label=tests&style=flat-square)](https://github.com/unic0rn9k/slas/actions/workflows/rust.yml)
+//! [![GitHub Workflow Status](https://img.shields.io/github/workflow/status/unic0rn9k/slas/Tests?label=tests&logo=github&style=flat-square)](https://github.com/unic0rn9k/slas/actions/workflows/rust.yml)
+//! [![Crates.io](https://img.shields.io/crates/v/slas?logo=rust&style=flat-square)](https://crates.io/crates/slas)
+//! [![Docs](https://img.shields.io/docsrs/slas/latest?logo=rust&style=flat-square)](https://docs.rs/slas/latest/slas/)
 //! [![Donate on paypal](https://img.shields.io/badge/paypal-donate-1?style=flat-square&logo=paypal&color=blue)](https://www.paypal.com/paypalme/unic0rn9k/5usd)
 //!
 //! </div>
@@ -108,8 +110,8 @@
 //! - Implement stable tensors - perhabs for predefined dimensions with a macro
 //! - Make StaticCowVec backed by a union -so that vectors that are always owned can also be supported (useful for memory critical systems, fx. embeded devices).
 //! - Changable backends - [like in coaster](https://github.com/spearow/juice/tree/master/coaster)
-//!  - GPU support - maybe with cublas
-//!  - pure rust support - for irust and jupyter support.
+//!     - GPU support - maybe with cublas
+//!     - pure rust support - usefull for irust and jupyter support.
 
 #![allow(incomplete_features)]
 #![feature(generic_const_exprs)]
