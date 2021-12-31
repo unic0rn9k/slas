@@ -174,7 +174,7 @@ mod vs_ndarray {
             be.iter(|| {
                 let mut a = Array::zeros(super::DOT_ARR_LEN);
                 let mut b = Array::zeros(super::DOT_ARR_LEN);
-                for n in 0..100 {
+                for n in 0..super::DOT_ARR_LEN {
                     a[n] = random::<f32>();
                     b[n] = random::<f32>();
                 }
@@ -194,7 +194,7 @@ mod vs_ndarray {
             be.iter(|| {
                 let mut a = moo![0f32; super::DOT_ARR_LEN];
                 let mut b = moo![0f32; super::DOT_ARR_LEN];
-                for n in 0..100 {
+                for n in 0..super::DOT_ARR_LEN {
                     a[n] = random();
                     b[n] = random();
                 }

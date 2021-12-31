@@ -16,8 +16,8 @@ The performance advantage was only present when allocating inside the benchmark 
 This is reasonable, since slas and ndarray both call blis. So the only part of slas that is faster is allocation, which is to be expected, since it is entirely statically allocated, whereas ndarray is dynamically allocated.
 
 ``` text
-test vs_ndarray::ndarray::dot ... bench:       1,359 ns/iter (+/- 217)
-test vs_ndarray::slas::dot    ... bench:       1,227 ns/iter (+/- 175)
+test vs_ndarray::ndarray::dot   ... bench:       5,719 ns/iter (+/- 1,185)
+test vs_ndarray::slas::dot      ... bench:       5,455 ns/iter (+/- 755)
 ```
 *Benchmark for 500 elements and 32-bit floats using blis as backend for both slas and ndarray.*
 
