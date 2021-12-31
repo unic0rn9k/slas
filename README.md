@@ -26,7 +26,7 @@ println!("Dot product of {:?} and {:?} is {:?}", a, b, a.dot(&b));
 ### What is a COW?
 The copy-on-write functionality is inspired by [std::borrow::cow](https://doc.rust-lang.org/std/borrow/enum.Cow.html).
 The idea is simply that allocations (and time) can be saved, by figuring out when to copy at runtime instead of at compiletime.
-This can be memory ineficient at times, but I'm planing on making ways around this in the future.
+This can be memory ineficient at times (as an enum takes the size of its largest field + tag size), but I'm planing on making ways around this in the future.
 
 #### In code...
 ```rust
