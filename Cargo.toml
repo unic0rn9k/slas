@@ -20,6 +20,3 @@ num = "0.4.0"
 
 [workspace]
 members = ["tests"]
-
-[lib]
-doctest = false
