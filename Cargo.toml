@@ -8,7 +8,7 @@ license = "Apache-2.0"
 repository = "https://github.com/unic0rn9k/slas"
 description = "Statically allocated vector, matrix and tensor types, for interfacing with blas, in a performant manor, using copy-on-write (aka cow) behavior."
 
-keywords = ["array", "data-structure", "multidimensional", "matrix", "blas", "linearalgebra", "matrix", "vectors"]
+keywords = ["matrix", "blas", "linearalgebra", "matrix", "vectors"]
 categories = ["data-structures", "science", "math", "machine-learning"]
 
 readme = "README.md"
