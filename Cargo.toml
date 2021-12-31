@@ -2,6 +2,16 @@
 name = "slas"
 version = "0.1.0"
 edition = "2018"
+authors = ["Aksel Mannstaedt \"unic0rn9k\""]
+license = "Apache-2.0"
+
+repository = "https://github.com/unic0rn9k/slas"
+description = "Statically allocated vector, matrix and tensor types, for interfacing with blas, in a performant manor, using copy-on-write (aka cow) behavior."
+
+keywords = ["array", "data-structure", "multidimensional", "matrix", "blas", "linearalgebra", "matrix", "vectors"]
+categories = ["data-structures", "science", "math", "machine-learning"]
+
+readme = "README.md"
 
 [dependencies]
 blas-src = { version = "0.8.0", features = ["blis"] }
@@ -11,6 +21,5 @@ num = "0.4.0"
 [workspace]
 members = ["tests"]
 
-[profile.release]
-lto = true
-opt-level = 3
+[lib]
+doctest = false

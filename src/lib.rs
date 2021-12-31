@@ -107,9 +107,9 @@
 //! - Allow for use on stable channel - perhabs with a stable feature
 //! - Implement stable tensors - perhabs for predefined dimensions with a macro
 //! - Make StaticCowVec backed by a union -so that vectors that are always owned can also be supported (useful for memory critical systems, fx. embeded devices).
-//!
-//! ## TODO: Long term
-//! - GPU support - maybe with cublas
+//! - Changable backends - [like in coaster](https://github.com/spearow/juice/tree/master/coaster)
+//!  - GPU support - maybe with cublas
+//!  - pure rust support - for irust and jupyter support.
 
 #![allow(incomplete_features)]
 #![feature(generic_const_exprs)]
