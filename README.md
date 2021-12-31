@@ -93,7 +93,7 @@ in the root of the repository.
 - ~~Move ./experimental to other branch~~
 - ~~Implement Debug for matrix~~
 - ~~Fix matrix api (Column and row specification is weird)~~
-- Write documentation
+- ~~Write documentation~~
 - Benchmark against ndarray - and maybe others? numpy?
 
 ### TODO: after publish
