@@ -9,7 +9,7 @@ repository = "https://github.com/unic0rn9k/slas"
 description = "Statically allocated vector, matrix and tensor types, for interfacing with blas, in a performant manor, using copy-on-write (aka cow) behavior."
 
 keywords = ["matrix", "blas", "linearalgebra", "matrix", "vectors"]
-categories = ["data-structures", "science", "math", "machine-learning"]
+categories = ["data-structures", "science", "mathematics"]
 
 readme = "README.md"
 
