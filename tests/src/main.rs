@@ -158,3 +158,49 @@ mod matrix {
     //    assert_eq!(**(m * n), k);
     //}
 }
+
+#[cfg(all(test, feature = "vsndarray"))]
+mod vs_ndarray {
+    extern crate test;
+    const DOT_ARR_LEN: usize = 500;
+
+    mod ndarray {
+        use super::test::{black_box, Bencher};
+        use ndarray::prelude::*;
+        use rand::random;
+
+        #[bench]
+        fn dot(be: &mut Bencher) {
+            be.iter(|| {
+                let mut a = Array::zeros(super::DOT_ARR_LEN);
+                let mut b = Array::zeros(super::DOT_ARR_LEN);
+                for n in 0..100 {
+                    a[n] = random::<f32>();
+                    b[n] = random::<f32>();
+                }
+
+                black_box(a.dot(&b))
+            });
+        }
+    }
+
+    mod slas {
+        use super::test::{black_box, Bencher};
+        use rand::random;
+        use slas::prelude::*;
+
+        #[bench]
+        fn dot(be: &mut Bencher) {
+            be.iter(|| {
+                let mut a = moo![0f32; super::DOT_ARR_LEN];
+                let mut b = moo![0f32; super::DOT_ARR_LEN];
+                for n in 0..100 {
+                    a[n] = random();
+                    b[n] = random();
+                }
+
+                black_box(a.dot(&b))
+            });
+        }
+    }
+}

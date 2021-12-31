@@ -4,4 +4,9 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+ndarray = {version = "0.15.4", optional = true, features = ["blas"]}
+rand = {version = "0.8.4", optional = true}
 slas = {path = "../"}
+
+[features]
+vsndarray = ["ndarray", "rand"]

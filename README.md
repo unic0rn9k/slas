@@ -1,7 +1,6 @@
 <div align="center">
 
 ## SLAS
-
 *Static Linear Algebra System*
 
 [![GitHub Workflow Status](https://img.shields.io/github/workflow/status/unic0rn9k/slas/Tests?label=tests&style=flat-square)](https://github.com/unic0rn9k/slas/actions/workflows/rust.yml)
@@ -9,11 +8,9 @@
 
 </div>
 
-
-Provides statically allocated vector, matrix and tensor types, for interfacing with blas/blis, in a performant manor, using copy-on-write (aka cow) behaviour.
+Provides statically allocated vector, matrix and tensor types, for interfacing with blas/blis, in a performant manor, using copy-on-write (aka cow) behavior.
 
 ### Example
-**General note:** The `StaticCowVec` type implements `deref` and `deref_mut`, so any method implemented for `[T;LEN]` is also implemented for `StaticCowVec`.
 
 ```rust
 use slas::prelude::*;
@@ -60,10 +57,10 @@ In the example above, you can see `v` changed value the first time `source` was 
 This is because `v` was copied when it was mutated at the line after the first mutation of `source`.
 
 ### Matricies, tensors and other mathematical types
-At the moment the way I want to implement these types, causes a compiler crash when trying to create 2 objects with the same shape.
-For now I'm going to try to create a temporary, and more stable way of dealing with these variations of static multi dimensional arrays.
+At the moment the way I want to implement these types, causes a compiler crash, when trying to create 2 objects with the same shape.
+For now I'm going to try to create a temporary, and more stable, way of dealing with these variations of static multi dimensional arrays.
 
-As of now there is a Matrix type, but no tensor type on the stable branch.
+As of now there is a Matrix type, but no tensor type on the master branch.
 The stable matricies are very basic, as I hopefully will be able to replace them with a more generic tensor type soon...
 
 ```rust
@@ -85,10 +82,18 @@ If you want a look at whats to come in the future,
 you can go [here](https://github.com/unic0rn9k/slas/tree/experimental/src/experimental)
 for some *very* experimental source code for the project.
 
-### Test and Benchmark it yourself!
-You can get benchmark results and tests by running
-`cargo test -p tests` and `cargo bench -p tests`
-in the root of the repository.
+### Why not just use ndarray (or alike)?
+Slas can be faster than ndarray in some specifik use cases, like when having to do a lot of allocations, or when using referenced data in vector operations.
+Besides slas should always be atleast as fast as ndarray, so it can't hurt.
+
+Statcal allocation and the way slas cow behavior works with the borrow checker,
+also means that you might catch a lot of bugs at compiletime,
+where ndarray most of the time will let you get away with pretty much anything.
+
+### More info...
+- Slas is still in very early days, and is subject to a lot of breaking changes.
+- The `StaticCowVec` type implements `deref` and `deref_mut`, so any method implemented for `[T;LEN]` is also implemented for `StaticCowVec`.
+- [Benchmarks, tests and related](https://github.com/unic0rn9k/slas/tree/master/tests)
 
 ### TODO: before publishing 🎉
 - ~~Move ./experimental to other branch~~
