@@ -23,7 +23,7 @@
 //! ## What is a COW?
 //! The copy-on-write functionality is inspired by [std::borrow::cow](https://doc.rust-lang.org/std/borrow/enum.Cow.html).
 //! The idea is simply that allocations (and time) can be saved, by figuring out when to copy at runtime instead of at compiletime.
-//! This can be memory ineficient at times (as an enum takes the size of its largest field + tag size), but I'm planing on making ways around this in the future.
+//! This can be memory inefficient at times (as an enum takes the size of its largest field + tag size), but I'm planing on making ways around this in the future.
 //!
 //! ### In code...
 //! ```rust
@@ -86,7 +86,7 @@
 //! Slas can be faster than ndarray in some specifik use cases, like when having to do a lot of allocations, or when using referenced data in vector operations.
 //! Besides slas should always be atleast as fast as ndarray, so it can't hurt.
 //!
-//! Statcal allocation and the way slas cow behavior works with the borrow checker,
+//! Statical allocation and the way slas cow behavior works with the borrow checker,
 //! also means that you might catch a lot of bugs at compiletime,
 //! where ndarray most of the time will let you get away with pretty much anything.
 //!
