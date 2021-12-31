@@ -2,6 +2,30 @@ use crate::prelude::*;
 use num::NumCast;
 use std::ops::*;
 
+///A stable matrix type not backed by a tensor.
+///`Matrix` uses `StaticCowVec` internally, so it also has copy-on-write behaviour.
+///
+/// A matrix of type `Matrix<f32, M, K>` has `M` rows and `K` columns.
+/// This means the height of the matrix (y len) is specified first, and then the width (x len).
+///
+/// When indexing into a matrix, it is in the order `[x, y]`.
+///
+///## Example
+///```rust
+/// let m: Matrix<f32, 2, 3> = [
+///  1., 2., 3.,
+///  4., 5., 6.
+/// ].into();
+///
+/// assert!(m[[1, 0]] == 2.);
+///
+/// let k: Matrix<f32, 3, 2> = moo![f32: 0..6].into();
+///
+/// println!("Product of {:?} and {:?} is {:?}", m, k, m * k);
+///```
+///
+///I found that [Khan Academy](https://www.khanacademy.org/math/precalculus/x9e81a4f98389efdf:matrices/x9e81a4f98389efdf:properties-of-matrix-multiplication/a/matrix-multiplication-dimensions)
+///was a good resource for better understanding matricies.
 #[derive(Copy, Clone)]
 pub struct Matrix<'a, T: NumCast + Copy, const M: usize, const K: usize>(
     StaticCowVec<'a, T, { K * M }>,
@@ -32,6 +56,7 @@ where
         self.0.get_unchecked(n[0] + n[1] * K)
     }
 
+    /// Very slow, quick and dirty matrix transpose. It just switches the x and y axis...
     pub fn transpose(&self) -> Matrix<T, K, M>
     where
         StaticCowVec<'a, T, { M * K }>: Sized,
@@ -148,6 +173,14 @@ where
 
 macro_rules! impl_gemm {
     ($t: ty, $f: ident) => {
+        /// This is matrix multiplication, **NOT** element wise multiplication.
+        /// Take a look at
+        /// [wiki](https://en.wikipedia.org/wiki/Matrix_multiplication),
+        /// [3Blue1Brown at yt](https://www.youtube.com/watch?v=XkY2DOUCWMU)
+        /// and/or [Khan Academy](https://www.khanacademy.org/math/precalculus/x9e81a4f98389efdf:matrices/x9e81a4f98389efdf:properties-of-matrix-multiplication/a/matrix-multiplication-dimensions)
+        /// for more information.
+        ///
+        /// It's notable that your left hand matrix needs to be as wide as the right hand matrix is tall.
         impl<'a, 'b, const M: usize, const N: usize, const K: usize> Mul<Matrix<'b, $t, K, N>>
             for Matrix<'a, $t, M, K>
         where

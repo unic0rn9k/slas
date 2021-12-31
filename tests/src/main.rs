@@ -126,6 +126,16 @@ mod matrix {
         assert_eq!(**(m * n), k);
     }
 
+    #[test]
+    fn from_readme() {
+        use slas::prelude::*;
+        let m: Matrix<f32, 2, 3> = [1., 2., 3., 4., 5., 6.].into();
+        assert_eq!(m[[1, 0]], 2.);
+        let k: Matrix<f32, 3, 2> = moo![f32: 0..6].into();
+
+        println!("Product of {:?} and {:?} is {:?}", m, k, m * k);
+    }
+
     //#[test]
     //fn mul3() { // Doesn't work. Might just be an incorrect expected result.
     //    let m: Matrix<f32, 5, 6> = [
