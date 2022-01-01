@@ -3,8 +3,8 @@
 //! # SLAS
 //! *Static Linear Algebra System*
 //!
-//! [![GitHub Workflow Status](https://img.shields.io/github/workflow/status/unic0rn9k/slas/Tests?label=tests&logo=github&style=flat-square)](https://github.com/unic0rn9k/slas/actions/workflows/rust.yml)
 //! [![Crates.io](https://img.shields.io/crates/v/slas?logo=rust&style=flat-square)](https://crates.io/crates/slas)
+//! [![GitHub Workflow Status](https://img.shields.io/github/workflow/status/unic0rn9k/slas/Tests?label=tests&logo=github&style=flat-square)](https://github.com/unic0rn9k/slas/actions/workflows/rust.yml)
 //! [![Docs](https://img.shields.io/docsrs/slas/latest?logo=rust&style=flat-square)](https://docs.rs/slas/latest/slas/)
 //! [![Donate on paypal](https://img.shields.io/badge/paypal-donate-1?style=flat-square&logo=paypal&color=blue)](https://www.paypal.com/paypalme/unic0rn9k/5usd)
 //!
@@ -97,18 +97,12 @@
 //! - The `StaticCowVec` type implements `deref` and `deref_mut`, so any method implemented for `[T;LEN]` is also implemented for `StaticCowVec`.
 //! - [Benchmarks, tests and related](https://github.com/unic0rn9k/slas/tree/master/tests)
 //!
-//! ## TODO: before publishing 🎉
-//! - ~~Move ./experimental to other branch~~
-//! - ~~Implement Debug for matrix~~
-//! - ~~Fix matrix api (Column and row specification is weird)~~
-//! - ~~Write documentation~~
-//! - Benchmark against ndarray - and maybe others? numpy?
-//!
-//! ## TODO: after publish
+//! ## TODO
+//! - Make less terrible benchmarks
 //! - Feature support for conversion between [ndarray](lib.rs/ndarray) types
 //! - Allow for use on stable channel - perhabs with a stable feature
 //! - Implement stable tensors - perhabs for predefined dimensions with a macro
-//! - Make StaticCowVec backed by a union -so that vectors that are always owned can also be supported (useful for memory critical systems, fx. embeded devices).
+//! - Make StaticCowVec backed by a union - so that vectors that are always owned can also be supported (useful for memory critical systems, fx. embeded devices).
 //! - Changable backends - [like in coaster](https://github.com/spearow/juice/tree/master/coaster)
 //!     - GPU support - maybe with cublas
 //!     - pure rust support - usefull for irust and jupyter support.
@@ -121,20 +115,27 @@ pub use matrix_stable::matrix;
 pub mod prelude;
 
 use num::*;
-use std::{convert::TryInto, hint::unreachable_unchecked, ops::*};
+use std::{hint::unreachable_unchecked, ops::*};
 extern crate blas_src;
 extern crate cblas_sys;
+
+#[derive(Clone, Copy)]
+pub union StaticVector<'a, T: NumCast + Copy, const LEN: usize> {
+    pub owned: [T; LEN],
+    pub borrowed: &'a [T; LEN],
+}
 
 /// Statically allocated copy-on-write vector struct.
 /// This is the backbone of the crate, and is also the type used inside of matricies and tensors.
 #[derive(Clone, Copy)]
 pub enum StaticCowVec<'a, T: NumCast + Copy, const LEN: usize> {
     Owned([T; LEN]),
-    Borrowed(&'a [T]),
+    Borrowed(&'a [T; LEN]),
 }
 
 impl<'a, T: NumCast + Copy, const LEN: usize> StaticCowVec<'a, T, LEN> {
     pub fn zeros() -> Self {
+        // TODO:Replace this function with fill function, and remove NumCast as trait dependecy for T.
         Self::Owned([T::from(0).unwrap(); LEN])
     }
 
@@ -164,7 +165,18 @@ impl<'a, T: NumCast + Copy, const LEN: usize> StaticCowVec<'a, T, LEN> {
     }
 
     pub unsafe fn from_ptr(ptr: *const T) -> Self {
-        Self::Borrowed((ptr as *const [T; LEN]).as_ref().unwrap())
+        Self::Borrowed(
+            (ptr as *const [T; LEN])
+                .as_ref()
+                .expect("Cannot create StaticCowVec::Borrowed from NULL"),
+        )
+    }
+
+    pub unsafe fn as_ptr(&self) -> *const T {
+        match self {
+            Self::Owned(o) => o as *const T,
+            Self::Borrowed(b) => &b[0] as *const T,
+        }
     }
 }
 
@@ -214,7 +226,7 @@ impl<'a, T: NumCast + Copy, const LEN: usize> Deref for StaticCowVec<'a, T, LEN>
     fn deref(&self) -> &Self::Target {
         match self {
             Self::Owned(o) => o,
-            Self::Borrowed(b) => unsafe { (*b).try_into().unwrap_unchecked() }, // I'm afraid to cast raw pointer here, since I think it might cause incorrect lifetimes.
+            Self::Borrowed(b) => b,
         }
     }
 }
@@ -224,7 +236,7 @@ impl<'a, T: NumCast + Copy, const LEN: usize> DerefMut for StaticCowVec<'a, T, L
         match self {
             Self::Owned(o) => o,
             Self::Borrowed(b) => {
-                *self = Self::Owned(unsafe { *(b.as_ptr() as *mut [T; LEN]) });
+                *self = Self::Owned(**b);
                 match self {
                     Self::Owned(o) => o,
                     _ => unsafe { unreachable_unchecked() },
@@ -241,13 +253,13 @@ impl<'a, T: NumCast + Copy, const LEN: usize> From<[T; LEN]> for StaticCowVec<'a
 }
 impl<'a, T: NumCast + Copy, const LEN: usize> From<&'a [T; LEN]> for StaticCowVec<'a, T, LEN> {
     fn from(s: &'a [T; LEN]) -> Self {
-        Self::Borrowed(&s[..])
+        Self::Borrowed(s)
     }
 }
 impl<'a, T: NumCast + Copy, const LEN: usize> From<&'a [T]> for StaticCowVec<'a, T, LEN> {
     fn from(s: &'a [T]) -> Self {
         assert_eq!(s.len(), LEN); // TODO: Unchecked version of this...
-        Self::Borrowed(s)
+        Self::Borrowed(unsafe { (s.as_ptr() as *const [T; LEN]).as_ref().unwrap_unchecked() })
     }
 }
 

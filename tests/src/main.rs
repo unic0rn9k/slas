@@ -159,8 +159,8 @@ mod matrix {
     //}
 }
 
-#[cfg(all(test, feature = "vsndarray"))]
-mod vs_ndarray {
+#[cfg(all(test, feature = "versus"))]
+mod versus {
     extern crate test;
     const DOT_ARR_LEN: usize = 500;
 
@@ -171,16 +171,33 @@ mod vs_ndarray {
 
         #[bench]
         fn dot(be: &mut Bencher) {
-            be.iter(|| {
-                let mut a = Array::zeros(super::DOT_ARR_LEN);
-                let mut b = Array::zeros(super::DOT_ARR_LEN);
-                for n in 0..super::DOT_ARR_LEN {
-                    a[n] = random::<f32>();
-                    b[n] = random::<f32>();
-                }
+            let mut a = Array::zeros(super::DOT_ARR_LEN);
+            let mut b = Array::zeros(super::DOT_ARR_LEN);
+            for n in 0..super::DOT_ARR_LEN {
+                a[n] = random::<f32>();
+                b[n] = random::<f32>();
+            }
 
-                black_box(a.dot(&b))
-            });
+            be.iter(|| black_box(a.dot(&b)));
+        }
+    }
+
+    mod nalgebra {
+        use super::test::{black_box, Bencher};
+        use rand::random;
+
+        #[bench]
+        fn dot(be: &mut Bencher) {
+            let mut a: nalgebra::base::SVector<f32, { super::DOT_ARR_LEN }> =
+                [0f32; super::DOT_ARR_LEN].into();
+            let mut b: nalgebra::base::SVector<f32, { super::DOT_ARR_LEN }> =
+                [0f32; super::DOT_ARR_LEN].into();
+            for n in 0..super::DOT_ARR_LEN {
+                a[n] = random::<f32>();
+                b[n] = random::<f32>();
+            }
+
+            be.iter(|| black_box(a.dot(&b)));
         }
     }
 
@@ -191,16 +208,25 @@ mod vs_ndarray {
 
         #[bench]
         fn dot(be: &mut Bencher) {
-            be.iter(|| {
-                let mut a = moo![0f32; super::DOT_ARR_LEN];
-                let mut b = moo![0f32; super::DOT_ARR_LEN];
-                for n in 0..super::DOT_ARR_LEN {
-                    a[n] = random();
-                    b[n] = random();
-                }
+            let mut a = moo![0f32; super::DOT_ARR_LEN];
+            let mut b = moo![0f32; super::DOT_ARR_LEN];
+            for n in 0..super::DOT_ARR_LEN {
+                a[n] = random();
+                b[n] = random();
+            }
 
-                black_box(a.dot(&b))
-            });
+            be.iter(|| black_box(a.dot(&b)));
+        }
+
+        #[bench]
+        fn index(be: &mut Bencher) {
+            let i: usize = random::<usize>() % super::DOT_ARR_LEN;
+            let mut a = moo![0f32; super::DOT_ARR_LEN];
+            for n in 0..super::DOT_ARR_LEN {
+                a[n] = random();
+            }
+
+            be.iter(|| black_box(a[black_box(i)]));
         }
     }
 }

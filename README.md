@@ -3,8 +3,8 @@
 ## SLAS
 *Static Linear Algebra System*
 
-[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/unic0rn9k/slas/Tests?label=tests&logo=github&style=flat-square)](https://github.com/unic0rn9k/slas/actions/workflows/rust.yml)
 [![Crates.io](https://img.shields.io/crates/v/slas?logo=rust&style=flat-square)](https://crates.io/crates/slas)
+[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/unic0rn9k/slas/Tests?label=tests&logo=github&style=flat-square)](https://github.com/unic0rn9k/slas/actions/workflows/rust.yml)
 [![Docs](https://img.shields.io/docsrs/slas/latest?logo=rust&style=flat-square)](https://docs.rs/slas/latest/slas/)
 [![Donate on paypal](https://img.shields.io/badge/paypal-donate-1?style=flat-square&logo=paypal&color=blue)](https://www.paypal.com/paypalme/unic0rn9k/5usd)
 
@@ -97,18 +97,12 @@ where ndarray most of the time will let you get away with pretty much anything.
 - The `StaticCowVec` type implements `deref` and `deref_mut`, so any method implemented for `[T;LEN]` is also implemented for `StaticCowVec`.
 - [Benchmarks, tests and related](https://github.com/unic0rn9k/slas/tree/master/tests)
 
-### TODO: before publishing 🎉
-- ~~Move ./experimental to other branch~~
-- ~~Implement Debug for matrix~~
-- ~~Fix matrix api (Column and row specification is weird)~~
-- ~~Write documentation~~
-- Benchmark against ndarray - and maybe others? numpy?
-
-### TODO: after publish
+### TODO
+- Make less terrible benchmarks
 - Feature support for conversion between [ndarray](lib.rs/ndarray) types
 - Allow for use on stable channel - perhabs with a stable feature
 - Implement stable tensors - perhabs for predefined dimensions with a macro
-- Make StaticCowVec backed by a union -so that vectors that are always owned can also be supported (useful for memory critical systems, fx. embeded devices).
+- Make StaticCowVec backed by a union - so that vectors that are always owned can also be supported (useful for memory critical systems, fx. embeded devices).
 - Changable backends - [like in coaster](https://github.com/spearow/juice/tree/master/coaster)
     - GPU support - maybe with cublas
     - pure rust support - usefull for irust and jupyter support.

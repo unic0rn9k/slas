@@ -3,9 +3,9 @@ You can test and benchmark slas on your local machine by running
 `cargo test -p tests` and `cargo bench -p tests`
 respectively, in the repository root.
 
-If you want to compare performance of slas and [ndarray](https://lib.rs/ndarray) you can run 
+If you want to compare performance of slas, [ndarray](https://lib.rs/ndarray) and [nalgebra](https://nalgebra.org) you can run 
 
-`cargo bench -j8 -p tests --features tests/vsndarray`
+`cargo bench -j8 -p tests --features tests/versus`
 
 
 # Results and comparing with ndarray

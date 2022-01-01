@@ -6,7 +6,7 @@ authors = ["Aksel Mannstaedt <unic0rn9k@protonmail.com>"]
 license = "Apache-2.0"
 
 repository = "https://github.com/unic0rn9k/slas"
-description = "Statically allocated vector, matrix and tensor types, for interfacing with blas, in a performant manor, using copy-on-write (aka cow) behavior."
+description = "Static Linear Algebra System"
 
 keywords = ["matrix", "blas", "linearalgebra", "matrix", "vectors"]
 categories = ["data-structures", "science", "mathematics"]
