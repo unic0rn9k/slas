@@ -24,6 +24,6 @@ jobs:
     - name: Install nightly toolchain
       run: rustup toolchain install nightly
     - name: Install blis
-      run: apt install libblis-dev
+      run: sudo apt install libblis-dev
     - name: Run tests
       run: cargo +nightly t -p tests
