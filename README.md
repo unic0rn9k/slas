@@ -101,7 +101,7 @@ In the future you will have to choose your own blas provider, and instructions f
 On the crates.io version of slas (v0.1.0 and 0.1.1) blis is compiled automatically.
 
 For now, if you want to use the git version of slas, you need to install blis on your system.
-- On Arch linux blis-cblas v0.7.0 from the aur has been tested and works fine.
+- On Arch linux `blis-cblas` v0.7.0 from the aur has been tested and works fine.
 - On Debian you can simply run `apt install libblis-dev` to install.
 
 ### General info...
