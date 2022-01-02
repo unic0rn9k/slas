@@ -120,9 +120,15 @@ extern crate blas_src;
 extern crate cblas_sys;
 
 #[derive(Clone, Copy)]
-pub union StaticVector<'a, T: NumCast + Copy, const LEN: usize> {
+pub union StaticCowVectorUnion<'a, T: NumCast + Copy, const LEN: usize> {
     pub owned: [T; LEN],
     pub borrowed: &'a [T; LEN],
+}
+
+/// A very general trait for anything that can be called a static vector (fx. `[T; LEN]`)
+pub trait StaticVector<T, const LEN: usize> {
+    /// Return pointer to first element.
+    unsafe fn as_ptr(&self) -> *const T;
 }
 
 /// Statically allocated copy-on-write vector struct.
@@ -171,8 +177,10 @@ impl<'a, T: NumCast + Copy, const LEN: usize> StaticCowVec<'a, T, LEN> {
                 .expect("Cannot create StaticCowVec::Borrowed from NULL"),
         )
     }
+}
 
-    pub unsafe fn as_ptr(&self) -> *const T {
+impl<'a, T: NumCast + Copy, const LEN: usize> StaticVector<T, LEN> for StaticCowVec<'a, T, LEN> {
+    unsafe fn as_ptr(&self) -> *const T {
         match self {
             Self::Owned(o) => o as *const T,
             Self::Borrowed(b) => &b[0] as *const T,
@@ -181,44 +189,54 @@ impl<'a, T: NumCast + Copy, const LEN: usize> StaticCowVec<'a, T, LEN> {
 }
 
 macro_rules! impl_dot {
-    ($float: ty, $blas_fn: ident) => {
+    ($float: ty, $blas_fn: ident, $comp_blas_fn: ident) => {
+        /// Dot product for two vectors of same length using blas.
+        pub fn $blas_fn<const LEN: usize>(
+            a: &impl StaticVector<$float, LEN>,
+            b: &impl StaticVector<$float, LEN>,
+        ) -> $float {
+            unsafe { cblas_sys::$blas_fn(LEN as i32, a.as_ptr(), 1, b.as_ptr(), 1) }
+        }
+
         impl<'a, const LEN: usize> StaticCowVec<'a, $float, LEN> {
             /// Dot product for two vectors of same length using blas.
-            pub fn dot<'b>(&self, other: &Self) -> $float {
-                unsafe { cblas_sys::$blas_fn(LEN as i32, self.as_ptr(), 1, other.as_ptr(), 1) }
+            pub fn dot(&self, other: &Self) -> $float {
+                $blas_fn(self, other)
             }
         }
-    };
-}
-macro_rules! impl_dot_complex {
-    ($float: ty, $blas_fn: ident) => {
+        /// Dot product for two complex vectors of same length using blas.
+        pub fn $comp_blas_fn<const LEN: usize>(
+            a: &impl StaticVector<Complex<$float>, LEN>,
+            b: &impl StaticVector<Complex<$float>, LEN>,
+        ) -> Complex<$float> {
+            let mut tmp: [$float; 2] = [0.; 2];
+            unsafe {
+                cblas_sys::$comp_blas_fn(
+                    LEN as i32,
+                    a.as_ptr() as *const [$float; 2],
+                    1,
+                    b.as_ptr() as *const [$float; 2],
+                    1,
+                    tmp.as_mut_ptr() as *mut [$float; 2],
+                )
+            }
+            Complex {
+                re: tmp[0],
+                im: tmp[1],
+            }
+        }
+
         impl<'a, const LEN: usize> StaticCowVec<'a, Complex<$float>, LEN> {
             /// Dot product for two complex vectors of same length using blas.
-            pub fn dot<'b>(&self, other: &Self) -> Complex<$float> {
-                let mut tmp: [$float; 2] = [0.; 2];
-                unsafe {
-                    cblas_sys::$blas_fn(
-                        LEN as i32,
-                        self.as_ptr() as *const [$float; 2],
-                        1,
-                        other.as_ptr() as *const [$float; 2],
-                        1,
-                        tmp.as_mut_ptr() as *mut [$float; 2],
-                    )
-                }
-                Complex {
-                    re: tmp[0],
-                    im: tmp[1],
-                }
+            pub fn dot(&self, other: &Self) -> Complex<$float> {
+                $comp_blas_fn(self, other)
             }
         }
     };
 }
 
-impl_dot!(f32, cblas_sdot);
-impl_dot!(f64, cblas_ddot);
-impl_dot_complex!(f32, cblas_cdotu_sub);
-impl_dot_complex!(f64, cblas_zdotu_sub);
+impl_dot!(f32, cblas_sdot, cblas_cdotu_sub);
+impl_dot!(f64, cblas_ddot, cblas_zdotu_sub);
 
 impl<'a, T: NumCast + Copy, const LEN: usize> Deref for StaticCowVec<'a, T, LEN> {
     type Target = [T; LEN];
