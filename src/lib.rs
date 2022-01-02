@@ -103,7 +103,7 @@
 //! - Allow for use on stable channel - perhabs with a stable feature
 //! - Implement stable tensors - perhabs for predefined dimensions with a macro
 //! - ~~Make StaticCowVec backed by a union - so that vectors that are always owned can also be supported (useful for memory critical systems, fx. embeded devices).~~
-//! - Changable backends - [like in coaster](https://github.com/spearow/juice/tree/master/coaster)
+//! - Modular backends - [like in coaster](https://github.com/spearow/juice/tree/master/coaster)
 //!     - GPU support - maybe with cublas
 //!     - pure rust support - usefull for irust and jupyter support.
 
@@ -116,7 +116,7 @@ pub mod prelude;
 
 use num::*;
 use std::{marker::PhantomData, ops::*};
-extern crate blas_src;
+extern crate blis_src;
 extern crate cblas_sys;
 
 /// A very general trait for anything that can be called a static vector (fx. `[T; LEN]`)
@@ -130,16 +130,71 @@ pub trait StaticVector<T, const LEN: usize> {
     /// Return pointer to first element.
     unsafe fn as_ptr(&self) -> *const T;
 
-    /// Return a reference to self with the type of [`StaticVectorUnion.owned`]
-    fn as_static_vector_ref<'a>(&'a self) -> &StaticVectorUnion<'a, T, LEN>
+    /// Return a reference to self with the type of [`StaticVectorUnion::owned`]
+    fn moo_ref<'a>(&'a self) -> &StaticVectorUnion<'a, T, LEN>
     where
         T: Copy,
     {
-        unsafe {
-            (self.as_ptr() as *const StaticVectorUnion<'a, T, LEN>)
-                .as_ref()
-                .unwrap_unchecked()
+        unsafe { &*(self.as_ptr() as *const StaticVectorUnion<'a, T, LEN>) }
+    }
+
+    fn moo<'a>(&'a self) -> StaticCowVec<'a, T, LEN>
+    where
+        T: Copy + NumCast,
+    {
+        unsafe { StaticCowVec::from_ptr(self.as_ptr()) }
+    }
+}
+
+macro_rules! dyn_cast_panic {
+    ($a: expr, $b: expr) => {{
+        if $a != $b {
+            panic!(
+                "Cannot cast a DynamicVector of len {}, to a StaticVector with len {}",
+                $a, $b
+            )
         }
+    }};
+}
+
+/// Allow to pretend that dynamically sized vectors are statically sized.
+/// See [`StaticVector`] for more information.
+///
+/// ## Example
+/// ```rust
+/// let a = vec![0f32, 1., 2., 3.];
+/// let b = moo![f32: 0, -1, -2, 3];
+///
+/// assert!(cblas_sdot(&a.pretend_static(), &b) == 4.)
+/// ```
+pub trait DynamicVector<T> {
+    fn len(&self) -> usize;
+    unsafe fn as_ptr(&self) -> *const T;
+    fn pretend_static<const LEN: usize>(&self) -> PretendStaticVector<'_, T, Self, LEN> {
+        dyn_cast_panic!(self.len(), LEN);
+        PretendStaticVector(self, PhantomData)
+    }
+    unsafe fn pretend_static_unchecked<const LEN: usize>(
+        &self,
+    ) -> PretendStaticVector<'_, T, Self, LEN> {
+        PretendStaticVector(self, PhantomData)
+    }
+
+    /// Return a reference to self with the type of [`StaticVectorUnion::owned`]
+    fn moo_ref<'a, const LEN: usize>(&'a self) -> &StaticVectorUnion<'a, T, LEN>
+    where
+        T: Copy,
+    {
+        dyn_cast_panic!(self.len(), LEN);
+        unsafe { &*(self.as_ptr() as *const StaticVectorUnion<'a, T, LEN>) }
+    }
+
+    fn moo<'a, const LEN: usize>(&'a self) -> StaticCowVec<'a, T, LEN>
+    where
+        T: Copy + NumCast,
+    {
+        dyn_cast_panic!(self.len(), LEN);
+        unsafe { StaticCowVec::from_ptr(self.as_ptr()) }
     }
 }
 
@@ -158,33 +213,9 @@ impl<'a, T: Copy, const LEN: usize> StaticVector<T, LEN> for StaticVectorUnion<'
     }
 }
 
-/// Allow to pretend that dynamically sized vectors are statically sized.
-/// See [`StaticVector`] for more information.
-///
-/// ## Example
-/// ```rust
-/// let a = vec![0f32, 1., 2., 3.];
-/// let b = moo![f32: 0, -1, -2, 3];
-///
-/// assert!(cblas_sdot(&a.pretend_static(), &b) == 4.)
-/// ```
-pub trait DynamicVector<T> {
-    fn len(&self) -> usize;
-    unsafe fn as_ptr(&self) -> *const T;
-    fn pretend_static<const LEN: usize>(&self) -> PretendStaticVector<'_, T, Self, LEN> {
-        if self.len() != LEN {
-            panic!(
-                "Cannot cast a DynamicVector of len {}, to a StaticVector with len {}",
-                self.len(),
-                LEN
-            )
-        }
-        PretendStaticVector(self, PhantomData)
-    }
-    unsafe fn pretend_static_unchecked<const LEN: usize>(
-        &self,
-    ) -> PretendStaticVector<'_, T, Self, LEN> {
-        PretendStaticVector(self, PhantomData)
+impl<T, const LEN: usize> StaticVector<T, LEN> for [T; LEN] {
+    unsafe fn as_ptr(&self) -> *const T {
+        self as *const T
     }
 }
 
@@ -207,7 +238,7 @@ impl<T> DynamicVector<T> for [T] {
         self.len()
     }
     unsafe fn as_ptr(&self) -> *const T {
-        &self[0] as *const T
+        self as *const [T] as *const T
     }
 }
 
@@ -275,7 +306,7 @@ impl<'a, T: NumCast + Copy, const LEN: usize> StaticVector<T, LEN> for StaticCow
     unsafe fn as_ptr(&self) -> *const T {
         match self.is_owned {
             true => self.data.as_ptr(),
-            false => &self.data.borrowed[0] as *const T,
+            false => self.data.borrowed as *const T,
         }
     }
 }
@@ -375,7 +406,7 @@ impl<'a, T: NumCast + Copy, const LEN: usize> From<&'a [T; LEN]> for StaticCowVe
 impl<'a, T: NumCast + Copy, const LEN: usize> From<&'a [T]> for StaticCowVec<'a, T, LEN> {
     fn from(s: &'a [T]) -> Self {
         assert_eq!(s.len(), LEN);
-        Self::from(unsafe { (s.as_ptr() as *const [T; LEN]).as_ref().unwrap_unchecked() })
+        Self::from(unsafe { &*(s.as_ptr() as *const [T; LEN]) })
     }
 }
 

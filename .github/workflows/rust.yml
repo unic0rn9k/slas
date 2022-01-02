@@ -23,7 +23,7 @@ jobs:
     - uses: actions/checkout@v2
     - name: Install nightly toolchain
       run: rustup toolchain install nightly
-    - name: Build
-      run: cargo +nightly b
+    - name: Install blis
+      run: apt install libblis-dev
     - name: Run tests
       run: cargo +nightly t -p tests

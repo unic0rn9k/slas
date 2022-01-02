@@ -14,7 +14,7 @@ categories = ["data-structures", "science", "mathematics"]
 readme = "README.md"
 
 [dependencies]
-blas-src = { version = "0.8.0", features = ["blis"] }
+blis-src = { version = "0.2.0", features = ["system"] }
 cblas-sys = "0.1.4"
 num = "0.4.0"
 

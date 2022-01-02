@@ -4,23 +4,14 @@
 use slas::prelude::*;
 
 fn main() {
-    let a_vec: Vec<f32> = vec![1., 2., 3.2];
-    let a = moo![_ a_vec.as_slice()];
+    extern crate test;
+    use slas::prelude::*;
+    use test::black_box;
 
-    // a_vec[1] = 3.; // Borrow checker won't let us do this. This is pratical because it also means a won't unexpectedly change value.
-    // a[0] = 3.; // You can however still mutate a.
-    // assert_eq!(a_vec, vec![1., 3., 3.2]);
-    // assert_eq!(*a, [3., 3., 3.2]);
+    let a = [1., 2., 3.1];
+    let b = [1., -2., 3.];
 
-    let mut b = moo![f32: 1..4]; // moo![f32: 1..=3]; works too.
-    b.norm();
-
-    println!("Dot product of {:?} and {:?} is {:?}", a, b, a.dot(&b));
-
-    use slas::matrix::Matrix;
-    let m: Matrix<f32, 2, 3> = moo![f32: 1..7].into();
-
-    println!("matrix = {:?}; You get?", m);
+    black_box(cblas_sdot(&a, &b));
 }
 
 #[cfg(test)]
@@ -53,6 +44,16 @@ mod thin_blas {
         let b = moo![f32: 0, -1, -2, 3];
 
         assert_eq!(cblas_sdot(&a.pretend_static(), &b), 4.)
+    }
+
+    #[test]
+    fn casting_and_dot_alt() {
+        use slas::prelude::*;
+
+        let a = vec![0f32, 1., 2., 3.];
+        let b = moo![f32: 0, -1, -2, 3];
+
+        assert_eq!(a.moo().dot(&b), 4.);
     }
 }
 
@@ -175,7 +176,21 @@ mod matrix {
 #[cfg(all(test, feature = "versus"))]
 mod versus {
     extern crate test;
-    const DOT_ARR_LEN: usize = 500;
+    use lazy_static::*;
+    use rand::random;
+    const DOT_ARR_LEN: usize = 300;
+
+    lazy_static! {
+        static ref RAND_VECS: [[f32; DOT_ARR_LEN]; 2] = {
+            let mut a = [0f32; DOT_ARR_LEN];
+            let mut b = [0f32; DOT_ARR_LEN];
+            for n in 0..DOT_ARR_LEN {
+                a[n] = random::<f32>();
+                b[n] = random::<f32>();
+            }
+            [a, b]
+        };
+    }
 
     mod ndarray {
         use super::test::{black_box, Bencher};
@@ -187,8 +202,8 @@ mod versus {
             let mut a = Array::zeros(super::DOT_ARR_LEN);
             let mut b = Array::zeros(super::DOT_ARR_LEN);
             for n in 0..super::DOT_ARR_LEN {
-                a[n] = random::<f32>();
-                b[n] = random::<f32>();
+                a[n] = super::RAND_VECS[0][n];
+                b[n] = super::RAND_VECS[1][n];
             }
 
             be.iter(|| black_box(a.dot(&b)));
@@ -202,13 +217,9 @@ mod versus {
         #[bench]
         fn dot(be: &mut Bencher) {
             let mut a: nalgebra::base::SVector<f32, { super::DOT_ARR_LEN }> =
-                [0f32; super::DOT_ARR_LEN].into();
+                super::RAND_VECS[0].into();
             let mut b: nalgebra::base::SVector<f32, { super::DOT_ARR_LEN }> =
-                [0f32; super::DOT_ARR_LEN].into();
-            for n in 0..super::DOT_ARR_LEN {
-                a[n] = random::<f32>();
-                b[n] = random::<f32>();
-            }
+                super::RAND_VECS[1].into();
 
             be.iter(|| black_box(a.dot(&b)));
         }
@@ -221,25 +232,15 @@ mod versus {
 
         #[bench]
         fn dot(be: &mut Bencher) {
-            let mut a = moo![0f32; super::DOT_ARR_LEN];
-            let mut b = moo![0f32; super::DOT_ARR_LEN];
-            for n in 0..super::DOT_ARR_LEN {
-                a[n] = random();
-                b[n] = random();
-            }
+            let mut a = super::RAND_VECS[0].moo();
+            let mut b = super::RAND_VECS[1].moo();
 
             be.iter(|| black_box(a.dot(&b)));
         }
 
         #[bench]
-        fn index(be: &mut Bencher) {
-            let i: usize = random::<usize>() % super::DOT_ARR_LEN;
-            let mut a = moo![0f32; super::DOT_ARR_LEN];
-            for n in 0..super::DOT_ARR_LEN {
-                a[n] = random();
-            }
-
-            be.iter(|| black_box(a[black_box(i)]));
+        fn dot_fast(be: &mut Bencher) {
+            be.iter(|| black_box(cblas_sdot(&super::RAND_VECS[0], &super::RAND_VECS[1])));
         }
     }
 }
