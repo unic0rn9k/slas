@@ -38,7 +38,7 @@ where
     StaticCowVec<'a, T, { K * M }>: Sized,
 {
     pub fn zeros() -> Self {
-        Self(StaticCowVec::zeros())
+        Self(StaticCowVec::from([T::from(0).unwrap(); K * M]))
     }
 
     pub fn is_borrowed(&self) -> bool {

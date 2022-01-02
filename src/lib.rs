@@ -66,18 +66,18 @@
 //! The stable matricies are very basic, as I hopefully will be able to replace them with a more generic tensor type soon...
 //!
 //! ```rust
-//!  use slas::{prelude::*, matrix::Matrix};
+//! use slas::{prelude::*, matrix::Matrix};
 //!
-//!  let m: Matrix<f32, 2, 3> = [
-//!   1., 2., 3.,
-//!   4., 5., 6.
-//!  ].into();
+//! let m: Matrix<f32, 2, 3> = [
+//!  1., 2., 3.,
+//!  4., 5., 6.
+//! ].into();
 //!
-//!  assert!(m[[1, 0]] == 2.);
+//! assert!(m[[1, 0]] == 2.);
 //!
-//!  let k: Matrix<f32, 3, 2> = moo![f32: 0..6].into();
+//! let k: Matrix<f32, 3, 2> = moo![f32: 0..6].into();
 //!
-//!  println!("Product of {:?} and {:?} is {:?}", m, k, m * k);
+//! println!("Product of {:?} and {:?} is {:?}", m, k, m * k);
 //! ```
 //!
 //! If you want a look at whats to come in the future,
@@ -102,7 +102,7 @@
 //! - Feature support for conversion between [ndarray](lib.rs/ndarray) types
 //! - Allow for use on stable channel - perhabs with a stable feature
 //! - Implement stable tensors - perhabs for predefined dimensions with a macro
-//! - Make StaticCowVec backed by a union - so that vectors that are always owned can also be supported (useful for memory critical systems, fx. embeded devices).
+//! - ~~Make StaticCowVec backed by a union - so that vectors that are always owned can also be supported (useful for memory critical systems, fx. embeded devices).~~
 //! - Changable backends - [like in coaster](https://github.com/spearow/juice/tree/master/coaster)
 //!     - GPU support - maybe with cublas
 //!     - pure rust support - usefull for irust and jupyter support.
@@ -115,28 +115,59 @@ pub use matrix_stable::matrix;
 pub mod prelude;
 
 use num::*;
-use std::{hint::unreachable_unchecked, marker::PhantomData, ops::*};
+use std::{marker::PhantomData, ops::*};
 extern crate blas_src;
 extern crate cblas_sys;
 
+/// A very general trait for anything that can be called a static vector (fx. `[T; LEN]`)
+///
+/// **Warning:** If self is not contiguous, it will cause undefined behaviour.
+///
+/// Why does StaticVector not allow mutable access to self?
+///
+/// Because there is no overhead casting to [`StaticVectorUnion::owned`] and calling methods on that instead.
+pub trait StaticVector<T, const LEN: usize> {
+    /// Return pointer to first element.
+    unsafe fn as_ptr(&self) -> *const T;
+
+    /// Return a reference to self with the type of [`StaticVectorUnion.owned`]
+    fn as_static_vector_ref<'a>(&'a self) -> &StaticVectorUnion<'a, T, LEN>
+    where
+        T: Copy,
+    {
+        unsafe {
+            (self.as_ptr() as *const StaticVectorUnion<'a, T, LEN>)
+                .as_ref()
+                .unwrap_unchecked()
+        }
+    }
+}
+
+// TODO: Implement deref
+// TODO: Move methods and implementations from StaticCowVec, StaticVector and StaticVectorUnion to be more correct.
+/// Will always be owned, unless inside a [`StaticVector`]
 #[derive(Clone, Copy)]
-pub union StaticCowVectorUnion<'a, T: NumCast + Copy, const LEN: usize> {
+pub union StaticVectorUnion<'a, T: Copy, const LEN: usize> {
     pub owned: [T; LEN],
     pub borrowed: &'a [T; LEN],
 }
 
-/// *Warning:* If self is not contiguous, it will cause undefined behaviour.
-/// A very general trait for anything that can be called a static vector (fx. `[T; LEN]`)
-///
-/// # Why does StaticVector not allow mutable access to self?
-/// Because there is no overhead casting to [`StaticCowVectorUnion::owned`] and calling methods on that instead.
-pub trait StaticVector<T, const LEN: usize> {
-    /// Return pointer to first element.
-    unsafe fn as_ptr(&self) -> *const T;
+impl<'a, T: Copy, const LEN: usize> StaticVector<T, LEN> for StaticVectorUnion<'a, T, LEN> {
+    unsafe fn as_ptr(&self) -> *const T {
+        self.owned.as_ptr()
+    }
 }
 
 /// Allow to pretend that dynamically sized vectors are statically sized.
 /// See [`StaticVector`] for more information.
+///
+/// ## Example
+/// ```rust
+/// let a = vec![0f32, 1., 2., 3.];
+/// let b = moo![f32: 0, -1, -2, 3];
+///
+/// assert!(cblas_sdot(&a.pretend_static(), &b) == 4.)
+/// ```
 pub trait DynamicVector<T> {
     fn len(&self) -> usize;
     unsafe fn as_ptr(&self) -> *const T;
@@ -157,6 +188,7 @@ pub trait DynamicVector<T> {
     }
 }
 
+/// See [`StaticVector`].
 pub struct PretendStaticVector<'a, I, T: DynamicVector<I> + ?Sized, const LEN: usize>(
     &'a T,
     PhantomData<I>,
@@ -179,15 +211,6 @@ impl<T> DynamicVector<T> for [T] {
     }
 }
 
-impl<T> DynamicVector<T> for &[T] {
-    fn len(&self) -> usize {
-        (*self).len()
-    }
-    unsafe fn as_ptr(&self) -> *const T {
-        &self[0] as *const T
-    }
-}
-
 impl<T> DynamicVector<T> for Vec<T> {
     fn len(&self) -> usize {
         self.len()
@@ -197,33 +220,36 @@ impl<T> DynamicVector<T> for Vec<T> {
     }
 }
 
-/// Statically allocated copy-on-write vector struct.
-/// This is the backbone of the crate, and is also the type used inside of matricies and tensors.
+// /// Statically allocated copy-on-write vector struct.
+// /// This is the backbone of the crate, and is also the type used inside of matricies and tensors.
+// #[derive(Clone, Copy)]
+// pub enum StaticCowVec<'a, T: NumCast + Copy, const LEN: usize> {
+//     Owned([T; LEN]),
+//     Borrowed(&'a [T; LEN]),
+// }
+
 #[derive(Clone, Copy)]
-pub enum StaticCowVec<'a, T: NumCast + Copy, const LEN: usize> {
-    Owned([T; LEN]),
-    Borrowed(&'a [T; LEN]),
+pub struct StaticCowVec<'a, T: Copy, const LEN: usize> {
+    data: StaticVectorUnion<'a, T, LEN>,
+    is_owned: bool,
 }
 
 impl<'a, T: NumCast + Copy, const LEN: usize> StaticCowVec<'a, T, LEN> {
-    pub fn zeros() -> Self {
-        // TODO:Replace this function with fill function, and remove NumCast as trait dependecy for T.
-        Self::Owned([T::from(0).unwrap(); LEN])
-    }
+    //pub fn zeros() -> Self {
+    //    // TODO:Replace this function with fill function, and remove NumCast as trait dependecy for T.
+    //    Self::Owned([T::from(0).unwrap(); LEN])
+    //}
 
     pub fn len(&self) -> usize {
         LEN
     }
 
     pub fn is_borrowed(&self) -> bool {
-        match self {
-            Self::Borrowed(_) => true,
-            _ => false,
-        }
+        !self.is_owned()
     }
 
     pub fn is_owned(&self) -> bool {
-        !self.is_borrowed()
+        self.is_owned
     }
 
     /// Slow, quick and dirty norm function, which normalizes a vector.
@@ -237,7 +263,7 @@ impl<'a, T: NumCast + Copy, const LEN: usize> StaticCowVec<'a, T, LEN> {
     }
 
     pub unsafe fn from_ptr(ptr: *const T) -> Self {
-        Self::Borrowed(
+        Self::from(
             (ptr as *const [T; LEN])
                 .as_ref()
                 .expect("Cannot create StaticCowVec::Borrowed from NULL"),
@@ -247,9 +273,9 @@ impl<'a, T: NumCast + Copy, const LEN: usize> StaticCowVec<'a, T, LEN> {
 
 impl<'a, T: NumCast + Copy, const LEN: usize> StaticVector<T, LEN> for StaticCowVec<'a, T, LEN> {
     unsafe fn as_ptr(&self) -> *const T {
-        match self {
-            Self::Owned(o) => o as *const T,
-            Self::Borrowed(b) => &b[0] as *const T,
+        match self.is_owned {
+            true => self.data.as_ptr(),
+            false => &self.data.borrowed[0] as *const T,
         }
     }
 }
@@ -308,42 +334,48 @@ impl<'a, T: NumCast + Copy, const LEN: usize> Deref for StaticCowVec<'a, T, LEN>
     type Target = [T; LEN];
 
     fn deref(&self) -> &Self::Target {
-        match self {
-            Self::Owned(o) => o,
-            Self::Borrowed(b) => b,
+        unsafe {
+            match self.is_owned {
+                true => &self.data.owned,
+                false => self.data.borrowed,
+            }
         }
     }
 }
 
 impl<'a, T: NumCast + Copy, const LEN: usize> DerefMut for StaticCowVec<'a, T, LEN> {
     fn deref_mut(&mut self) -> &mut Self::Target {
-        match self {
-            Self::Owned(o) => o,
-            Self::Borrowed(b) => {
-                *self = Self::Owned(**b);
-                match self {
-                    Self::Owned(o) => o,
-                    _ => unsafe { unreachable_unchecked() },
-                }
+        unsafe {
+            if self.is_owned {
+                return &mut self.data.owned;
             }
+            self.is_owned = true;
+            self.data.owned = *self.data.borrowed;
+            &mut self.data.owned
         }
     }
 }
 
 impl<'a, T: NumCast + Copy, const LEN: usize> From<[T; LEN]> for StaticCowVec<'a, T, LEN> {
     fn from(s: [T; LEN]) -> Self {
-        Self::Owned(s)
+        Self {
+            data: StaticVectorUnion { owned: s },
+            is_owned: true,
+        }
     }
 }
 impl<'a, T: NumCast + Copy, const LEN: usize> From<&'a [T; LEN]> for StaticCowVec<'a, T, LEN> {
     fn from(s: &'a [T; LEN]) -> Self {
-        Self::Borrowed(s)
+        Self {
+            data: StaticVectorUnion { borrowed: s },
+            is_owned: false,
+        }
     }
 }
 impl<'a, T: NumCast + Copy, const LEN: usize> From<&'a [T]> for StaticCowVec<'a, T, LEN> {
     fn from(s: &'a [T]) -> Self {
-        assert_eq!(s.len(), LEN); // TODO: Unchecked version of this...
-        Self::Borrowed(unsafe { (s.as_ptr() as *const [T; LEN]).as_ref().unwrap_unchecked() })
+        assert_eq!(s.len(), LEN);
+        Self::from(unsafe { (s.as_ptr() as *const [T; LEN]).as_ref().unwrap_unchecked() })
     }
 }
 

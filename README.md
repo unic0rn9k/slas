@@ -66,18 +66,18 @@ As of now there is a Matrix type, but no tensor type on the master branch.
 The stable matricies are very basic, as I hopefully will be able to replace them with a more generic tensor type soon...
 
 ```rust
- use slas::{prelude::*, matrix::Matrix};
+use slas::{prelude::*, matrix::Matrix};
 
- let m: Matrix<f32, 2, 3> = [
-  1., 2., 3.,
-  4., 5., 6.
- ].into();
+let m: Matrix<f32, 2, 3> = [
+ 1., 2., 3.,
+ 4., 5., 6.
+].into();
 
- assert!(m[[1, 0]] == 2.);
+assert!(m[[1, 0]] == 2.);
 
- let k: Matrix<f32, 3, 2> = moo![f32: 0..6].into();
+let k: Matrix<f32, 3, 2> = moo![f32: 0..6].into();
 
- println!("Product of {:?} and {:?} is {:?}", m, k, m * k);
+println!("Product of {:?} and {:?} is {:?}", m, k, m * k);
 ```
 
 If you want a look at whats to come in the future,
@@ -102,7 +102,7 @@ where ndarray most of the time will let you get away with pretty much anything.
 - Feature support for conversion between [ndarray](lib.rs/ndarray) types
 - Allow for use on stable channel - perhabs with a stable feature
 - Implement stable tensors - perhabs for predefined dimensions with a macro
-- Make StaticCowVec backed by a union - so that vectors that are always owned can also be supported (useful for memory critical systems, fx. embeded devices).
+- ~~Make StaticCowVec backed by a union - so that vectors that are always owned can also be supported (useful for memory critical systems, fx. embeded devices).~~
 - Changable backends - [like in coaster](https://github.com/spearow/juice/tree/master/coaster)
     - GPU support - maybe with cublas
     - pure rust support - usefull for irust and jupyter support.
