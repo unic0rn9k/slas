@@ -115,7 +115,7 @@ pub use matrix_stable::matrix;
 pub mod prelude;
 
 use num::*;
-use std::{hint::unreachable_unchecked, ops::*};
+use std::{hint::unreachable_unchecked, marker::PhantomData, ops::*};
 extern crate blas_src;
 extern crate cblas_sys;
 
@@ -125,10 +125,76 @@ pub union StaticCowVectorUnion<'a, T: NumCast + Copy, const LEN: usize> {
     pub borrowed: &'a [T; LEN],
 }
 
+/// *Warning:* If self is not contiguous, it will cause undefined behaviour.
 /// A very general trait for anything that can be called a static vector (fx. `[T; LEN]`)
+///
+/// # Why does StaticVector not allow mutable access to self?
+/// Because there is no overhead casting to [`StaticCowVectorUnion::owned`] and calling methods on that instead.
 pub trait StaticVector<T, const LEN: usize> {
     /// Return pointer to first element.
     unsafe fn as_ptr(&self) -> *const T;
+}
+
+/// Allow to pretend that dynamically sized vectors are statically sized.
+/// See [`StaticVector`] for more information.
+pub trait DynamicVector<T> {
+    fn len(&self) -> usize;
+    unsafe fn as_ptr(&self) -> *const T;
+    fn pretend_static<const LEN: usize>(&self) -> PretendStaticVector<'_, T, Self, LEN> {
+        if self.len() != LEN {
+            panic!(
+                "Cannot cast a DynamicVector of len {}, to a StaticVector with len {}",
+                self.len(),
+                LEN
+            )
+        }
+        PretendStaticVector(self, PhantomData)
+    }
+    unsafe fn pretend_static_unchecked<const LEN: usize>(
+        &self,
+    ) -> PretendStaticVector<'_, T, Self, LEN> {
+        PretendStaticVector(self, PhantomData)
+    }
+}
+
+pub struct PretendStaticVector<'a, I, T: DynamicVector<I> + ?Sized, const LEN: usize>(
+    &'a T,
+    PhantomData<I>,
+);
+
+impl<'a, I, T: DynamicVector<I>, const LEN: usize> StaticVector<I, LEN>
+    for PretendStaticVector<'a, I, T, LEN>
+{
+    unsafe fn as_ptr(&self) -> *const I {
+        self.0.as_ptr()
+    }
+}
+
+impl<T> DynamicVector<T> for [T] {
+    fn len(&self) -> usize {
+        self.len()
+    }
+    unsafe fn as_ptr(&self) -> *const T {
+        &self[0] as *const T
+    }
+}
+
+impl<T> DynamicVector<T> for &[T] {
+    fn len(&self) -> usize {
+        (*self).len()
+    }
+    unsafe fn as_ptr(&self) -> *const T {
+        &self[0] as *const T
+    }
+}
+
+impl<T> DynamicVector<T> for Vec<T> {
+    fn len(&self) -> usize {
+        self.len()
+    }
+    unsafe fn as_ptr(&self) -> *const T {
+        &self[0] as *const T
+    }
 }
 
 /// Statically allocated copy-on-write vector struct.

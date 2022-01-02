@@ -44,6 +44,19 @@ mod benches {
 }
 
 #[cfg(test)]
+mod thin_blas {
+    use crate::*;
+
+    #[test]
+    fn casting_and_dot() {
+        let a = vec![0f32, 1., 2., 3.];
+        let b = moo![f32: 0, -1, -2, 3];
+
+        assert_eq!(cblas_sdot(&a.pretend_static(), &b), 4.)
+    }
+}
+
+#[cfg(test)]
 mod moo {
     use crate::num::*;
     use crate::*;
