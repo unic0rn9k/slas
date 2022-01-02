@@ -27,6 +27,8 @@
 //! The idea is simply that allocations (and time) can be saved, by figuring out when to copy at runtime instead of at compiletime.
 //! This can be memory inefficient at times (as an enum takes the size of its largest field + tag size), but I'm planing on making ways around this in the future.
 //!
+//! **If you're using the git version of slas, you can now use `VecRef`'s instead of `StaticCowVecs`, when you don't want the cow behavior.**
+//!
 //! ### In code...
 //! ```rust
 //! let source: Vec<f32> = vec![1., 2., 3.];
@@ -85,14 +87,24 @@
 //! for some *very* experimental source code for the project.
 //!
 //! ## Why not just use ndarray (or alike)?
-//! Slas can be faster than ndarray in some specifik use cases, like when having to do a lot of allocations, or when using referenced data in vector operations.
+//! Slas can be faster than ndarray in some specific use cases, like when having to do a lot of allocations, or when using referenced data in vector operations.
 //! Besides slas should always be atleast as fast as ndarray, so it can't hurt.
 //!
 //! Statical allocation and the way slas cow behavior works with the borrow checker,
 //! also means that you might catch a lot of bugs at compiletime,
 //! where ndarray most of the time will let you get away with pretty much anything.
 //!
-//! ## More info...
+//! ## Installation
+//! Slas depends on blas, and currently only supports using blis.
+//! In the future you will have to choose your own blas provider, and instructions for doing so will be added here.
+//!
+//! On the crates.io version of slas (v0.1.0 and 0.1.1) blis is compiled automatically.
+//!
+//! For now, if you want to use the git version of slas, you need to install blis on your system.
+//! - On Arch linux blis-cblas v0.7.0 from the aur has been tested and works fine.
+//! - On Debian you can simply run `apt install libblis-dev` to install.
+//!
+//! ## General info...
 //! - Slas is still in very early days, and is subject to a lot of breaking changes.
 //! - The `StaticCowVec` type implements `deref` and `deref_mut`, so any method implemented for `[T;LEN]` is also implemented for `StaticCowVec`.
 //! - [Benchmarks, tests and related](https://github.com/unic0rn9k/slas/tree/master/tests)
@@ -119,6 +131,9 @@ use std::{marker::PhantomData, ops::*};
 extern crate blis_src;
 extern crate cblas_sys;
 
+/// StaticVectorUnion is always owned when it is not found in a StaticCowVec, therefore we have this type alias to make it less confisung when dealing with references to owned vectors.
+pub type VecRef<'a, T, const LEN: usize> = &'a StaticVectorUnion<'a, T, LEN>;
+
 /// A very general trait for anything that can be called a static vector (fx. `[T; LEN]`)
 ///
 /// **Warning:** If self is not contiguous, it will cause undefined behaviour.
@@ -131,7 +146,7 @@ pub trait StaticVector<T, const LEN: usize> {
     unsafe fn as_ptr(&self) -> *const T;
 
     /// Return a reference to self with the type of [`StaticVectorUnion::owned`]
-    fn moo_ref<'a>(&'a self) -> &StaticVectorUnion<'a, T, LEN>
+    fn moo_ref<'a>(&'a self) -> VecRef<'a, T, LEN>
     where
         T: Copy,
     {
@@ -181,7 +196,7 @@ pub trait DynamicVector<T> {
     }
 
     /// Return a reference to self with the type of [`StaticVectorUnion::owned`]
-    fn moo_ref<'a, const LEN: usize>(&'a self) -> &StaticVectorUnion<'a, T, LEN>
+    fn moo_ref<'a, const LEN: usize>(&'a self) -> VecRef<'a, T, LEN>
     where
         T: Copy,
     {

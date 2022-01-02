@@ -27,6 +27,8 @@ The copy-on-write functionality is inspired by [std::borrow::cow](https://doc.ru
 The idea is simply that allocations (and time) can be saved, by figuring out when to copy at runtime instead of at compiletime.
 This can be memory inefficient at times (as an enum takes the size of its largest field + tag size), but I'm planing on making ways around this in the future.
 
+**If you're using the git version of slas, you can now use `VecRef`'s instead of `StaticCowVecs`, when you don't want the cow behavior.**
+
 #### In code...
 ```rust
 let source: Vec<f32> = vec![1., 2., 3.];
@@ -85,14 +87,24 @@ you can go [here](https://github.com/unic0rn9k/slas/tree/experimental/src/experi
 for some *very* experimental source code for the project.
 
 ### Why not just use ndarray (or alike)?
-Slas can be faster than ndarray in some specifik use cases, like when having to do a lot of allocations, or when using referenced data in vector operations.
+Slas can be faster than ndarray in some specific use cases, like when having to do a lot of allocations, or when using referenced data in vector operations.
 Besides slas should always be atleast as fast as ndarray, so it can't hurt.
 
 Statical allocation and the way slas cow behavior works with the borrow checker,
 also means that you might catch a lot of bugs at compiletime,
 where ndarray most of the time will let you get away with pretty much anything.
 
-### More info...
+### Installation
+Slas depends on blas, and currently only supports using blis.
+In the future you will have to choose your own blas provider, and instructions for doing so will be added here.
+
+On the crates.io version of slas (v0.1.0 and 0.1.1) blis is compiled automatically.
+
+For now, if you want to use the git version of slas, you need to install blis on your system.
+- On Arch linux blis-cblas v0.7.0 from the aur has been tested and works fine.
+- On Debian you can simply run `apt install libblis-dev` to install.
+
+### General info...
 - Slas is still in very early days, and is subject to a lot of breaking changes.
 - The `StaticCowVec` type implements `deref` and `deref_mut`, so any method implemented for `[T;LEN]` is also implemented for `StaticCowVec`.
 - [Benchmarks, tests and related](https://github.com/unic0rn9k/slas/tree/master/tests)
@@ -103,7 +115,7 @@ where ndarray most of the time will let you get away with pretty much anything.
 - Allow for use on stable channel - perhabs with a stable feature
 - Implement stable tensors - perhabs for predefined dimensions with a macro
 - ~~Make StaticCowVec backed by a union - so that vectors that are always owned can also be supported (useful for memory critical systems, fx. embeded devices).~~
-- Changable backends - [like in coaster](https://github.com/spearow/juice/tree/master/coaster)
+- Modular backends - [like in coaster](https://github.com/spearow/juice/tree/master/coaster)
     - GPU support - maybe with cublas
     - pure rust support - usefull for irust and jupyter support.
 
