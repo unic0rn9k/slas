@@ -102,7 +102,7 @@
 //!
 //! For now, if you want to use the git version of slas, you need to install blis on your system.
 //! - On Arch linux `blis-cblas` v0.7.0 from the aur has been tested and works fine.
-//! - On Debian you can simply run `apt install libblis-dev` to install.
+//! - On Debian you can simply run `apt install libblis-dev`.
 //!
 //! ## General info...
 //! - Slas is still in very early days, and is subject to a lot of breaking changes.
@@ -132,7 +132,7 @@ extern crate blis_src;
 extern crate cblas_sys;
 
 /// StaticVectorUnion is always owned when it is not found in a StaticCowVec, therefore we have this type alias to make it less confisung when dealing with references to owned vectors.
-pub type VecRef<'a, T, const LEN: usize> = &'a StaticVectorUnion<'a, T, LEN>;
+pub type StaticVecRef<'a, T, const LEN: usize> = &'a StaticVecUnion<'a, T, LEN>;
 
 /// A very general trait for anything that can be called a static vector (fx. `[T; LEN]`)
 ///
@@ -141,16 +141,16 @@ pub type VecRef<'a, T, const LEN: usize> = &'a StaticVectorUnion<'a, T, LEN>;
 /// Why does StaticVector not allow mutable access to self?
 ///
 /// Because there is no overhead casting to [`StaticVectorUnion::owned`] and calling methods on that instead.
-pub trait StaticVector<T, const LEN: usize> {
+pub trait StaticVec<T, const LEN: usize> {
     /// Return pointer to first element.
     unsafe fn as_ptr(&self) -> *const T;
 
     /// Return a reference to self with the type of [`StaticVectorUnion::owned`]
-    fn moo_ref<'a>(&'a self) -> VecRef<'a, T, LEN>
+    fn moo_ref<'a>(&'a self) -> StaticVecRef<'a, T, LEN>
     where
         T: Copy,
     {
-        unsafe { &*(self.as_ptr() as *const StaticVectorUnion<'a, T, LEN>) }
+        unsafe { &*(self.as_ptr() as *const StaticVecUnion<'a, T, LEN>) }
     }
 
     fn moo<'a>(&'a self) -> StaticCowVec<'a, T, LEN>
@@ -182,26 +182,26 @@ macro_rules! dyn_cast_panic {
 ///
 /// assert!(cblas_sdot(&a.pretend_static(), &b) == 4.)
 /// ```
-pub trait DynamicVector<T> {
+pub trait DynamicVec<T> {
     fn len(&self) -> usize;
     unsafe fn as_ptr(&self) -> *const T;
-    fn pretend_static<const LEN: usize>(&self) -> PretendStaticVector<'_, T, Self, LEN> {
+    fn pretend_static<const LEN: usize>(&self) -> PretendStaticVec<'_, T, Self, LEN> {
         dyn_cast_panic!(self.len(), LEN);
-        PretendStaticVector(self, PhantomData)
+        PretendStaticVec(self, PhantomData)
     }
     unsafe fn pretend_static_unchecked<const LEN: usize>(
         &self,
-    ) -> PretendStaticVector<'_, T, Self, LEN> {
-        PretendStaticVector(self, PhantomData)
+    ) -> PretendStaticVec<'_, T, Self, LEN> {
+        PretendStaticVec(self, PhantomData)
     }
 
     /// Return a reference to self with the type of [`StaticVectorUnion::owned`]
-    fn moo_ref<'a, const LEN: usize>(&'a self) -> VecRef<'a, T, LEN>
+    fn moo_ref<'a, const LEN: usize>(&'a self) -> StaticVecRef<'a, T, LEN>
     where
         T: Copy,
     {
         dyn_cast_panic!(self.len(), LEN);
-        unsafe { &*(self.as_ptr() as *const StaticVectorUnion<'a, T, LEN>) }
+        unsafe { &*(self.as_ptr() as *const StaticVecUnion<'a, T, LEN>) }
     }
 
     fn moo<'a, const LEN: usize>(&'a self) -> StaticCowVec<'a, T, LEN>
@@ -217,38 +217,38 @@ pub trait DynamicVector<T> {
 // TODO: Move methods and implementations from StaticCowVec, StaticVector and StaticVectorUnion to be more correct.
 /// Will always be owned, unless inside a [`StaticVector`]
 #[derive(Clone, Copy)]
-pub union StaticVectorUnion<'a, T: Copy, const LEN: usize> {
+pub union StaticVecUnion<'a, T: Copy, const LEN: usize> {
     pub owned: [T; LEN],
     pub borrowed: &'a [T; LEN],
 }
 
-impl<'a, T: Copy, const LEN: usize> StaticVector<T, LEN> for StaticVectorUnion<'a, T, LEN> {
+impl<'a, T: Copy, const LEN: usize> StaticVec<T, LEN> for StaticVecUnion<'a, T, LEN> {
     unsafe fn as_ptr(&self) -> *const T {
         self.owned.as_ptr()
     }
 }
 
-impl<T, const LEN: usize> StaticVector<T, LEN> for [T; LEN] {
+impl<T, const LEN: usize> StaticVec<T, LEN> for [T; LEN] {
     unsafe fn as_ptr(&self) -> *const T {
         self as *const T
     }
 }
 
 /// See [`StaticVector`].
-pub struct PretendStaticVector<'a, I, T: DynamicVector<I> + ?Sized, const LEN: usize>(
+pub struct PretendStaticVec<'a, I, T: DynamicVec<I> + ?Sized, const LEN: usize>(
     &'a T,
     PhantomData<I>,
 );
 
-impl<'a, I, T: DynamicVector<I>, const LEN: usize> StaticVector<I, LEN>
-    for PretendStaticVector<'a, I, T, LEN>
+impl<'a, I, T: DynamicVec<I>, const LEN: usize> StaticVec<I, LEN>
+    for PretendStaticVec<'a, I, T, LEN>
 {
     unsafe fn as_ptr(&self) -> *const I {
         self.0.as_ptr()
     }
 }
 
-impl<T> DynamicVector<T> for [T] {
+impl<T> DynamicVec<T> for [T] {
     fn len(&self) -> usize {
         self.len()
     }
@@ -257,7 +257,7 @@ impl<T> DynamicVector<T> for [T] {
     }
 }
 
-impl<T> DynamicVector<T> for Vec<T> {
+impl<T> DynamicVec<T> for Vec<T> {
     fn len(&self) -> usize {
         self.len()
     }
@@ -266,26 +266,13 @@ impl<T> DynamicVector<T> for Vec<T> {
     }
 }
 
-// /// Statically allocated copy-on-write vector struct.
-// /// This is the backbone of the crate, and is also the type used inside of matricies and tensors.
-// #[derive(Clone, Copy)]
-// pub enum StaticCowVec<'a, T: NumCast + Copy, const LEN: usize> {
-//     Owned([T; LEN]),
-//     Borrowed(&'a [T; LEN]),
-// }
-
 #[derive(Clone, Copy)]
 pub struct StaticCowVec<'a, T: Copy, const LEN: usize> {
-    data: StaticVectorUnion<'a, T, LEN>,
+    data: StaticVecUnion<'a, T, LEN>,
     is_owned: bool,
 }
 
 impl<'a, T: NumCast + Copy, const LEN: usize> StaticCowVec<'a, T, LEN> {
-    //pub fn zeros() -> Self {
-    //    // TODO:Replace this function with fill function, and remove NumCast as trait dependecy for T.
-    //    Self::Owned([T::from(0).unwrap(); LEN])
-    //}
-
     pub fn len(&self) -> usize {
         LEN
     }
@@ -317,7 +304,7 @@ impl<'a, T: NumCast + Copy, const LEN: usize> StaticCowVec<'a, T, LEN> {
     }
 }
 
-impl<'a, T: NumCast + Copy, const LEN: usize> StaticVector<T, LEN> for StaticCowVec<'a, T, LEN> {
+impl<'a, T: NumCast + Copy, const LEN: usize> StaticVec<T, LEN> for StaticCowVec<'a, T, LEN> {
     unsafe fn as_ptr(&self) -> *const T {
         match self.is_owned {
             true => self.data.as_ptr(),
@@ -328,10 +315,16 @@ impl<'a, T: NumCast + Copy, const LEN: usize> StaticVector<T, LEN> for StaticCow
 
 macro_rules! impl_dot {
     ($float: ty, $blas_fn: ident, $comp_blas_fn: ident) => {
-        /// Dot product for two vectors of same length using blas.
+        /// Thin wrapper around blas for the various dot product functions that works for multiple different (and mixed) vector types.
+        ///
+        /// ## Example
+        /// ```rust
+        /// use slas::prelude::*;
+        /// assert!(cblas_sdot(&[1., 2., 3.], &moo![f32: -1, 2, -1]) == 0.);
+        /// ```
         pub fn $blas_fn<const LEN: usize>(
-            a: &impl StaticVector<$float, LEN>,
-            b: &impl StaticVector<$float, LEN>,
+            a: &impl StaticVec<$float, LEN>,
+            b: &impl StaticVec<$float, LEN>,
         ) -> $float {
             unsafe { cblas_sys::$blas_fn(LEN as i32, a.as_ptr(), 1, b.as_ptr(), 1) }
         }
@@ -343,9 +336,10 @@ macro_rules! impl_dot {
             }
         }
         /// Dot product for two complex vectors of same length using blas.
+        /// Also has support for multiple (and mixed) types.
         pub fn $comp_blas_fn<const LEN: usize>(
-            a: &impl StaticVector<Complex<$float>, LEN>,
-            b: &impl StaticVector<Complex<$float>, LEN>,
+            a: &impl StaticVec<Complex<$float>, LEN>,
+            b: &impl StaticVec<Complex<$float>, LEN>,
         ) -> Complex<$float> {
             let mut tmp: [$float; 2] = [0.; 2];
             unsafe {
@@ -405,7 +399,7 @@ impl<'a, T: NumCast + Copy, const LEN: usize> DerefMut for StaticCowVec<'a, T, L
 impl<'a, T: NumCast + Copy, const LEN: usize> From<[T; LEN]> for StaticCowVec<'a, T, LEN> {
     fn from(s: [T; LEN]) -> Self {
         Self {
-            data: StaticVectorUnion { owned: s },
+            data: StaticVecUnion { owned: s },
             is_owned: true,
         }
     }
@@ -413,7 +407,7 @@ impl<'a, T: NumCast + Copy, const LEN: usize> From<[T; LEN]> for StaticCowVec<'a
 impl<'a, T: NumCast + Copy, const LEN: usize> From<&'a [T; LEN]> for StaticCowVec<'a, T, LEN> {
     fn from(s: &'a [T; LEN]) -> Self {
         Self {
-            data: StaticVectorUnion { borrowed: s },
+            data: StaticVecUnion { borrowed: s },
             is_owned: false,
         }
     }
