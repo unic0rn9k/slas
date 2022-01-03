@@ -3,15 +3,26 @@
 
 use slas::prelude::*;
 
+#[cfg(versus)]
 fn main() {
     extern crate test;
-    use slas::prelude::*;
+    use nalgebra::*;
     use test::black_box;
-
-    let a = [1., 2., 3.1];
-    let b = [1., -2., 3.];
+    let mut a: nalgebra::base::SVector<f32, 3> = [1., 2., 3.1].into();
+    let mut b: nalgebra::base::SVector<f32, 3> = [1., -2., 3.].into();
 
     black_box(cblas_sdot(&a, &b));
+}
+
+#[cfg(not(versus))]
+fn main() {
+    extern crate test;
+    use test::black_box;
+
+    let a = moo![f32: 1., 2., 3.1];
+    let b = moo![f32: 1., -2., 3.];
+
+    black_box(a.dot(&b));
 }
 
 #[cfg(test)]
@@ -178,7 +189,7 @@ mod versus {
     extern crate test;
     use lazy_static::*;
     use rand::random;
-    const DOT_ARR_LEN: usize = 300;
+    const DOT_ARR_LEN: usize = 100;
 
     lazy_static! {
         static ref RAND_VECS: [[f32; DOT_ARR_LEN]; 2] = {
@@ -232,15 +243,18 @@ mod versus {
 
         #[bench]
         fn dot(be: &mut Bencher) {
-            let mut a = super::RAND_VECS[0].moo();
-            let mut b = super::RAND_VECS[1].moo();
+            let a = super::RAND_VECS[0].moo();
+            let b = super::RAND_VECS[1].moo();
 
             be.iter(|| black_box(a.dot(&b)));
         }
 
         #[bench]
         fn dot_fast(be: &mut Bencher) {
-            be.iter(|| black_box(cblas_sdot(&super::RAND_VECS[0], &super::RAND_VECS[1])));
+            let a = super::RAND_VECS[0];
+            let b = super::RAND_VECS[1];
+
+            be.iter(|| black_box(cblas_sdot(&a, &b)));
         }
     }
 }
