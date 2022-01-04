@@ -202,15 +202,23 @@ impl<'a, T: Copy, const LEN: usize> StaticCowVec<'a, T, LEN> {
     }
 }
 
+// TODO: This needs to check if SIMD is available at compile time.
 macro_rules! impl_slas_dot {
     ($t: ty, $fn: ident) => {
+        /// Pure rust implementation of dot product. This is more performant for smaller vectors, where as the blas ([`cblas_sdot`] and [`cblas_ddot`]) dot product is faster for larger vectors.
+        ///
+        /// ## Example
+        /// ```rust
+        /// use slas::prelude::*;
+        /// assert!(slas_sdot(&[1., 2., 3.], &moo![f32: -1, 2, -1]) == 0.);
+        /// ```
         #[inline(always)]
         pub fn $fn<const LEN: usize>(
-            a: &impl StaticVec<f32, LEN>,
-            b: &impl StaticVec<f32, LEN>,
-        ) -> f32 {
+            a: &impl StaticVec<$t, LEN>,
+            b: &impl StaticVec<$t, LEN>,
+        ) -> $t {
             const LANES: usize = 4;
-            let mut sum = Simd::<f32, LANES>::from_array([0.; LANES]);
+            let mut sum = Simd::<$t, LANES>::from_array([0.; LANES]);
             for n in 0..LEN / LANES {
                 sum += unsafe {
                     Simd::from_slice(a.static_slice_unchecked::<LANES>(n * LANES))
@@ -227,7 +235,7 @@ macro_rules! impl_slas_dot {
 }
 
 macro_rules! impl_dot {
-    ($float: ty, $blas_fn: ident, $comp_blas_fn: ident) => {
+    ($float: ty, $blas_fn: ident, $comp_blas_fn: ident, $slas_fn: ident) => {
         /// Thin wrapper around blas for the various dot product functions that works for multiple different (and mixed) vector types.
         ///
         /// ## Example
@@ -245,7 +253,11 @@ macro_rules! impl_dot {
         impl<'a, const LEN: usize> StaticCowVec<'a, $float, LEN> {
             /// Dot product for two vectors of same length using blas.
             pub fn dot(&self, other: &Self) -> $float {
-                $blas_fn(self, other)
+                if LEN > 750 {
+                    $blas_fn(self, other)
+                } else {
+                    $slas_fn(self, other)
+                }
             }
         }
 
@@ -281,8 +293,8 @@ macro_rules! impl_dot {
     };
 }
 
-impl_dot!(f32, cblas_sdot, cblas_cdotu_sub);
-impl_dot!(f64, cblas_ddot, cblas_zdotu_sub);
+impl_dot!(f32, cblas_sdot, cblas_cdotu_sub, slas_sdot);
+impl_dot!(f64, cblas_ddot, cblas_zdotu_sub, slas_ddot);
 impl_slas_dot!(f32, slas_sdot);
 impl_slas_dot!(f64, slas_ddot);
 

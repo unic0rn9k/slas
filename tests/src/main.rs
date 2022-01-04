@@ -269,7 +269,7 @@ mod versus {
         }
 
         #[bench]
-        fn dot_fast(be: &mut Bencher) {
+        fn dot_blas(be: &mut Bencher) {
             let a = super::RAND_VECS[0];
             let b = super::RAND_VECS[1];
 
