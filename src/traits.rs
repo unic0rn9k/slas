@@ -1,6 +1,5 @@
 use crate::prelude::*;
 use crate::StaticVecUnion;
-use num::NumCast;
 use std::marker::PhantomData;
 use std::mem::transmute;
 
@@ -25,7 +24,7 @@ pub trait StaticVec<T, const LEN: usize> {
 
     fn moo<'a>(&'a self) -> StaticCowVec<'a, T, LEN>
     where
-        T: Copy + NumCast,
+        T: Copy,
     {
         unsafe { StaticCowVec::from_ptr(self.as_ptr()) }
     }
@@ -78,7 +77,7 @@ pub trait DynamicVec<T> {
 
     fn moo<'a, const LEN: usize>(&'a self) -> StaticCowVec<'a, T, LEN>
     where
-        T: Copy + NumCast,
+        T: Copy,
     {
         dyn_cast_panic!(self.len(), LEN);
         unsafe { StaticCowVec::from_ptr(self.as_ptr()) }
@@ -129,7 +128,7 @@ impl<T> DynamicVec<T> for Vec<T> {
     }
 }
 
-impl<'a, T: NumCast + Copy, const LEN: usize> StaticVec<T, LEN> for StaticCowVec<'a, T, LEN> {
+impl<'a, T: Copy, const LEN: usize> StaticVec<T, LEN> for StaticCowVec<'a, T, LEN> {
     unsafe fn as_ptr(&self) -> *const T {
         match self.is_owned {
             true => self.data.as_ptr(),

@@ -1,5 +1,4 @@
 use crate::prelude::*;
-use num::NumCast;
 use std::ops::*;
 
 ///A stable matrix type not backed by a tensor.
@@ -27,18 +26,17 @@ use std::ops::*;
 ///I found that [Khan Academy](https://www.khanacademy.org/math/precalculus/x9e81a4f98389efdf:matrices/x9e81a4f98389efdf:properties-of-matrix-multiplication/a/matrix-multiplication-dimensions)
 ///was a good resource for better understanding matricies.
 #[derive(Copy, Clone)]
-pub struct Matrix<'a, T: NumCast + Copy, const M: usize, const K: usize>(
-    StaticCowVec<'a, T, { K * M }>,
-)
+pub struct Matrix<'a, T: Copy, const M: usize, const K: usize>(StaticCowVec<'a, T, { K * M }>)
 where
     StaticCowVec<'a, T, { K * M }>: Sized;
 
-impl<'a, T: NumCast + Copy, const M: usize, const K: usize> Matrix<'a, T, M, K>
+impl<'a, T: Copy, const M: usize, const K: usize> Matrix<'a, T, M, K>
 where
     StaticCowVec<'a, T, { K * M }>: Sized,
+    T: Float,
 {
     pub fn zeros() -> Self {
-        Self(StaticCowVec::from([T::from(0).unwrap(); K * M]))
+        Self(StaticCowVec::from([T::zero(); K * M]))
     }
 
     pub fn is_borrowed(&self) -> bool {
@@ -71,7 +69,7 @@ where
     }
 }
 
-impl<'a, T: NumCast + Copy, const M: usize, const K: usize> Deref for Matrix<'a, T, M, K>
+impl<'a, T: Copy, const M: usize, const K: usize> Deref for Matrix<'a, T, M, K>
 where
     StaticCowVec<'a, T, { K * M }>: Sized,
 {
@@ -82,7 +80,7 @@ where
     }
 }
 
-impl<'a, T: NumCast + Copy, const M: usize, const K: usize> DerefMut for Matrix<'a, T, M, K>
+impl<'a, T: Copy, const M: usize, const K: usize> DerefMut for Matrix<'a, T, M, K>
 where
     StaticCowVec<'a, T, { K * M }>: Sized,
 {
@@ -91,8 +89,7 @@ where
     }
 }
 
-impl<'a, T: NumCast + Copy, const M: usize, const K: usize> Index<[usize; 2]>
-    for Matrix<'a, T, M, K>
+impl<'a, T: Copy, const M: usize, const K: usize> Index<[usize; 2]> for Matrix<'a, T, M, K>
 where
     StaticCowVec<'a, T, { K * M }>: Sized,
 {
@@ -108,8 +105,7 @@ where
     }
 }
 
-impl<'a, T: NumCast + Copy, const M: usize, const K: usize> IndexMut<[usize; 2]>
-    for Matrix<'a, T, M, K>
+impl<'a, T: Copy, const M: usize, const K: usize> IndexMut<[usize; 2]> for Matrix<'a, T, M, K>
 where
     StaticCowVec<'a, T, { K * M }>: Sized,
 {
@@ -124,7 +120,7 @@ where
     }
 }
 
-impl<'a, T: Copy + NumCast, const M: usize, const K: usize> From<StaticCowVec<'a, T, { K * M }>>
+impl<'a, T: Copy, const M: usize, const K: usize> From<StaticCowVec<'a, T, { K * M }>>
     for Matrix<'a, T, M, K>
 {
     fn from(v: StaticCowVec<'a, T, { K * M }>) -> Self {
@@ -132,23 +128,19 @@ impl<'a, T: Copy + NumCast, const M: usize, const K: usize> From<StaticCowVec<'a
     }
 }
 
-impl<'a, T: Copy + NumCast, const M: usize, const K: usize> From<&'a [T; K * M]>
-    for Matrix<'a, T, M, K>
-{
+impl<'a, T: Copy, const M: usize, const K: usize> From<&'a [T; K * M]> for Matrix<'a, T, M, K> {
     fn from(v: &'a [T; K * M]) -> Self {
         Matrix(v.into())
     }
 }
 
-impl<'a, T: Copy + NumCast, const M: usize, const K: usize> From<[T; K * M]>
-    for Matrix<'a, T, M, K>
-{
+impl<'a, T: Copy, const M: usize, const K: usize> From<[T; K * M]> for Matrix<'a, T, M, K> {
     fn from(v: [T; K * M]) -> Self {
         Matrix(v.into())
     }
 }
 
-impl<'a, T: Copy + NumCast + std::fmt::Debug, const M: usize, const K: usize> std::fmt::Debug
+impl<'a, T: Copy + std::fmt::Debug, const M: usize, const K: usize> std::fmt::Debug
     for Matrix<'a, T, M, K>
 where
     StaticCowVec<'a, T, { K * M }>: Sized,

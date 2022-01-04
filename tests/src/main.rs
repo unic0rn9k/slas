@@ -70,8 +70,19 @@ mod thin_blas {
 
 #[cfg(test)]
 mod moo {
-    use crate::num::*;
     use crate::*;
+
+    //#[test]
+    //fn norm_complex() {
+    //    let c = Complex::<f32> { re: 1.2, im: 2.3 };
+
+    //    let mut a = moo![c;5];
+    //    let mut b = moo![c;5];
+    //    a.norm();
+    //    b.norm();
+
+    //    assert_eq!(a.dot(&b), 0.);
+    //}
 
     #[test]
     fn mutations() {
@@ -189,7 +200,7 @@ mod versus {
     extern crate test;
     use lazy_static::*;
     use rand::random;
-    const DOT_ARR_LEN: usize = 100;
+    const DOT_ARR_LEN: usize = 750;
 
     lazy_static! {
         static ref RAND_VECS: [[f32; DOT_ARR_LEN]; 2] = {
@@ -206,7 +217,6 @@ mod versus {
     mod ndarray {
         use super::test::{black_box, Bencher};
         use ndarray::prelude::*;
-        use rand::random;
 
         #[bench]
         fn dot(be: &mut Bencher) {
@@ -223,13 +233,12 @@ mod versus {
 
     mod nalgebra {
         use super::test::{black_box, Bencher};
-        use rand::random;
 
         #[bench]
         fn dot(be: &mut Bencher) {
-            let mut a: nalgebra::base::SVector<f32, { super::DOT_ARR_LEN }> =
+            let a: nalgebra::base::SVector<f32, { super::DOT_ARR_LEN }> =
                 super::RAND_VECS[0].into();
-            let mut b: nalgebra::base::SVector<f32, { super::DOT_ARR_LEN }> =
+            let b: nalgebra::base::SVector<f32, { super::DOT_ARR_LEN }> =
                 super::RAND_VECS[1].into();
 
             be.iter(|| black_box(a.dot(&b)));
@@ -238,7 +247,6 @@ mod versus {
 
     mod slas {
         use super::test::{black_box, Bencher};
-        use rand::random;
         use slas::prelude::*;
 
         #[bench]

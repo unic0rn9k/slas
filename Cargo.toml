@@ -16,7 +16,6 @@ readme = "README.md"
 [dependencies]
 blis-src = { version = "0.2.0", features = ["system"] }
 cblas-sys = "0.1.4"
-num = "0.4.0"
 
 [workspace]
 members = ["tests"]

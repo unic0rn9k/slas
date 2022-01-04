@@ -27,7 +27,7 @@
 //! The idea is simply that allocations (and time) can be saved, by figuring out when to copy at runtime instead of at compiletime.
 //! This can be memory inefficient at times (as an enum takes the size of its largest field + tag size), but I'm planing on making ways around this in the future.
 //!
-//! **If you're using the git version of slas, you can now use `StaticVecRef`'s instead of `StaticCowVecs`, when you don't want the cow behavior.**
+//! **NOTICE:** If you're using the git version of slas, you can now use `StaticVecRef`'s instead of `StaticCowVecs`, when you don't want the cow behavior.
 //!
 //!  ### In code...
 //! ```rust
@@ -127,7 +127,11 @@ mod matrix_stable;
 pub use matrix_stable::matrix;
 pub mod prelude;
 
+//pub use num_complex::Complex;
+//pub use num_traits::Float;
+pub mod num;
 use num::*;
+
 use std::{intrinsics::transmute, ops::*};
 extern crate blis_src;
 extern crate cblas_sys;
@@ -146,13 +150,15 @@ pub union StaticVecUnion<'a, T: Copy, const LEN: usize> {
     borrowed: &'a [T; LEN],
 }
 
+/// Vectors as copy-on-write smart pointers. Use full for situations where you don't know, if you need mutable access to your data, at compile time.
+/// See [`moo`] for how to create a StaticCowVec.
 #[derive(Clone, Copy)]
 pub struct StaticCowVec<'a, T: Copy, const LEN: usize> {
     data: StaticVecUnion<'a, T, LEN>,
     is_owned: bool,
 }
 
-impl<'a, T: NumCast + Copy, const LEN: usize> StaticCowVec<'a, T, LEN> {
+impl<'a, T: Copy, const LEN: usize> StaticCowVec<'a, T, LEN> {
     pub fn len(&self) -> usize {
         LEN
     }
@@ -165,22 +171,36 @@ impl<'a, T: NumCast + Copy, const LEN: usize> StaticCowVec<'a, T, LEN> {
         self.is_owned
     }
 
-    /// Slow, quick and dirty norm function, which normalizes a vector.
-    pub fn norm(&mut self)
+    ///Returns normal of self.
+    pub fn norm(&self) -> T
     where
         T: Float + std::iter::Sum,
     {
         // TODO: Make me fast. Use blas.
-        let len = self.iter().map(|n| n.powi(2)).sum::<T>().sqrt();
-        self.iter_mut().for_each(|n| *n = *n / len);
+        self.iter().map(|n| n.powi_(2)).sum::<T>().sqrt_()
     }
 
+    /// Normalizes self.
+    pub fn normalize(&mut self)
+    where
+        T: Float + std::iter::Sum,
+    {
+        let norm = self.norm();
+        self.iter_mut().for_each(|n| *n = *n / norm);
+    }
+
+    /// Cast StaticCowVec from pointer.
     pub unsafe fn from_ptr(ptr: *const T) -> Self {
         Self::from(
             (ptr as *const [T; LEN])
                 .as_ref()
-                .expect("Cannot create StaticCowVec::Borrowed from NULL"),
+                .expect("Cannot create StaticCowVec from null pointer"),
         )
+    }
+
+    /// Cast StaticCowVec from pointer without checking if it is null.
+    pub unsafe fn from_ptr_unchecked(ptr: *const T) -> Self {
+        Self::from(transmute::<*const T, &[T; LEN]>(ptr))
     }
 }
 
@@ -206,6 +226,7 @@ macro_rules! impl_dot {
                 $blas_fn(self, other)
             }
         }
+
         /// Dot product for two complex vectors of same length using blas.
         /// Also has support for multiple (and mixed) types.
         pub fn $comp_blas_fn<const LEN: usize>(
@@ -241,7 +262,21 @@ macro_rules! impl_dot {
 impl_dot!(f32, cblas_sdot, cblas_cdotu_sub);
 impl_dot!(f64, cblas_ddot, cblas_zdotu_sub);
 
-impl<'a, T: NumCast + Copy, const LEN: usize> Deref for StaticCowVec<'a, T, LEN> {
+impl<'a, T: Copy, const LEN: usize> Deref for StaticVecUnion<'a, T, LEN> {
+    type Target = [T; LEN];
+
+    fn deref(&self) -> &Self::Target {
+        unsafe { transmute::<&Self, &'a Self::Target>(self) }
+    }
+}
+
+impl<'a, T: Copy, const LEN: usize> DerefMut for StaticVecUnion<'a, T, LEN> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        unsafe { transmute::<&mut Self, &'a mut Self::Target>(self) }
+    }
+}
+
+impl<'a, T: Copy, const LEN: usize> Deref for StaticCowVec<'a, T, LEN> {
     type Target = [T; LEN];
 
     fn deref(&self) -> &Self::Target {
@@ -254,7 +289,7 @@ impl<'a, T: NumCast + Copy, const LEN: usize> Deref for StaticCowVec<'a, T, LEN>
     }
 }
 
-impl<'a, T: NumCast + Copy, const LEN: usize> DerefMut for StaticCowVec<'a, T, LEN> {
+impl<'a, T: Copy, const LEN: usize> DerefMut for StaticCowVec<'a, T, LEN> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         unsafe {
             if self.is_owned {
@@ -267,7 +302,7 @@ impl<'a, T: NumCast + Copy, const LEN: usize> DerefMut for StaticCowVec<'a, T, L
     }
 }
 
-impl<'a, T: NumCast + Copy, const LEN: usize> From<[T; LEN]> for StaticCowVec<'a, T, LEN> {
+impl<'a, T: Copy, const LEN: usize> From<[T; LEN]> for StaticCowVec<'a, T, LEN> {
     fn from(s: [T; LEN]) -> Self {
         Self {
             data: StaticVecUnion { owned: s },
@@ -275,7 +310,7 @@ impl<'a, T: NumCast + Copy, const LEN: usize> From<[T; LEN]> for StaticCowVec<'a
         }
     }
 }
-impl<'a, T: NumCast + Copy, const LEN: usize> From<&'a [T; LEN]> for StaticCowVec<'a, T, LEN> {
+impl<'a, T: Copy, const LEN: usize> From<&'a [T; LEN]> for StaticCowVec<'a, T, LEN> {
     fn from(s: &'a [T; LEN]) -> Self {
         Self {
             data: StaticVecUnion { borrowed: s },
@@ -283,16 +318,14 @@ impl<'a, T: NumCast + Copy, const LEN: usize> From<&'a [T; LEN]> for StaticCowVe
         }
     }
 }
-impl<'a, T: NumCast + Copy, const LEN: usize> From<&'a [T]> for StaticCowVec<'a, T, LEN> {
+impl<'a, T: Copy, const LEN: usize> From<&'a [T]> for StaticCowVec<'a, T, LEN> {
     fn from(s: &'a [T]) -> Self {
         assert_eq!(s.len(), LEN);
         Self::from(unsafe { transmute::<*const T, &'a [T; LEN]>(s.as_ptr()) })
     }
 }
 
-impl<'a, T: NumCast + Copy + std::fmt::Debug, const LEN: usize> std::fmt::Debug
-    for StaticCowVec<'a, T, LEN>
-{
+impl<'a, T: Copy + std::fmt::Debug, const LEN: usize> std::fmt::Debug for StaticCowVec<'a, T, LEN> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         use std::fmt::Write;
         if self.is_borrowed() {
