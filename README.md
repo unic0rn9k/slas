@@ -27,9 +27,9 @@ The copy-on-write functionality is inspired by [std::borrow::cow](https://doc.ru
 The idea is simply that allocations (and time) can be saved, by figuring out when to copy at runtime instead of at compiletime.
 This can be memory inefficient at times (as an enum takes the size of its largest field + tag size), but I'm planing on making ways around this in the future.
 
-**If you're using the git version of slas, you can now use `VecRef`'s instead of `StaticCowVecs`, when you don't want the cow behavior.**
+**NOTICE:** If you're using the git version of slas, you can now use `StaticVecRef`'s instead of `StaticCowVecs`, when you don't want the cow behavior.
 
-#### In code...
+ ### In code...
 ```rust
 let source: Vec<f32> = vec![1., 2., 3.];
 let mut v = moo![_ source.as_slice()];
@@ -110,6 +110,7 @@ For now, if you want to use the git version of slas, you need to install blis on
 - [Benchmarks, tests and related](https://github.com/unic0rn9k/slas/tree/master/tests)
 
 ### TODO
+- ~~Rust version of blas functions allowing for loop unrolling - also compile time checks for choosing fastest function~~
 - Make less terrible benchmarks
 - Feature support for conversion between [ndarray](lib.rs/ndarray) types
 - Allow for use on stable channel - perhabs with a stable feature

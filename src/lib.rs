@@ -110,7 +110,7 @@
 //! - [Benchmarks, tests and related](https://github.com/unic0rn9k/slas/tree/master/tests)
 //!
 //! ## TODO
-//! - Rust version of blas functions allowing for loop unrolling - also compile time checks for choosing fastest function
+//! - ~~Rust version of blas functions allowing for loop unrolling - also compile time checks for choosing fastest function~~
 //! - Make less terrible benchmarks
 //! - Feature support for conversion between [ndarray](lib.rs/ndarray) types
 //! - Allow for use on stable channel - perhabs with a stable feature
