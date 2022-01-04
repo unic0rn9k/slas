@@ -35,8 +35,8 @@ mod benches {
     #[bench]
     fn norm(b: &mut Bencher) {
         b.iter(|| {
-            let mut a = StaticCowVec::from(&[1f32, 2., 3.2]);
-            let mut b = moo![f32: 3, 0.4, 5];
+            let a = StaticCowVec::from(&[1f32, 2., 3.2]);
+            let b = moo![f32: 3, 0.4, 5];
             a.norm();
             b.norm();
 
@@ -83,6 +83,17 @@ mod moo {
 
     //    assert_eq!(a.dot(&b), 0.);
     //}
+
+    #[test]
+    fn dot_slas() {
+        assert_eq!(slas_sdot(&[1., 2., 3., 4.], &[1., 2., 3., 4.]), 30.);
+        assert_eq!(slas_sdot(&[1., 2., 3., 4., 5.], &[1., 2., 3., 4., 5.]), 55.);
+    }
+
+    #[test]
+    fn static_slice_unchecked() {
+        unsafe { assert_eq!([1., 2., 3., 4.].static_slice_unchecked::<2>(1), &[2., 3.]) }
+    }
 
     #[test]
     fn mutations() {
@@ -200,7 +211,7 @@ mod versus {
     extern crate test;
     use lazy_static::*;
     use rand::random;
-    const DOT_ARR_LEN: usize = 750;
+    const DOT_ARR_LEN: usize = 100;
 
     lazy_static! {
         static ref RAND_VECS: [[f32; DOT_ARR_LEN]; 2] = {
@@ -263,6 +274,14 @@ mod versus {
             let b = super::RAND_VECS[1];
 
             be.iter(|| black_box(cblas_sdot(&a, &b)));
+        }
+
+        #[bench]
+        fn dot_sals(be: &mut Bencher) {
+            let a = super::RAND_VECS[0];
+            let b = super::RAND_VECS[1];
+
+            be.iter(|| black_box(slas_sdot(&a, &b)));
         }
     }
 }

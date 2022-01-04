@@ -28,6 +28,14 @@ pub trait StaticVec<T, const LEN: usize> {
     {
         unsafe { StaticCowVec::from_ptr(self.as_ptr()) }
     }
+
+    unsafe fn get_unchecked<'a>(&'a self, i: usize) -> &'a T {
+        transmute(self.as_ptr().offset(i as isize))
+    }
+
+    unsafe fn static_slice_unchecked<'a, const SLEN: usize>(&'a self, i: usize) -> &'a [T; SLEN] {
+        transmute::<*const T, &'a [T; SLEN]>(self.as_ptr().offset(i as isize))
+    }
 }
 
 macro_rules! dyn_cast_panic {

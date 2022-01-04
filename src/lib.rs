@@ -121,18 +121,16 @@
 //!     - pure rust support - usefull for irust and jupyter support.
 
 #![allow(incomplete_features)]
-#![feature(generic_const_exprs)]
+#![feature(generic_const_exprs, portable_simd)]
 
 mod matrix_stable;
 pub use matrix_stable::matrix;
 pub mod prelude;
 
-//pub use num_complex::Complex;
-//pub use num_traits::Float;
 pub mod num;
 use num::*;
 
-use std::{intrinsics::transmute, ops::*};
+use std::{intrinsics::transmute, ops::*, simd::Simd};
 extern crate blis_src;
 extern crate cblas_sys;
 mod traits;
@@ -204,6 +202,30 @@ impl<'a, T: Copy, const LEN: usize> StaticCowVec<'a, T, LEN> {
     }
 }
 
+macro_rules! impl_slas_dot {
+    ($t: ty, $fn: ident) => {
+        #[inline(always)]
+        pub fn $fn<const LEN: usize>(
+            a: &impl StaticVec<f32, LEN>,
+            b: &impl StaticVec<f32, LEN>,
+        ) -> f32 {
+            const LANES: usize = 4;
+            let mut sum = Simd::<f32, LANES>::from_array([0.; LANES]);
+            for n in 0..LEN / LANES {
+                sum += unsafe {
+                    Simd::from_slice(a.static_slice_unchecked::<LANES>(n * LANES))
+                        * Simd::from_slice(b.static_slice_unchecked::<LANES>(n * LANES))
+                }
+            }
+            let mut rem = 0.;
+            for n in LEN - (LEN % LANES)..LEN {
+                rem += unsafe { a.get_unchecked(n) * b.get_unchecked(n) }
+            }
+            sum.horizontal_sum() + rem
+        }
+    };
+}
+
 macro_rules! impl_dot {
     ($float: ty, $blas_fn: ident, $comp_blas_fn: ident) => {
         /// Thin wrapper around blas for the various dot product functions that works for multiple different (and mixed) vector types.
@@ -261,6 +283,8 @@ macro_rules! impl_dot {
 
 impl_dot!(f32, cblas_sdot, cblas_cdotu_sub);
 impl_dot!(f64, cblas_ddot, cblas_zdotu_sub);
+impl_slas_dot!(f32, slas_sdot);
+impl_slas_dot!(f64, slas_ddot);
 
 impl<'a, T: Copy, const LEN: usize> Deref for StaticVecUnion<'a, T, LEN> {
     type Target = [T; LEN];
