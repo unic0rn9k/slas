@@ -119,6 +119,7 @@
 //! - Modular backends - [like in coaster](https://github.com/spearow/juice/tree/master/coaster)
 //!     - GPU support - maybe with cublas
 //!     - pure rust support - usefull for irust and jupyter support.
+//! - Write unit tests to make sure unsafe functions cant produce ub.
 
 #![allow(incomplete_features)]
 #![feature(generic_const_exprs, portable_simd)]
@@ -139,8 +140,6 @@ use traits::*;
 /// StaticVectorUnion is always owned when it is not found in a StaticCowVec, therefore we have this type alias to make it less confisung when dealing with references to owned vectors.
 pub type StaticVecRef<'a, T, const LEN: usize> = &'a StaticVecUnion<'a, T, LEN>;
 
-// TODO: Implement deref
-// TODO: Move methods and implementations from StaticCowVec, StaticVector and StaticVectorUnion to be more correct.
 /// Will always be owned, unless inside a [`StaticVec`]
 #[derive(Clone, Copy)]
 pub union StaticVecUnion<'a, T: Copy, const LEN: usize> {
@@ -212,7 +211,6 @@ macro_rules! impl_slas_dot {
         /// use slas::prelude::*;
         /// assert!(slas_sdot(&[1., 2., 3.], &moo![f32: -1, 2, -1]) == 0.);
         /// ```
-        #[inline(always)]
         pub fn $fn<const LEN: usize>(
             a: &impl StaticVec<$t, LEN>,
             b: &impl StaticVec<$t, LEN>,
@@ -225,11 +223,11 @@ macro_rules! impl_slas_dot {
                         * Simd::from_slice(b.static_slice_unchecked::<LANES>(n * LANES))
                 }
             }
-            let mut rem = 0.;
+            let mut sum = sum.horizontal_sum();
             for n in LEN - (LEN % LANES)..LEN {
-                rem += unsafe { a.get_unchecked(n) * b.get_unchecked(n) }
+                sum += unsafe { a.get_unchecked(n) * b.get_unchecked(n) }
             }
-            sum.horizontal_sum() + rem
+            sum
         }
     };
 }
@@ -250,7 +248,7 @@ macro_rules! impl_dot {
             unsafe { cblas_sys::$blas_fn(LEN as i32, a.as_ptr(), 1, b.as_ptr(), 1) }
         }
 
-        impl<'a, const LEN: usize> StaticCowVec<'a, $float, LEN> {
+        impl<'a, const LEN: usize> StaticVecUnion<'a, $float, LEN> {
             /// Dot product for two vectors of same length using blas.
             pub fn dot(&self, other: &Self) -> $float {
                 if LEN > 750 {
@@ -284,7 +282,7 @@ macro_rules! impl_dot {
             }
         }
 
-        impl<'a, const LEN: usize> StaticCowVec<'a, Complex<$float>, LEN> {
+        impl<'a, const LEN: usize> StaticVecUnion<'a, Complex<$float>, LEN> {
             /// Dot product for two complex vectors of same length using blas.
             pub fn dot(&self, other: &Self) -> Complex<$float> {
                 $comp_blas_fn(self, other)
@@ -313,14 +311,12 @@ impl<'a, T: Copy, const LEN: usize> DerefMut for StaticVecUnion<'a, T, LEN> {
 }
 
 impl<'a, T: Copy, const LEN: usize> Deref for StaticCowVec<'a, T, LEN> {
-    type Target = [T; LEN];
+    type Target = StaticVecUnion<'a, T, LEN>;
 
     fn deref(&self) -> &Self::Target {
-        unsafe {
-            match self.is_owned {
-                true => &self.data.owned,
-                false => self.data.borrowed,
-            }
+        match self.is_owned {
+            true => &self.data,
+            false => unsafe { transmute(self.data.borrowed) },
         }
     }
 }
@@ -329,11 +325,11 @@ impl<'a, T: Copy, const LEN: usize> DerefMut for StaticCowVec<'a, T, LEN> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         unsafe {
             if self.is_owned {
-                return &mut self.data.owned;
+                return &mut self.data;
             }
             self.is_owned = true;
             self.data.owned = *self.data.borrowed;
-            &mut self.data.owned
+            &mut self.data
         }
     }
 }

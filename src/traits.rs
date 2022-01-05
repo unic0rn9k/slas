@@ -9,17 +9,17 @@ use std::mem::transmute;
 ///
 /// Why does StaticVector not allow mutable access to self?
 ///
-/// Because there is no overhead casting to [`StaticVecUnion::owned`] and calling methods on that instead.
+/// Because there is no overhead casting to [`StaticVecUnion`] and calling methods on that instead.
 pub trait StaticVec<T, const LEN: usize> {
     /// Return pointer to first element.
     unsafe fn as_ptr(&self) -> *const T;
 
-    /// Return a reference to self with the type of [`StaticVecUnion::owned`]
+    /// Return a reference to self with the type of [`StaticVecUnion`]
     fn moo_ref<'a>(&'a self) -> StaticVecRef<'a, T, LEN>
     where
         T: Copy,
     {
-        unsafe { transmute(&self) }
+        unsafe { transmute(self.as_ptr()) }
     }
 
     fn moo<'a>(&'a self) -> StaticCowVec<'a, T, LEN>
@@ -74,7 +74,7 @@ pub trait DynamicVec<T> {
         PretendStaticVec(self, PhantomData)
     }
 
-    /// Return a reference to self with the type of [`StaticVecUnion::owned`]
+    /// Return a reference to self with the type of [`StaticVecUnion`]
     fn moo_ref<'a, const LEN: usize>(&'a self) -> StaticVecRef<'a, T, LEN>
     where
         T: Copy,

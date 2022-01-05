@@ -85,6 +85,11 @@ mod moo {
     //}
 
     #[test]
+    fn vec_ref_dot() {
+        assert_eq!([1f32, 2., 3.,].moo_ref().dot([1., 2., 3.,].moo_ref()), 14.)
+    }
+
+    #[test]
     fn dot_slas() {
         assert_eq!(slas_sdot(&[1., 2., 3., 4.], &[1., 2., 3., 4.]), 30.);
         assert_eq!(slas_sdot(&[1., 2., 3., 4., 5.], &[1., 2., 3., 4., 5.]), 55.);
@@ -126,7 +131,7 @@ mod moo {
         b[0] = 2.;
         a[0] = 3.;
         assert_eq!(a, vec![3., 2., 3.2]);
-        assert_eq!(*b, [2., 2., 3.2]);
+        assert_eq!(**b, [2., 2., 3.2]);
     }
 
     #[test]
@@ -139,7 +144,7 @@ mod moo {
         v[0] = 0.;
         source[2] = 4.;
 
-        assert_eq!(*v, [0., 3., 3.]);
+        assert_eq!(**v, [0., 3., 3.]);
         assert_eq!(source, vec![1., 3., 4.]);
     }
 }
@@ -153,7 +158,7 @@ mod matrix {
         let m = Matrix::<f32, 2, 2>::zeros();
         let n: Matrix<f32, 2, 2> = [0.; 4].into();
         assert_eq!(m[[0, 0]], 0.);
-        assert_eq!(**m, **n)
+        assert_eq!(***m, ***n)
     }
 
     #[test]
@@ -162,7 +167,7 @@ mod matrix {
         let n: Matrix<f32, 3, 2> = [10., 11., 20., 21., 30., 31.].into();
         let k = [140., 146., 320., 335.];
 
-        assert_eq!(**(m * n), k);
+        assert_eq!(***(m * n), k);
     }
 
     #[test]
@@ -170,7 +175,7 @@ mod matrix {
         let m: Matrix<f32, 4, 3> = [1., 2., 3., 4., 5., 6., 7., 8., 9., 10., 11., 12.].into();
         let n: Matrix<f32, 3, 2> = [3., 6., 8., 10., 9., 17.].into();
         let k = [46., 77., 106., 176., 166., 275., 226., 374.];
-        assert_eq!(**(m * n), k);
+        assert_eq!(***(m * n), k);
     }
 
     #[test]
@@ -277,7 +282,7 @@ mod versus {
         }
 
         #[bench]
-        fn dot_sals(be: &mut Bencher) {
+        fn dot_slas(be: &mut Bencher) {
             let a = super::RAND_VECS[0];
             let b = super::RAND_VECS[1];
 

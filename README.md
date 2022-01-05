@@ -119,5 +119,6 @@ For now, if you want to use the git version of slas, you need to install blis on
 - Modular backends - [like in coaster](https://github.com/spearow/juice/tree/master/coaster)
     - GPU support - maybe with cublas
     - pure rust support - usefull for irust and jupyter support.
+- Write unit tests to make sure unsafe functions cant produce ub.
 
 License: Apache-2.0
