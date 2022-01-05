@@ -80,7 +80,7 @@ pub trait DynamicVec<T> {
         T: Copy,
     {
         dyn_cast_panic!(self.len(), LEN);
-        unsafe { transmute(&self) }
+        unsafe { transmute(self.as_ptr()) }
     }
 
     fn moo<'a, const LEN: usize>(&'a self) -> StaticCowVec<'a, T, LEN>

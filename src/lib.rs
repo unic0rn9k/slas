@@ -118,7 +118,7 @@
 //! - ~~Make StaticCowVec backed by a union - so that vectors that are always owned can also be supported (useful for memory critical systems, fx. embeded devices).~~
 //! - Modular backends - [like in coaster](https://github.com/spearow/juice/tree/master/coaster)
 //!     - GPU support - maybe with cublas
-//!     - pure rust support - usefull for irust and jupyter support.
+//!     - ~~pure rust support - usefull for irust and jupyter support.~~
 //! - Write unit tests to make sure unsafe functions cant produce ub.
 
 #![allow(incomplete_features)]
