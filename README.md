@@ -122,7 +122,13 @@ For now, if you want to use the git version of slas, you need to install blis on
 - ~~Make StaticCowVec backed by a union - so that vectors that are always owned can also be supported (useful for memory critical systems, fx. embeded devices).~~
 - ~~Modular backends - [like in coaster](https://github.com/spearow/juice/tree/master/coaster)~~
     - GPU support - maybe with cublas
-    - ~~pure rust support - usefull for irust and jupyter support.~~
+    - ~~Pure rust support - usefull for irust and jupyter support.~~
 - Write unit tests to make sure unsafe functions can't produce ub.
+
+### TODO Before v0.2.0
+- Feature flag for choosing own blas provider
+- More operations implemented for backends
+- Rewrite documentation
+- `WithBackend` struct for vectors with associated backends
 
 License: Apache-2.0
