@@ -31,6 +31,8 @@ This can be memory inefficient at times (as an enum takes the size of its larges
 
  ### In code...
 ```rust
+use slas::prelude::*;
+
 let source: Vec<f32> = vec![1., 2., 3.];
 let mut v = moo![_ source.as_slice()];
 
@@ -38,7 +40,7 @@ let mut v = moo![_ source.as_slice()];
 // so the content of source will be copied into v before the mutation occours.
 v[0] = 0.;
 
-assert_eq!(*v, [0., 2., 3.]);
+assert_eq!(**v, [0., 2., 3.]);
 assert_eq!(source, vec![1., 2., 3.]);
 ```
 
@@ -46,6 +48,8 @@ The borrow checker won't allow mutating `source` after `v` is created, because a
 This can be a problem in some situations.
 
 ```rust
+use slas::prelude::*;
+
 let mut source: Vec<f32> = vec![1., 2., 3.];
 let mut v = unsafe { StaticCowVec::<f32, 3>::from_ptr(source.as_ptr()) };
 
@@ -54,7 +58,7 @@ source[1] = 3.;
 v[0] = 0.;
 source[2] = 4.;
 
-assert_eq!(*v, [0., 3., 3.]);
+assert_eq!(**v, [0., 3., 3.]);
 assert_eq!(source, vec![1., 3., 4.]);
 ```
 In the example above, you can see `v` changed value the first time `source` was mutated, but not the second time.
@@ -73,7 +77,7 @@ use slas::{prelude::*, matrix::Matrix};
 let m: Matrix<f32, 2, 3> = [
  1., 2., 3.,
  4., 5., 6.
-].into();
+].matrix_ref();
 
 assert!(m[[1, 0]] == 2.);
 
@@ -116,9 +120,9 @@ For now, if you want to use the git version of slas, you need to install blis on
 - Allow for use on stable channel - perhabs with a stable feature
 - Implement stable tensors - perhabs for predefined dimensions with a macro
 - ~~Make StaticCowVec backed by a union - so that vectors that are always owned can also be supported (useful for memory critical systems, fx. embeded devices).~~
-- Modular backends - [like in coaster](https://github.com/spearow/juice/tree/master/coaster)
+- ~~Modular backends - [like in coaster](https://github.com/spearow/juice/tree/master/coaster)~~
     - GPU support - maybe with cublas
     - ~~pure rust support - usefull for irust and jupyter support.~~
-- Write unit tests to make sure unsafe functions cant produce ub.
+- Write unit tests to make sure unsafe functions can't produce ub.
 
 License: Apache-2.0
