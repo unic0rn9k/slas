@@ -11,14 +11,17 @@ use std::ops::*;
 ///
 ///## Example
 ///```rust
+/// use slas::prelude::*;
+/// use slas::matrix::Matrix;
+///
 /// let m: Matrix<f32, 2, 3> = [
 ///  1., 2., 3.,
 ///  4., 5., 6.
-/// ].into();
+/// ].moo().matrix();
 ///
 /// assert!(m[[1, 0]] == 2.);
 ///
-/// let k: Matrix<f32, 3, 2> = moo![f32: 0..6].into();
+/// let k = moo![f32: 0..6].matrix::<3, 2>();
 ///
 /// println!("Product of {:?} and {:?} is {:?}", m, k, m * k);
 ///```
@@ -26,7 +29,7 @@ use std::ops::*;
 ///I found that [Khan Academy](https://www.khanacademy.org/math/precalculus/x9e81a4f98389efdf:matrices/x9e81a4f98389efdf:properties-of-matrix-multiplication/a/matrix-multiplication-dimensions)
 ///was a good resource for better understanding matricies.
 #[derive(Copy, Clone)]
-pub struct Matrix<'a, T: Copy, const M: usize, const K: usize>(StaticCowVec<'a, T, { K * M }>)
+pub struct Matrix<'a, T: Copy, const M: usize, const K: usize>(pub StaticCowVec<'a, T, { K * M }>)
 where
     StaticCowVec<'a, T, { K * M }>: Sized;
 
@@ -66,6 +69,10 @@ where
             }
         }
         buffer
+    }
+
+    pub unsafe fn from_ptr(ptr: *const T) -> Self {
+        Self(StaticCowVec::from_ptr(ptr))
     }
 }
 

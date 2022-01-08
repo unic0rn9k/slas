@@ -31,6 +31,8 @@
 //!
 //!  ### In code...
 //! ```rust
+//! use slas::prelude::*;
+//!
 //! let source: Vec<f32> = vec![1., 2., 3.];
 //! let mut v = moo![_ source.as_slice()];
 //!
@@ -38,7 +40,7 @@
 //! // so the content of source will be copied into v before the mutation occours.
 //! v[0] = 0.;
 //!
-//! assert_eq!(*v, [0., 2., 3.]);
+//! assert_eq!(**v, [0., 2., 3.]);
 //! assert_eq!(source, vec![1., 2., 3.]);
 //! ```
 //!
@@ -46,6 +48,8 @@
 //! This can be a problem in some situations.
 //!
 //! ```rust
+//! use slas::prelude::*;
+//!
 //! let mut source: Vec<f32> = vec![1., 2., 3.];
 //! let mut v = unsafe { StaticCowVec::<f32, 3>::from_ptr(source.as_ptr()) };
 //!
@@ -54,7 +58,7 @@
 //! v[0] = 0.;
 //! source[2] = 4.;
 //!
-//! assert_eq!(*v, [0., 3., 3.]);
+//! assert_eq!(**v, [0., 3., 3.]);
 //! assert_eq!(source, vec![1., 3., 4.]);
 //! ```
 //! In the example above, you can see `v` changed value the first time `source` was mutated, but not the second time.
@@ -73,7 +77,7 @@
 //! let m: Matrix<f32, 2, 3> = [
 //!  1., 2., 3.,
 //!  4., 5., 6.
-//! ].into();
+//! ].matrix_ref();
 //!
 //! assert!(m[[1, 0]] == 2.);
 //!
@@ -116,10 +120,10 @@
 //! - Allow for use on stable channel - perhabs with a stable feature
 //! - Implement stable tensors - perhabs for predefined dimensions with a macro
 //! - ~~Make StaticCowVec backed by a union - so that vectors that are always owned can also be supported (useful for memory critical systems, fx. embeded devices).~~
-//! - Modular backends - [like in coaster](https://github.com/spearow/juice/tree/master/coaster)
+//! - ~~Modular backends - [like in coaster](https://github.com/spearow/juice/tree/master/coaster)~~
 //!     - GPU support - maybe with cublas
 //!     - ~~pure rust support - usefull for irust and jupyter support.~~
-//! - Write unit tests to make sure unsafe functions cant produce ub.
+//! - Write unit tests to make sure unsafe functions can't produce ub.
 
 #![allow(incomplete_features)]
 #![feature(generic_const_exprs, portable_simd)]
@@ -128,10 +132,11 @@ mod matrix_stable;
 pub use matrix_stable::matrix;
 pub mod prelude;
 
+pub mod backends;
 pub mod num;
 use num::*;
 
-use std::{intrinsics::transmute, ops::*, simd::Simd};
+use std::{mem::transmute, ops::*};
 extern crate blis_src;
 extern crate cblas_sys;
 mod traits;
@@ -140,11 +145,25 @@ use traits::*;
 /// StaticVectorUnion is always owned when it is not found in a StaticCowVec, therefore we have this type alias to make it less confisung when dealing with references to owned vectors.
 pub type StaticVecRef<'a, T, const LEN: usize> = &'a StaticVecUnion<'a, T, LEN>;
 
-/// Will always be owned, unless inside a [`StaticVec`]
-#[derive(Clone, Copy)]
+/// Will always be owned, unless inside a [`StaticCowVec`]
+#[derive(Clone, Copy, Eq)]
 pub union StaticVecUnion<'a, T: Copy, const LEN: usize> {
     owned: [T; LEN],
     borrowed: &'a [T; LEN],
+}
+
+impl<'a, T: Copy, const LEN: usize> StaticVecUnion<'a, T, LEN> {
+    pub fn slice(&'a self) -> &'a [T; LEN] {
+        unsafe { transmute(self.as_ptr()) }
+    }
+}
+
+impl<'a, T: Copy + PartialEq, const LEN: usize> std::cmp::PartialEq<StaticVecUnion<'a, T, LEN>>
+    for StaticVecUnion<'a, T, LEN>
+{
+    fn eq(&self, other: &Self) -> bool {
+        self.slice() == other.slice()
+    }
 }
 
 /// Vectors as copy-on-write smart pointers. Use full for situations where you don't know, if you need mutable access to your data, at compile time.
@@ -196,105 +215,11 @@ impl<'a, T: Copy, const LEN: usize> StaticCowVec<'a, T, LEN> {
     }
 
     /// Cast StaticCowVec from pointer without checking if it is null.
+    /// **Very** **very** **very** unsafe.
     pub unsafe fn from_ptr_unchecked(ptr: *const T) -> Self {
         Self::from(transmute::<*const T, &[T; LEN]>(ptr))
     }
 }
-
-// TODO: This needs to check if SIMD is available at compile time.
-macro_rules! impl_slas_dot {
-    ($t: ty, $fn: ident) => {
-        /// Pure rust implementation of dot product. This is more performant for smaller vectors, where as the blas ([`cblas_sdot`] and [`cblas_ddot`]) dot product is faster for larger vectors.
-        ///
-        /// ## Example
-        /// ```rust
-        /// use slas::prelude::*;
-        /// assert!(slas_sdot(&[1., 2., 3.], &moo![f32: -1, 2, -1]) == 0.);
-        /// ```
-        pub fn $fn<const LEN: usize>(
-            a: &impl StaticVec<$t, LEN>,
-            b: &impl StaticVec<$t, LEN>,
-        ) -> $t {
-            const LANES: usize = 4;
-            let mut sum = Simd::<$t, LANES>::from_array([0.; LANES]);
-            for n in 0..LEN / LANES {
-                sum += unsafe {
-                    Simd::from_slice(a.static_slice_unchecked::<LANES>(n * LANES))
-                        * Simd::from_slice(b.static_slice_unchecked::<LANES>(n * LANES))
-                }
-            }
-            let mut sum = sum.horizontal_sum();
-            for n in LEN - (LEN % LANES)..LEN {
-                sum += unsafe { a.get_unchecked(n) * b.get_unchecked(n) }
-            }
-            sum
-        }
-    };
-}
-
-macro_rules! impl_dot {
-    ($float: ty, $blas_fn: ident, $comp_blas_fn: ident, $slas_fn: ident) => {
-        /// Thin wrapper around blas for the various dot product functions that works for multiple different (and mixed) vector types.
-        ///
-        /// ## Example
-        /// ```rust
-        /// use slas::prelude::*;
-        /// assert!(cblas_sdot(&[1., 2., 3.], &moo![f32: -1, 2, -1]) == 0.);
-        /// ```
-        pub fn $blas_fn<const LEN: usize>(
-            a: &impl StaticVec<$float, LEN>,
-            b: &impl StaticVec<$float, LEN>,
-        ) -> $float {
-            unsafe { cblas_sys::$blas_fn(LEN as i32, a.as_ptr(), 1, b.as_ptr(), 1) }
-        }
-
-        impl<'a, const LEN: usize> StaticVecUnion<'a, $float, LEN> {
-            /// Dot product for two vectors of same length using blas.
-            pub fn dot(&self, other: &Self) -> $float {
-                if LEN > 750 {
-                    $blas_fn(self, other)
-                } else {
-                    $slas_fn(self, other)
-                }
-            }
-        }
-
-        /// Dot product for two complex vectors of same length using blas.
-        /// Also has support for multiple (and mixed) types.
-        pub fn $comp_blas_fn<const LEN: usize>(
-            a: &impl StaticVec<Complex<$float>, LEN>,
-            b: &impl StaticVec<Complex<$float>, LEN>,
-        ) -> Complex<$float> {
-            let mut tmp: [$float; 2] = [0.; 2];
-            unsafe {
-                cblas_sys::$comp_blas_fn(
-                    LEN as i32,
-                    a.as_ptr() as *const [$float; 2],
-                    1,
-                    b.as_ptr() as *const [$float; 2],
-                    1,
-                    tmp.as_mut_ptr() as *mut [$float; 2],
-                )
-            }
-            Complex {
-                re: tmp[0],
-                im: tmp[1],
-            }
-        }
-
-        impl<'a, const LEN: usize> StaticVecUnion<'a, Complex<$float>, LEN> {
-            /// Dot product for two complex vectors of same length using blas.
-            pub fn dot(&self, other: &Self) -> Complex<$float> {
-                $comp_blas_fn(self, other)
-            }
-        }
-    };
-}
-
-impl_dot!(f32, cblas_sdot, cblas_cdotu_sub, slas_sdot);
-impl_dot!(f64, cblas_ddot, cblas_zdotu_sub, slas_ddot);
-impl_slas_dot!(f32, slas_sdot);
-impl_slas_dot!(f64, slas_ddot);
 
 impl<'a, T: Copy, const LEN: usize> Deref for StaticVecUnion<'a, T, LEN> {
     type Target = [T; LEN];
@@ -367,16 +292,25 @@ impl<'a, T: Copy + std::fmt::Debug, const LEN: usize> std::fmt::Debug for Static
     }
 }
 
+impl<'a, T: Copy + std::fmt::Debug, const LEN: usize> std::fmt::Debug
+    for StaticVecUnion<'a, T, LEN>
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.slice().fmt(f)
+    }
+}
+
 /// Macro for creating [`StaticCowVec`]'s
 ///
 /// ## Example
 /// ```rust
+/// use slas::prelude::*;
 /// moo![f32: 1, 2, 3.5];
 /// moo![f32: 1..4];
 /// moo![f32: 1..=3];
 /// moo![0f32; 4];
-/// moo![_ source.as_slice()];
-/// moo![_: 1f32, 2, 3];
+// moo![_ source.as_slice()];
+// moo![_: 1f32, 2, 3];
 /// ```
 #[macro_export]
 macro_rules! moo {

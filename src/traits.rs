@@ -2,6 +2,7 @@ use crate::prelude::*;
 use crate::StaticVecUnion;
 use std::marker::PhantomData;
 use std::mem::transmute;
+use std::mem::transmute_copy;
 
 /// A very general trait for anything that can be called a static vector (fx. `[T; LEN]`)
 ///
@@ -35,6 +36,14 @@ pub trait StaticVec<T, const LEN: usize> {
 
     unsafe fn static_slice_unchecked<'a, const SLEN: usize>(&'a self, i: usize) -> &'a [T; SLEN] {
         transmute::<*const T, &'a [T; SLEN]>(self.as_ptr().offset(i as isize))
+    }
+
+    fn moo_owned(&self) -> StaticVecUnion<'static, T, LEN>
+    where
+        T: Copy,
+        Self: Sized,
+    {
+        unsafe { transmute_copy(self) }
     }
 }
 

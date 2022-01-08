@@ -11,7 +11,7 @@ fn main() {
     let mut a: nalgebra::base::SVector<f32, 3> = [1., 2., 3.1].into();
     let mut b: nalgebra::base::SVector<f32, 3> = [1., -2., 3.].into();
 
-    black_box(cblas_sdot(&a, &b));
+    black_box(slas_backends::Blas.sdot(&a, &b));
 }
 
 #[cfg(not(versus))]
@@ -54,7 +54,7 @@ mod thin_blas {
         let a = vec![0f32, 1., 2., 3.];
         let b = moo![f32: 0, -1, -2, 3];
 
-        assert_eq!(cblas_sdot(&a.pretend_static(), &b), 4.)
+        assert_eq!(slas_backend::Blas.sdot(&a.pretend_static(), &b), 4.)
     }
 
     #[test]
@@ -91,8 +91,14 @@ mod moo {
 
     #[test]
     fn dot_slas() {
-        assert_eq!(slas_sdot(&[1., 2., 3., 4.], &[1., 2., 3., 4.]), 30.);
-        assert_eq!(slas_sdot(&[1., 2., 3., 4., 5.], &[1., 2., 3., 4., 5.]), 55.);
+        assert_eq!(
+            slas_backend::Rust.sdot(&[1., 2., 3., 4.], &[1., 2., 3., 4.]),
+            30.
+        );
+        assert_eq!(
+            slas_backend::Rust.sdot(&[1., 2., 3., 4., 5.], &[1., 2., 3., 4., 5.]),
+            55.
+        );
     }
 
     #[test]
@@ -144,38 +150,38 @@ mod moo {
         v[0] = 0.;
         source[2] = 4.;
 
-        assert_eq!(**v, [0., 3., 3.]);
+        assert_eq!(*v, *[0., 3., 3.].moo_ref());
         assert_eq!(source, vec![1., 3., 4.]);
     }
 }
 
 #[cfg(test)]
 mod matrix {
-    use slas::matrix::Matrix;
+    use slas::{matrix::Matrix, prelude::*};
 
     #[test]
     fn zero() {
         let m = Matrix::<f32, 2, 2>::zeros();
         let n: Matrix<f32, 2, 2> = [0.; 4].into();
         assert_eq!(m[[0, 0]], 0.);
-        assert_eq!(***m, ***n)
+        assert_eq!(**m, **n)
     }
 
     #[test]
     fn mul() {
         let m: Matrix<f32, 2, 3> = [1., 2., 3., 4., 5., 6.].into();
         let n: Matrix<f32, 3, 2> = [10., 11., 20., 21., 30., 31.].into();
-        let k = [140., 146., 320., 335.];
+        let k = [140., 146., 320., 335.].moo_owned();
 
-        assert_eq!(***(m * n), k);
+        assert_eq!(**(m * n), k);
     }
 
     #[test]
     fn mul2() {
         let m: Matrix<f32, 4, 3> = [1., 2., 3., 4., 5., 6., 7., 8., 9., 10., 11., 12.].into();
         let n: Matrix<f32, 3, 2> = [3., 6., 8., 10., 9., 17.].into();
-        let k = [46., 77., 106., 176., 166., 275., 226., 374.];
-        assert_eq!(***(m * n), k);
+        let k = [46., 77., 106., 176., 166., 275., 226., 374.].moo_owned();
+        assert_eq!(**(m * n), k);
     }
 
     #[test]
@@ -186,6 +192,23 @@ mod matrix {
         let k: Matrix<f32, 3, 2> = moo![f32: 0..6].into();
 
         println!("Product of {:?} and {:?} is {:?}", m, k, m * k);
+    }
+
+    fn approx_equal(a: f32, b: f32, decimal_places: i32) -> bool {
+        let factor = 10f32.powi(decimal_places);
+        let a = (a * factor).trunc();
+        let b = (b * factor).trunc();
+        a == b
+    }
+
+    #[test]
+    fn unprecise() {
+        use slas::prelude::*;
+        assert!(approx_equal(
+            moo![f32: 0..4].dot([1.2; 4].moo_ref()),
+            7.2,
+            8
+        ))
     }
 
     //#[test]
@@ -278,7 +301,7 @@ mod versus {
             let a = super::RAND_VECS[0];
             let b = super::RAND_VECS[1];
 
-            be.iter(|| black_box(cblas_sdot(&a, &b)));
+            be.iter(|| black_box(slas_backends::Blas.sdot(&a, &b)));
         }
 
         #[bench]
@@ -286,7 +309,7 @@ mod versus {
             let a = super::RAND_VECS[0];
             let b = super::RAND_VECS[1];
 
-            be.iter(|| black_box(slas_sdot(&a, &b)));
+            be.iter(|| black_box(slas_backend::Rust::slas_sdot(&a, &b)));
         }
     }
 }
