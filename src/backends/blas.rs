@@ -1,3 +1,4 @@
+#[derive(Default)]
 pub struct Blas;
 use super::*;
 
@@ -8,10 +9,10 @@ macro_rules! impl_dot {
         /// ## Example
         /// ```rust
         /// use slas::prelude::*;
-        /// assert!(cblas_sdot(&[1., 2., 3.], &moo![f32: -1, 2, -1]) == 0.);
+        /// assert!(slas_backend::Blas.sdot(&[1., 2., 3.], &moo![f32: -1, 2, -1]) == 0.);
         /// ```
         fn $slas_fn<const LEN: usize>(
-            &self,
+            &mut self,
             a: &impl StaticVec<$float, LEN>,
             b: &impl StaticVec<$float, LEN>,
         ) -> $float {
@@ -25,7 +26,7 @@ macro_rules! impl_dot_comp {
         /// Dot product for two complex vectors.
         /// Also has support for multiple (and mixed) types.
         fn $slas_fn<const LEN: usize>(
-            &self,
+            &mut self,
             a: &impl StaticVec<Complex<$float>, LEN>,
             b: &impl StaticVec<Complex<$float>, LEN>,
         ) -> Complex<$float> {

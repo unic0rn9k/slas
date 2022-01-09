@@ -66,6 +66,35 @@ mod thin_blas {
 
         assert_eq!(a.moo().dot(&b), 4.);
     }
+
+    #[test]
+    fn static_backend() {
+        use slas::prelude::*;
+        assert_eq!(
+            moo![f32: 0..4]
+                .static_backend::<slas_backend::Blas>()
+                .dot(&[1., 2., 3., 4.].moo_ref().static_backend()),
+            20.
+        );
+    }
+
+    #[test]
+    fn static_backend_macro() {
+        use slas::prelude::*;
+        assert_eq!(
+            moo![on slas_backend::Blas:f32: 0..4].dot(&[1., 2., 3., 4.].moo_ref().static_backend()),
+            20.
+        );
+
+        // Does not work at the moment:
+        // assert_eq!(
+        //     [1., 2., 3., 4.]
+        //         .moo_ref()
+        //         .static_backend()
+        //         .dot(moo![on slas_backend::Blas:f32: 0..4]),
+        //     20.
+        // );
+    }
 }
 
 #[cfg(test)]
@@ -301,7 +330,7 @@ mod versus {
             let a = super::RAND_VECS[0];
             let b = super::RAND_VECS[1];
 
-            be.iter(|| black_box(slas_backends::Blas.sdot(&a, &b)));
+            be.iter(|| black_box(slas_backend::Blas.sdot(&a, &b)));
         }
 
         #[bench]
@@ -309,7 +338,7 @@ mod versus {
             let a = super::RAND_VECS[0];
             let b = super::RAND_VECS[1];
 
-            be.iter(|| black_box(slas_backend::Rust::slas_sdot(&a, &b)));
+            be.iter(|| black_box(slas_backend::Rust.sdot(&a, &b)));
         }
     }
 }

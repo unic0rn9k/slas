@@ -1,3 +1,5 @@
+# slas
+
 <div align="center">
 
 ## SLAS
@@ -12,6 +14,8 @@
 
 Provides statically allocated vector, matrix and tensor types, for interfacing with blas/blis, in a performant manor, using copy-on-write (aka cow) behavior.
 
+[What is BLAS?](http://www.netlib.org/blas/)
+
 ### Example
 
 ```rust
@@ -20,7 +24,19 @@ let a = moo![f32: 1, 2, 3.2];
 let b = moo![f32: 3, 0.4, 5];
 println!("Dot product of {:?} and {:?} is {:?}", a, b, a.dot(&b));
 ```
+You can also choose a static backend yourself.
+```rust
+let a = moo![on slas_backend::Rust:f32: 1, 2, 3.2];
+// This will only use rust code for all operations on a
+```
+
+```rust
+let a = moo![on slas_backend::Blas:f32: 1, 2, 3.2];
+// This will always use blas for all operations on a
+```
+
 [More example code here.](https://github.com/unic0rn9k/slas/blob/master/tests/src/main.rs)
+
 
 ### What is a COW?
 The copy-on-write functionality is inspired by [std::borrow::cow](https://doc.rust-lang.org/std/borrow/enum.Cow.html).
@@ -77,7 +93,7 @@ use slas::{prelude::*, matrix::Matrix};
 let m: Matrix<f32, 2, 3> = [
  1., 2., 3.,
  4., 5., 6.
-].matrix_ref();
+].into();
 
 assert!(m[[1, 0]] == 2.);
 
@@ -115,7 +131,6 @@ For now, if you want to use the git version of slas, you need to install blis on
 
 ### TODO
 - ~~Rust version of blas functions allowing for loop unrolling - also compile time checks for choosing fastest function~~
-- Make less terrible benchmarks
 - Feature support for conversion between [ndarray](lib.rs/ndarray) types
 - Allow for use on stable channel - perhabs with a stable feature
 - Implement stable tensors - perhabs for predefined dimensions with a macro
@@ -123,12 +138,16 @@ For now, if you want to use the git version of slas, you need to install blis on
 - ~~Modular backends - [like in coaster](https://github.com/spearow/juice/tree/master/coaster)~~
     - GPU support - maybe with cublas
     - ~~Pure rust support - usefull for irust and jupyter support.~~
-- Write unit tests to make sure unsafe functions can't produce ub.
+    - `DynacmicBackend` for selecting backends at runtime
+- Refactor backends to make it more generic
 
 ### TODO Before v0.2.0
 - Feature flag for choosing own blas provider
 - More operations implemented for backends
 - Rewrite documentation
-- `WithBackend` struct for vectors with associated backends
+- ~~`StaticBackend` struct for vectors with associated backends~~
+- Write unit tests to make sure unsafe functions can't produce ub.
+- Make less terrible benchmarks
+- `Normalize` operation for backends - to prove mutable access to vectors also work in backends, even with StaticCowVecs.
 
 License: Apache-2.0

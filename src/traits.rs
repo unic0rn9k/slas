@@ -11,6 +11,21 @@ use std::mem::transmute_copy;
 /// Why does StaticVector not allow mutable access to self?
 ///
 /// Because there is no overhead casting to [`StaticVecUnion`] and calling methods on that instead.
+///
+/// ## Example implementation
+/// ```rust
+/// use slas::prelude::*;
+///
+/// struct StaticVec3([f32; 3]);
+///
+/// impl StaticVec<f32, 3> for StaticVec3{
+///     unsafe fn as_ptr(&self) -> *const f32{
+///         &self.0[0] as *const f32
+///     }
+/// }
+/// ```
+
+//TODO: Likely need to move deref and deref_mut into this trait, to avoid weird behavior with passing StaticCowVec as &mut impl StaticVec.
 pub trait StaticVec<T, const LEN: usize> {
     /// Return pointer to first element.
     unsafe fn as_ptr(&self) -> *const T;
@@ -45,6 +60,19 @@ pub trait StaticVec<T, const LEN: usize> {
     {
         unsafe { transmute_copy(self) }
     }
+
+    fn static_backend<B: Backend + Default>(
+        self,
+    ) -> crate::backends::WithStaticBackend<T, Self, B, LEN>
+    where
+        Self: Sized,
+    {
+        crate::backends::WithStaticBackend {
+            data: self,
+            backend: B::default(),
+            _pd: PhantomData::<T>,
+        }
+    }
 }
 
 macro_rules! dyn_cast_panic {
@@ -68,7 +96,24 @@ macro_rules! dyn_cast_panic {
 /// let a = vec![0f32, 1., 2., 3.];
 /// let b = moo![f32: 0, -1, -2, 3];
 ///
-/// assert!(cblas_sdot(&a.pretend_static(), &b) == 4.)
+/// assert!(a.moo_ref().dot(b.moo_ref()) == 4.);
+/// ```
+///
+/// ## Example implementation
+/// ```rust
+/// use slas::prelude::*;
+///
+/// struct DynVec32(Vec<f32>);
+///
+/// impl DynamicVec<f32> for DynVec32{
+///     fn len(&self) -> usize{
+///         self.0.len()
+///     }
+///
+///     unsafe fn as_ptr(&self) -> *const f32{
+///         &self.0[0] as *const f32
+///     }
+/// }
 /// ```
 pub trait DynamicVec<T> {
     fn len(&self) -> usize;
@@ -113,7 +158,7 @@ impl<T, const LEN: usize> StaticVec<T, LEN> for [T; LEN] {
     }
 }
 
-/// See [`StaticVec`].
+/// Pretend dynamically shaped data is statical, meaning it implements [`StaticVec`].
 pub struct PretendStaticVec<'a, I, T: DynamicVec<I> + ?Sized, const LEN: usize>(
     &'a T,
     PhantomData<I>,

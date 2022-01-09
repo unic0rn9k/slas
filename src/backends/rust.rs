@@ -1,18 +1,20 @@
+#[derive(Default)]
 pub struct Rust;
 use super::*;
+use std::simd::Simd;
 
 // TODO: This needs to check if SIMD is available at compile time.
 macro_rules! impl_slas_dot {
     ($t: ty, $fn: ident) => {
-        /// Pure rust implementation of dot product. This is more performant for smaller vectors, where as the blas ([`cblas_sdot`] and [`cblas_ddot`]) dot product is faster for larger vectors.
+        /// Pure rust implementation of dot product. This is more performant for smaller vectors, where as the blas (cblas_sdot and cblas_ddot) dot products are faster for larger vectors.
         ///
         /// ## Example
         /// ```rust
         /// use slas::prelude::*;
-        /// assert!(slas_sdot(&[1., 2., 3.], &moo![f32: -1, 2, -1]) == 0.);
+        /// assert!(slas_backend::Rust.sdot(&[1., 2., 3.], &moo![f32: -1, 2, -1]) == 0.);
         /// ```
         fn $fn<const LEN: usize>(
-            &self,
+            &mut self,
             a: &impl StaticVec<$t, LEN>,
             b: &impl StaticVec<$t, LEN>,
         ) -> $t {
