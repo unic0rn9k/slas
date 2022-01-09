@@ -22,7 +22,7 @@
 //! let b = moo![f32: 3, 0.4, 5];
 //! println!("Dot product of {:?} and {:?} is {:?}", a, b, a.dot(&b));
 //! ```
-//! You can also choose a static backend yourself.
+//! You can also choose a static backend yourself
 //! ```rust
 //! let a = moo![on slas_backend::Rust:f32: 1, 2, 3.2];
 //! // This will only use rust code for all operations on a
@@ -137,13 +137,14 @@
 //!     - GPU support - maybe with cublas
 //!     - ~~Pure rust support - usefull for irust and jupyter support.~~
 //!     - `DynacmicBackend` for selecting backends at runtime
-//! - Refactor backends to make it more generic
+//! - ~~Refactor backends to make it more generic~~
+//!     - Default backend for default operations
 //!
 //! ## TODO Before v0.2.0
 //! - Feature flag for choosing own blas provider
 //! - More operations implemented for backends
 //! - Rewrite documentation
-//! - ~~`StaticBackend` struct for vectors with associated backends~~
+//! - ~~`WithStaticBackend` struct for vectors with associated backends~~
 //! - Write unit tests to make sure unsafe functions can't produce ub.
 //! - Make less terrible benchmarks
 //! - `Normalize` operation for backends - to prove mutable access to vectors also work in backends, even with StaticCowVecs.

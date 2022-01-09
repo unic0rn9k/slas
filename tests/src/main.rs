@@ -11,7 +11,7 @@ fn main() {
     let mut a: nalgebra::base::SVector<f32, 3> = [1., 2., 3.1].into();
     let mut b: nalgebra::base::SVector<f32, 3> = [1., -2., 3.].into();
 
-    black_box(slas_backends::Blas.sdot(&a, &b));
+    black_box(slas_backends::Blas.dot(&a, &b));
 }
 
 #[cfg(not(versus))]
@@ -54,7 +54,7 @@ mod thin_blas {
         let a = vec![0f32, 1., 2., 3.];
         let b = moo![f32: 0, -1, -2, 3];
 
-        assert_eq!(slas_backend::Blas.sdot(&a.pretend_static(), &b), 4.)
+        assert_eq!(slas_backend::Blas.dot(&a.pretend_static(), &b), 4.)
     }
 
     #[test]
@@ -121,11 +121,11 @@ mod moo {
     #[test]
     fn dot_slas() {
         assert_eq!(
-            slas_backend::Rust.sdot(&[1., 2., 3., 4.], &[1., 2., 3., 4.]),
+            slas_backend::Rust.dot(&[1., 2., 3., 4.], &[1., 2., 3., 4.]),
             30.
         );
         assert_eq!(
-            slas_backend::Rust.sdot(&[1., 2., 3., 4., 5.], &[1., 2., 3., 4., 5.]),
+            slas_backend::Rust.dot(&[1., 2., 3., 4., 5.], &[1., 2., 3., 4., 5.]),
             55.
         );
     }
@@ -330,7 +330,7 @@ mod versus {
             let a = super::RAND_VECS[0];
             let b = super::RAND_VECS[1];
 
-            be.iter(|| black_box(slas_backend::Blas.sdot(&a, &b)));
+            be.iter(|| black_box(slas_backend::Blas.dot(&a, &b)));
         }
 
         #[bench]
@@ -338,7 +338,7 @@ mod versus {
             let a = super::RAND_VECS[0];
             let b = super::RAND_VECS[1];
 
-            be.iter(|| black_box(slas_backend::Rust.sdot(&a, &b)));
+            be.iter(|| black_box(slas_backend::Rust.dot(&a, &b)));
         }
     }
 }

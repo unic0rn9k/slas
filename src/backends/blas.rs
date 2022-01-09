@@ -3,7 +3,7 @@ pub struct Blas;
 use super::*;
 
 macro_rules! impl_dot {
-    ($float: ty, $blas_fn: ident, $slas_fn: ident) => {
+    ($t: ty, $blas_fn: ident) => {
         /// Thin wrapper around blas for the various dot product functions that works for multiple different (and mixed) vector types.
         ///
         /// ## Example
@@ -11,49 +11,53 @@ macro_rules! impl_dot {
         /// use slas::prelude::*;
         /// assert!(slas_backend::Blas.sdot(&[1., 2., 3.], &moo![f32: -1, 2, -1]) == 0.);
         /// ```
-        fn $slas_fn<const LEN: usize>(
-            &mut self,
-            a: &impl StaticVec<$float, LEN>,
-            b: &impl StaticVec<$float, LEN>,
-        ) -> $float {
-            unsafe { cblas_sys::$blas_fn(LEN as i32, a.as_ptr(), 1, b.as_ptr(), 1) }
+        impl operations::DotProduct<$t> for Blas {
+            fn dot<const LEN: usize>(
+                &mut self,
+                a: &impl StaticVec<$t, LEN>,
+                b: &impl StaticVec<$t, LEN>,
+            ) -> $t {
+                unsafe { cblas_sys::$blas_fn(LEN as i32, a.as_ptr(), 1, b.as_ptr(), 1) }
+            }
         }
     };
 }
 
 macro_rules! impl_dot_comp {
-    ($float: ty, $comp_blas_fn: ident, $slas_fn: ident) => {
+    ($t: ty, $comp_blas_fn: ident) => {
         /// Dot product for two complex vectors.
         /// Also has support for multiple (and mixed) types.
-        fn $slas_fn<const LEN: usize>(
-            &mut self,
-            a: &impl StaticVec<Complex<$float>, LEN>,
-            b: &impl StaticVec<Complex<$float>, LEN>,
-        ) -> Complex<$float> {
-            let mut tmp: [$float; 2] = [0.; 2];
-            unsafe {
-                cblas_sys::$comp_blas_fn(
-                    LEN as i32,
-                    a.as_ptr() as *const [$float; 2],
-                    1,
-                    b.as_ptr() as *const [$float; 2],
-                    1,
-                    tmp.as_mut_ptr() as *mut [$float; 2],
-                )
-            }
-            Complex {
-                re: tmp[0],
-                im: tmp[1],
+        impl operations::DotProduct<Complex<$t>> for Blas {
+            fn dot<const LEN: usize>(
+                &mut self,
+                a: &impl StaticVec<Complex<$t>, LEN>,
+                b: &impl StaticVec<Complex<$t>, LEN>,
+            ) -> Complex<$t> {
+                let mut tmp: [$t; 2] = [0.; 2];
+                unsafe {
+                    cblas_sys::$comp_blas_fn(
+                        LEN as i32,
+                        a.as_ptr() as *const [$t; 2],
+                        1,
+                        b.as_ptr() as *const [$t; 2],
+                        1,
+                        tmp.as_mut_ptr() as *mut [$t; 2],
+                    )
+                }
+                Complex {
+                    re: tmp[0],
+                    im: tmp[1],
+                }
             }
         }
     };
 }
 
-impl operations::DotProduct for Blas {
-    impl_dot!(f32, cblas_sdot, sdot);
-    impl_dot!(f64, cblas_ddot, ddot);
-}
-impl operations::ComplexDotProduct for Blas {
-    impl_dot_comp!(f32, cblas_cdotu_sub, cdotu_sub);
-    impl_dot_comp!(f64, cblas_zdotu_sub, zdotu_sub);
-}
+impl_dot!(f32, cblas_sdot);
+impl_dot!(f64, cblas_ddot);
+impl_dot_comp!(f32, cblas_cdotu_sub);
+impl_dot_comp!(f64, cblas_zdotu_sub);
+impl Backend<f32> for Blas {}
+impl Backend<f64> for Blas {}
+impl Backend<Complex<f32>> for Blas {}
+impl Backend<Complex<f64>> for Blas {}

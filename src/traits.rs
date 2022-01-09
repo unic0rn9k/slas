@@ -61,7 +61,7 @@ pub trait StaticVec<T, const LEN: usize> {
         unsafe { transmute_copy(self) }
     }
 
-    fn static_backend<B: Backend + Default>(
+    fn static_backend<B: Backend<T> + Default>(
         self,
     ) -> crate::backends::WithStaticBackend<T, Self, B, LEN>
     where
