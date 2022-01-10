@@ -13,7 +13,7 @@ macro_rules! impl_dot {
         /// ```
         impl operations::DotProduct<$t> for Blas {
             fn dot<const LEN: usize>(
-                &mut self,
+                &self,
                 a: &impl StaticVec<$t, LEN>,
                 b: &impl StaticVec<$t, LEN>,
             ) -> $t {
@@ -29,7 +29,7 @@ macro_rules! impl_dot_comp {
         /// Also has support for multiple (and mixed) types.
         impl operations::DotProduct<Complex<$t>> for Blas {
             fn dot<const LEN: usize>(
-                &mut self,
+                &self,
                 a: &impl StaticVec<Complex<$t>, LEN>,
                 b: &impl StaticVec<Complex<$t>, LEN>,
             ) -> Complex<$t> {

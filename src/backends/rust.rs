@@ -15,7 +15,7 @@ macro_rules! impl_dot {
         /// ```
         impl operations::DotProduct<$t> for Rust {
             fn dot<const LEN: usize>(
-                &mut self,
+                &self,
                 a: &impl StaticVec<$t, LEN>,
                 b: &impl StaticVec<$t, LEN>,
             ) -> $t {
@@ -35,6 +35,17 @@ macro_rules! impl_dot {
             }
         }
     };
+}
+
+impl<T: Float + std::iter::Sum> operations::Normalize<T> for Rust {
+    fn norm<const LEN: usize>(&self, a: &impl StaticVec<T, LEN>) -> T {
+        a.moo_ref().iter().map(|n| n.powi_(2)).sum::<T>().sqrt_()
+    }
+
+    fn normalize<const LEN: usize>(&self, a: &mut impl StaticVec<T, LEN>) {
+        let norm = operations::Normalize::norm(self, a);
+        a.mut_moo_ref().iter_mut().for_each(|n| *n = *n / norm);
+    }
 }
 
 impl_dot!(f32);

@@ -147,7 +147,7 @@
 //! - ~~`WithStaticBackend` struct for vectors with associated backends~~
 //! - Write unit tests to make sure unsafe functions can't produce ub.
 //! - Make less terrible benchmarks
-//! - `Normalize` operation for backends - to prove mutable access to vectors also work in backends, even with StaticCowVecs.
+//! - ~~`Normalize` operation for backends - to prove mutable access to vectors also work in backends, even with StaticCowVecs.~~
 
 #![allow(incomplete_features)]
 #![feature(generic_const_exprs, portable_simd)]
@@ -158,7 +158,6 @@ pub mod prelude;
 
 pub mod backends;
 pub mod num;
-use num::*;
 
 use std::{mem::transmute, ops::*};
 extern crate blis_src;
@@ -168,6 +167,9 @@ use traits::*;
 
 /// StaticVectorUnion is always owned when it is not found in a StaticCowVec, therefore we have this type alias to make it less confisung when dealing with references to owned vectors.
 pub type StaticVecRef<'a, T, const LEN: usize> = &'a StaticVecUnion<'a, T, LEN>;
+
+/// Same as [`StaticVecRef`], but mutable.
+pub type MutStaticVecRef<'a, T, const LEN: usize> = &'a mut StaticVecUnion<'a, T, LEN>;
 
 /// Will always be owned, unless inside a [`StaticCowVec`]
 #[derive(Clone, Copy, Eq)]
@@ -209,24 +211,6 @@ impl<'a, T: Copy, const LEN: usize> StaticCowVec<'a, T, LEN> {
 
     pub fn is_owned(&self) -> bool {
         self.is_owned
-    }
-
-    ///Returns normal of self.
-    pub fn norm(&self) -> T
-    where
-        T: Float + std::iter::Sum,
-    {
-        // TODO: Make me fast. Use blas.
-        self.iter().map(|n| n.powi_(2)).sum::<T>().sqrt_()
-    }
-
-    /// Normalizes self.
-    pub fn normalize(&mut self)
-    where
-        T: Float + std::iter::Sum,
-    {
-        let norm = self.norm();
-        self.iter_mut().for_each(|n| *n = *n / norm);
     }
 
     /// Cast StaticCowVec from pointer.

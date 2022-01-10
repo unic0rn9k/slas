@@ -35,10 +35,12 @@ mod benches {
     #[bench]
     fn norm(b: &mut Bencher) {
         b.iter(|| {
-            let a = StaticCowVec::from(&[1f32, 2., 3.2]);
-            let b = moo![f32: 3, 0.4, 5];
-            a.norm();
-            b.norm();
+            let mut a = StaticCowVec::from(&[1f32, 2., 3.2]).static_backend::<slas_backend::Rust>();
+            let mut b = moo![f32: 3, 0.4, 5].static_backend();
+            assert!(a.data.is_borrowed());
+            a.normalize();
+            assert!(a.data.is_owned());
+            b.normalize();
 
             black_box(a.dot(&b));
         });

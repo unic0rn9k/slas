@@ -149,6 +149,6 @@ For now, if you want to use the git version of slas, you need to install blis on
 - ~~`WithStaticBackend` struct for vectors with associated backends~~
 - Write unit tests to make sure unsafe functions can't produce ub.
 - Make less terrible benchmarks
-- `Normalize` operation for backends - to prove mutable access to vectors also work in backends, even with StaticCowVecs.
+- ~~`Normalize` operation for backends - to prove mutable access to vectors also work in backends, even with StaticCowVecs.~~
 
 License: Apache-2.0

@@ -69,7 +69,7 @@ macro_rules! impl_operations {
 	($_t:ident : $($name: ident $($op: ident ($($generics: tt)*) ($($arg: ident : $arg_ty: ty),*) -> $t: ty),*);*;) => {
         pub trait Backend<$_t>: Default{
             $($(
-                fn $op<$($generics)*>(&mut self, $($arg : $arg_ty),*) -> $t where Self: operations::$name<$_t>{
+                fn $op<$($generics)*>(&self, $($arg : $arg_ty),*) -> $t where Self: operations::$name<$_t>{
                     <Self as operations::$name<$_t>>::$op(self, $($arg),*)
                 }
             )*)*
@@ -78,7 +78,7 @@ macro_rules! impl_operations {
             use super::*;
 
             $(pub trait $name<$_t>{
-                $(fn $op<$($generics)*>(&mut self, $($arg : $arg_ty),*) -> $t;)*
+                $(fn $op<$($generics)*>(&self, $($arg : $arg_ty),*) -> $t;)*
             })*
         }
 	};
@@ -90,6 +90,10 @@ impl_operations!(T:
             a: &impl StaticVec<T, LEN>,
             b: &impl StaticVec<T, LEN>
         ) -> T;
+
+    Normalize
+        norm(const LEN: usize)(a: &impl StaticVec<T, LEN>) -> T,
+        normalize(const LEN: usize)(a: &mut impl StaticVec<T, LEN>) -> ();
 );
 
 #[derive(Clone, Copy)]
@@ -97,6 +101,14 @@ pub struct WithStaticBackend<T, U: StaticVec<T, LEN>, B: Backend<T>, const LEN: 
     pub data: U,
     pub backend: B,
     pub _pd: PhantomData<T>,
+}
+
+impl<T, U: StaticVec<T, LEN>, B: Backend<T>, const LEN: usize> StaticVec<T, LEN>
+    for WithStaticBackend<T, U, B, LEN>
+{
+    unsafe fn as_ptr(&self) -> *const T {
+        self.data.as_ptr()
+    }
 }
 
 macro_rules! impl_default_ops {
@@ -132,30 +144,27 @@ macro_rules! impl_default_ops {
     };
 }
 
-macro_rules! impl_with_backend {
-    ($($op: ident : $fn: ident : $t: ty),*) => {$(
-        impl<U: StaticVec<$t, LEN>, B: Backend<$t> + operations::$op<$t>, const LEN: usize>
-            WithStaticBackend<$t, U, B, LEN>
-        {
-            pub fn dot<U2: StaticVec<$t, LEN>>(
-                &mut self,
-                other: &WithStaticBackend<$t, U2, B, LEN>,
-            ) -> $t {
-                operations::$op::<$t>::$fn(&mut self.backend, &self.data, &other.data)
-            }
-        }
-    )*};
-}
-
 use crate::StaticVecUnion;
 impl_default_ops!(f32);
 impl_default_ops!(f64);
-impl_with_backend![
-    DotProduct: dot: f32,
-    DotProduct: dot: f64,
-    DotProduct: dot: Complex<f64>,
-    DotProduct: dot: Complex<f32>
-];
+
+impl<T, U: StaticVec<T, LEN>, B: Backend<T> + operations::DotProduct<T>, const LEN: usize>
+    WithStaticBackend<T, U, B, LEN>
+{
+    pub fn dot<U2: StaticVec<T, LEN>>(&self, other: &WithStaticBackend<T, U2, B, LEN>) -> T {
+        operations::DotProduct::<T>::dot(&self.backend, &self.data, &other.data)
+    }
+}
+impl<T, U: StaticVec<T, LEN>, B: Backend<T> + operations::Normalize<T>, const LEN: usize>
+    WithStaticBackend<T, U, B, LEN>
+{
+    pub fn norm(&self) -> T {
+        operations::Normalize::<T>::norm(&self.backend, &self.data)
+    }
+    pub fn normalize(&mut self) {
+        operations::Normalize::<T>::normalize(&mut self.backend, &mut self.data)
+    }
+}
 
 mod blas;
 pub use blas::Blas;

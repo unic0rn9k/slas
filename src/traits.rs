@@ -3,6 +3,7 @@ use crate::StaticVecUnion;
 use std::marker::PhantomData;
 use std::mem::transmute;
 use std::mem::transmute_copy;
+use std::ops::DerefMut;
 
 /// A very general trait for anything that can be called a static vector (fx. `[T; LEN]`)
 ///
@@ -38,6 +39,18 @@ pub trait StaticVec<T, const LEN: usize> {
         unsafe { transmute(self.as_ptr()) }
     }
 
+    /// Return a mutable reference to self with the type of [`StaticVecUnion`].
+    /// If you want to write to a StaticVec, this is the method that should be used.
+    /// This method is re-implemented for StaticCowVecs,
+    /// so it perserves cow behavior even when cows are borrowed as StaticVec's.
+    fn mut_moo_ref<'a>(&'a mut self) -> MutStaticVecRef<'a, T, LEN>
+    where
+        T: Copy,
+    {
+        unsafe { transmute(self.as_ptr()) }
+    }
+
+    /// Return a cow vector containing a reference to self.
     fn moo<'a>(&'a self) -> StaticCowVec<'a, T, LEN>
     where
         T: Copy,
@@ -45,14 +58,17 @@ pub trait StaticVec<T, const LEN: usize> {
         unsafe { StaticCowVec::from_ptr(self.as_ptr()) }
     }
 
+    /// Indexing without bounds checking.
     unsafe fn get_unchecked<'a>(&'a self, i: usize) -> &'a T {
         transmute(self.as_ptr().offset(i as isize))
     }
 
+    /// Returns a static slice spanning from index i to i+SLEN.
     unsafe fn static_slice_unchecked<'a, const SLEN: usize>(&'a self, i: usize) -> &'a [T; SLEN] {
         transmute::<*const T, &'a [T; SLEN]>(self.as_ptr().offset(i as isize))
     }
 
+    /// Copies self into a StaticVecUnion.
     fn moo_owned(&self) -> StaticVecUnion<'static, T, LEN>
     where
         T: Copy,
@@ -61,6 +77,7 @@ pub trait StaticVec<T, const LEN: usize> {
         unsafe { transmute_copy(self) }
     }
 
+    /// Statically use `B` as a backend for self.
     fn static_backend<B: Backend<T> + Default>(
         self,
     ) -> crate::backends::WithStaticBackend<T, Self, B, LEN>
@@ -196,5 +213,12 @@ impl<'a, T: Copy, const LEN: usize> StaticVec<T, LEN> for StaticCowVec<'a, T, LE
             true => self.data.as_ptr(),
             false => self.data.borrowed as *const T,
         }
+    }
+
+    fn mut_moo_ref<'b>(&'b mut self) -> MutStaticVecRef<'b, T, LEN>
+    where
+        T: Copy,
+    {
+        unsafe { transmute(self.deref_mut()) }
     }
 }
