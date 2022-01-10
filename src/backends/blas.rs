@@ -1,3 +1,4 @@
+/// Binding to blas with [cblas-sys](https://lib.rs/cblas-sys) as a slas backend.
 #[derive(Default)]
 pub struct Blas;
 use super::*;

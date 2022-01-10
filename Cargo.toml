@@ -14,8 +14,12 @@ categories = ["data-structures", "science", "mathematics"]
 readme = "README.md"
 
 [dependencies]
-blis-src = { version = "0.2.0", features = ["system"] }
+blis-src = { version = "0.2.0", features = ["system"], optional = true}
 cblas-sys = "0.1.4"
 
 [workspace]
 members = ["tests"]
+
+[features]
+default = ["blis-sys"]
+blis-sys = ["blis-src"]

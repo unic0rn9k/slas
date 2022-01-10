@@ -115,13 +115,15 @@ also means that you might catch a lot of bugs at compiletime,
 where ndarray most of the time will let you get away with pretty much anything.
 
 ### Installation
-Slas depends on blas, and currently only supports using blis.
-In the future you will have to choose your own blas provider, and instructions for doing so will be added here.
+By default slas will assume you have blis installed on your system.
+If you want tos choose your own blas provider please set `dependencies.slas.default-features = false` in your `Cargo.toml`,
+and refer to [blas-src](https://lib.rs/crates/blas-src) for further instructions.
+Remember to add `extern crate blas_src;` if you use blas-src as a blas provider.
 
 On the crates.io version of slas (v0.1.0 and 0.1.1) blis is compiled automatically.
 
 For now, if you want to use the git version of slas, you need to install blis on your system.
-- On Arch linux `blis-cblas` v0.7.0 from the aur has been tested and works fine.
+- On Arch linux `blis-cblas` v0.7.0 from the AUR has been tested and works fine.
 - On Debian you can simply run `apt install libblis-dev`.
 
 ### General info...
@@ -143,7 +145,7 @@ For now, if you want to use the git version of slas, you need to install blis on
     - Default backend for default operations
 
 ### TODO Before v0.2.0
-- Feature flag for choosing own blas provider
+- ~~Feature flag for choosing own blas provider~~
 - More operations implemented for backends
 - Rewrite documentation
 - ~~`WithStaticBackend` struct for vectors with associated backends~~

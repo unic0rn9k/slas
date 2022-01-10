@@ -1,3 +1,4 @@
+/// A pure rust slas backend with simd support.
 #[derive(Default)]
 pub struct Rust;
 use super::*;

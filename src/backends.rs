@@ -1,55 +1,27 @@
 //! A slas backend defines how a set of supported algebraic operations can be performed on a specific software and/or hardware configuration.
 //!
-//! ## Operations
+//! ## [`operations`]
+//!
+//! The first argument of an operations, should be the backend to run the operation on.
+//! The following arguments should just be the arguments of the operation.
 //!
 //! The possible operations that can be implemented for a backend and its associated functions are
 //!
-//! ### DotProduct
-//! Dot product for regular floats.
+//! ### [`operations::DotProduct`]
+//! #### dot
+//! Should take two vectors of equal length, and return their dot product.
 //!
-//! **For 32-bit floats** :
-//! ```rust
-//! fn sdot(const LEN: usize)(
-//!     &self,
-//!     a: &impl StaticVec<f32, LEN>,
-//!     b: &impl StaticVec<f32, LEN>
-//! ) -> f32
-//! ```
+//! ### [`operations::Normalize`]
+//! #### norm
+//! Should return the euclidean length of a vector.
 //!
-//! **For 64-bit floats** :
-//! ```rust
-//! fn ddot(const LEN: usize)(
-//!     &self,
-//!     a: &impl StaticVec<f64, LEN>,
-//!     b: &impl StaticVec<f64, LEN>
-//! ) -> f64
-//! ```
-//!
-//! ### ComplexDotProduct
-//! Dot product for complex numbers.
-//!
-//! **For 32-bit complex numbers** :
-//! ```rust
-//! fn cdotu_sub(const LEN: usize)(
-//!     &self,
-//!     a: &impl StaticVec<Complex<f32>, LEN>,
-//!     b: &impl StaticVec<Complex<f32>, LEN>
-//! ) -> Complex<f32>,
-//! ```
-//!
-//! **For 32-bit complex numbers** :
-//! ```rust
-//! fn zdotu_sub(const LEN: usize)(
-//!     &self,
-//!     a: &impl StaticVec<Complex<f64>, LEN>,
-//!     b: &impl StaticVec<Complex<f64>, LEN>
-//! ) -> Complex<f64>;
-//! ```
+//! #### normalize
+//! Should normalize self (devide each element by the norm of the vector)
 //!
 //! ## How to specify backend
 //!
 //! If you're trying to use slas on a system where blas isn't available,
-//! you can use the `slas_backend::Rust` statically.
+//! you can use the [`slas_backend::Rust`] statically.
 //!
 //! ```rust
 //! use slas::prelude::*;
