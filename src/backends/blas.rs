@@ -10,7 +10,7 @@ macro_rules! impl_dot {
         /// ## Example
         /// ```rust
         /// use slas::prelude::*;
-        /// assert!(slas_backend::Blas.sdot(&[1., 2., 3.], &moo![f32: -1, 2, -1]) == 0.);
+        /// assert!(slas_backend::Blas.dot(&[1., 2., 3.], &moo![f32: -1, 2, -1]) == 0.);
         /// ```
         impl operations::DotProduct<$t> for Blas {
             fn dot<const LEN: usize>(

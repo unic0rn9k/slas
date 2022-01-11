@@ -194,7 +194,7 @@ mod matrix {
     #[test]
     fn zero() {
         let m = Matrix::<f32, 2, 2>::zeros();
-        let n: Matrix<f32, 2, 2> = [0.; 4].into();
+        let n: Matrix<f32, 2, 2> = [0.; 4].moo().matrix();
         assert_eq!(m[[0, 0]], 0.);
         assert_eq!(**m, **n)
     }
@@ -205,7 +205,7 @@ mod matrix {
         let n: Matrix<f32, 3, 2> = [10., 11., 20., 21., 30., 31.].into();
         let k = [140., 146., 320., 335.].moo_owned();
 
-        assert_eq!(**(m * n), k);
+        assert_eq!(*(m * n), k);
     }
 
     #[test]
@@ -213,7 +213,7 @@ mod matrix {
         let m: Matrix<f32, 4, 3> = [1., 2., 3., 4., 5., 6., 7., 8., 9., 10., 11., 12.].into();
         let n: Matrix<f32, 3, 2> = [3., 6., 8., 10., 9., 17.].into();
         let k = [46., 77., 106., 176., 166., 275., 226., 374.].moo_owned();
-        assert_eq!(**(m * n), k);
+        assert_eq!(*(m * n), k);
     }
 
     #[test]
@@ -221,7 +221,7 @@ mod matrix {
         use slas::prelude::*;
         let m: Matrix<f32, 2, 3> = [1., 2., 3., 4., 5., 6.].into();
         assert_eq!(m[[1, 0]], 2.);
-        let k: Matrix<f32, 3, 2> = moo![f32: 0..6].into();
+        let k: Matrix<f32, 3, 2> = moo![f32: 0..6].matrix();
 
         println!("Product of {:?} and {:?} is {:?}", m, k, m * k);
     }

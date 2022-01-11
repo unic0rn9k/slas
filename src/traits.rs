@@ -91,6 +91,15 @@ pub trait StaticVec<T, const LEN: usize> {
             _pd: PhantomData::<T>,
         }
     }
+
+    fn matrix<'a, const M: usize, const K: usize>(&self) -> crate::matrix::Matrix<'a, T, M, K>
+    where
+        T: Copy,
+        StaticVecUnion<'a, T, { K * M }>: Sized,
+    {
+        use crate::matrix::Matrix;
+        unsafe { Matrix(transmute_copy(self.moo_ref())) }
+    }
 }
 
 macro_rules! dyn_cast_panic {

@@ -1,4 +1,5 @@
-use crate::prelude::*;
+use crate::{prelude::*, StaticVecUnion};
+use std::mem::transmute_copy;
 use std::ops::*;
 
 ///A stable matrix type not backed by a tensor.
@@ -17,11 +18,11 @@ use std::ops::*;
 /// let m: Matrix<f32, 2, 3> = [
 ///  1., 2., 3.,
 ///  4., 5., 6.
-/// ].moo().into();
+/// ].matrix();
 ///
 /// assert!(m[[1, 0]] == 2.);
 ///
-/// let k: Matrix::<f32, 3, 2> = moo![f32: 0..6].into();
+/// let k: Matrix::<f32, 3, 2> = [1.2; 6].matrix();
 ///
 /// println!("Product of {:?} and {:?} is {:?}", m, k, m * k);
 ///```
@@ -29,9 +30,11 @@ use std::ops::*;
 ///I found that [Khan Academy](https://www.khanacademy.org/math/precalculus/x9e81a4f98389efdf:matrices/x9e81a4f98389efdf:properties-of-matrix-multiplication/a/matrix-multiplication-dimensions)
 ///was a good resource for better understanding matricies.
 #[derive(Copy, Clone)]
-pub struct Matrix<'a, T: Copy, const M: usize, const K: usize>(pub StaticCowVec<'a, T, { K * M }>)
+pub struct Matrix<'a, T: Copy, const M: usize, const K: usize>(
+    pub StaticVecUnion<'a, T, { K * M }>,
+)
 where
-    StaticCowVec<'a, T, { K * M }>: Sized;
+    StaticVecUnion<'a, T, { K * M }>: Sized;
 
 impl<'a, T: Copy, const M: usize, const K: usize> Matrix<'a, T, M, K>
 where
@@ -39,15 +42,7 @@ where
     T: Float,
 {
     pub fn zeros() -> Self {
-        Self(StaticCowVec::from([T::zero(); K * M]))
-    }
-
-    pub fn is_borrowed(&self) -> bool {
-        self.0.is_borrowed()
-    }
-
-    pub fn is_owned(&self) -> bool {
-        self.0.is_owned()
+        unsafe { Self(transmute_copy(&[T::zero(); K * M])) }
     }
 
     pub unsafe fn get_unchecked_mut(&mut self, n: [usize; 2]) -> &mut T {
@@ -70,17 +65,13 @@ where
         }
         buffer
     }
-
-    pub unsafe fn from_ptr(ptr: *const T) -> Self {
-        Self(StaticCowVec::from_ptr(ptr))
-    }
 }
 
 impl<'a, T: Copy, const M: usize, const K: usize> Deref for Matrix<'a, T, M, K>
 where
-    StaticCowVec<'a, T, { K * M }>: Sized,
+    StaticVecUnion<'a, T, { K * M }>: Sized,
 {
-    type Target = StaticCowVec<'a, T, { K * M }>;
+    type Target = StaticVecUnion<'a, T, { K * M }>;
 
     fn deref(&self) -> &Self::Target {
         &self.0
@@ -89,7 +80,7 @@ where
 
 impl<'a, T: Copy, const M: usize, const K: usize> DerefMut for Matrix<'a, T, M, K>
 where
-    StaticCowVec<'a, T, { K * M }>: Sized,
+    StaticVecUnion<'a, T, { K * M }>: Sized,
 {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.0
@@ -114,7 +105,7 @@ where
 
 impl<'a, T: Copy, const M: usize, const K: usize> IndexMut<[usize; 2]> for Matrix<'a, T, M, K>
 where
-    StaticCowVec<'a, T, { K * M }>: Sized,
+    StaticVecUnion<'a, T, { K * M }>: Sized,
 {
     fn index_mut(&mut self, n: [usize; 2]) -> &mut T {
         assert!(
@@ -127,23 +118,23 @@ where
     }
 }
 
-impl<'a, T: Copy, const M: usize, const K: usize> From<StaticCowVec<'a, T, { K * M }>>
+impl<'a, T: Copy, const M: usize, const K: usize> From<StaticVecUnion<'a, T, { K * M }>>
     for Matrix<'a, T, M, K>
 {
-    fn from(v: StaticCowVec<'a, T, { K * M }>) -> Self {
+    fn from(v: StaticVecUnion<'a, T, { K * M }>) -> Self {
         Matrix(v)
     }
 }
 
 impl<'a, T: Copy, const M: usize, const K: usize> From<&'a [T; K * M]> for Matrix<'a, T, M, K> {
     fn from(v: &'a [T; K * M]) -> Self {
-        Matrix(v.into())
+        unsafe { Matrix(transmute_copy(v)) }
     }
 }
 
 impl<'a, T: Copy, const M: usize, const K: usize> From<[T; K * M]> for Matrix<'a, T, M, K> {
     fn from(v: [T; K * M]) -> Self {
-        Matrix(v.into())
+        unsafe { Matrix(transmute_copy(&v)) }
     }
 }
 
@@ -153,10 +144,6 @@ where
     StaticCowVec<'a, T, { K * M }>: Sized,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        use std::fmt::Write;
-        if self.is_borrowed() {
-            f.write_char('&')?;
-        }
         f.write_str("[\n")?;
         for n in 0..M {
             f.write_str("   ")?;

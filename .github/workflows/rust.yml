@@ -28,4 +28,4 @@ jobs:
     - name: Install blis
       run: sudo apt install libblis-dev
     - name: Run tests
-      run: cargo +nightly t -p tests
+      run: cargo +nightly t

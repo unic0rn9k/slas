@@ -24,11 +24,13 @@
 //! ```
 //! You can also choose a static backend yourself
 //! ```rust
+//! use slas::prelude::*;
 //! let a = moo![on slas_backend::Rust:f32: 1, 2, 3.2];
 //! // This will only use rust code for all operations on a
 //! ```
 //!
 //! ```rust
+//! use slas::prelude::*;
 //! let a = moo![on slas_backend::Blas:f32: 1, 2, 3.2];
 //! // This will always use blas for all operations on a
 //! ```
@@ -91,13 +93,13 @@
 //! let m: Matrix<f32, 2, 3> = [
 //!  1., 2., 3.,
 //!  4., 5., 6.
-//! ].into();
+//! ].matrix();
 //!
 //! assert!(m[[1, 0]] == 2.);
 //!
-//! let k: Matrix<f32, 3, 2> = moo![f32: 0..6].into();
+//! //let k: Matrix<f32, 3, 2> = moo![f32: 0..6].into();
 //!
-//! println!("Product of {:?} and {:?} is {:?}", m, k, m * k);
+//! //println!("Product of {:?} and {:?} is {:?}", m, k, m * k);
 //! ```
 //!
 //! If you want a look at whats to come in the future,
