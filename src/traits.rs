@@ -27,6 +27,7 @@ use std::ops::DerefMut;
 /// ```
 
 //TODO: Likely need to move deref and deref_mut into this trait, to avoid weird behavior with passing StaticCowVec as &mut impl StaticVec.
+/// Trait for statically shaped, contiguous vectors.
 pub trait StaticVec<T, const LEN: usize> {
     /// Return pointer to first element.
     unsafe fn as_ptr(&self) -> *const T;

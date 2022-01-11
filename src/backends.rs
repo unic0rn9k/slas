@@ -68,6 +68,7 @@ impl_operations!(T:
         normalize(const LEN: usize)(a: &mut impl StaticVec<T, LEN>) -> ();
 );
 
+/// Perform opertaions on a [`StaticVec`] with a static backend.
 #[derive(Clone, Copy)]
 pub struct WithStaticBackend<T, U: StaticVec<T, LEN>, B: Backend<T>, const LEN: usize> {
     pub data: U,

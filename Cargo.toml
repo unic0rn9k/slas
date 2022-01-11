@@ -1,6 +1,6 @@
 [package]
 name = "slas"
-version = "0.1.1"
+version = "0.2.0"
 edition = "2018"
 authors = ["Aksel Mannstaedt <unic0rn9k@protonmail.com>"]
 license = "Apache-2.0"
