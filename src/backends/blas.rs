@@ -54,6 +54,62 @@ macro_rules! impl_dot_comp {
     };
 }
 
+macro_rules! impl_gemm {
+    ($t: ty, $f: ident) => {
+        /// This is matrix multiplication, **NOT** element wise multiplication.
+        /// Take a look at
+        /// [wiki](https://en.wikipedia.org/wiki/Matrix_multiplication),
+        /// [3Blue1Brown at yt](https://www.youtube.com/watch?v=XkY2DOUCWMU)
+        /// and/or [Khan Academy](https://www.khanacademy.org/math/precalculus/x9e81a4f98389efdf:matrices/x9e81a4f98389efdf:properties-of-matrix-multiplication/a/matrix-multiplication-dimensions)
+        /// for more information.
+        ///
+        /// It's notable that your left hand matrix needs to be as wide as the right hand matrix is tall.
+        impl operations::MatrixMul<$t> for Blas {
+            fn matrix_mul<
+                A: StaticVec<$t, { M * K }>,
+                B: StaticVec<$t, { N * K }>,
+                const M: usize,
+                const N: usize,
+                const K: usize,
+            >(
+                &self,
+                a: &A,
+                b: &B,
+            ) -> [$t; N * M]
+            where
+                A: Sized,
+                B: Sized,
+                [$t; N * M]: Sized,
+            {
+                let mut buffer = [<$t>::zero(); N * M];
+                unsafe {
+                    // TODO: gemv should be used here when other's dimensions are a transpose of self.
+                    cblas_sys::$f(
+                        cblas_sys::CBLAS_LAYOUT::CblasRowMajor,
+                        cblas_sys::CBLAS_TRANSPOSE::CblasNoTrans,
+                        cblas_sys::CBLAS_TRANSPOSE::CblasNoTrans,
+                        M as i32,
+                        N as i32,
+                        K as i32,
+                        1.,
+                        a.as_ptr(),
+                        K as i32,
+                        b.as_ptr(),
+                        N as i32,
+                        0.,
+                        buffer.as_mut_ptr(),
+                        N as i32,
+                    )
+                }
+                buffer
+            }
+        }
+    };
+}
+
+impl_gemm!(f32, cblas_sgemm);
+impl_gemm!(f64, cblas_dgemm);
+
 impl_dot!(f32, cblas_sdot);
 impl_dot!(f64, cblas_ddot);
 impl_dot_comp!(f32, cblas_cdotu_sub);

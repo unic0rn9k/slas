@@ -38,11 +38,11 @@ use std::marker::PhantomData;
 use crate::prelude::*;
 
 macro_rules! impl_operations {
-	($_t:ident : $($name: ident $($op: ident ($($generics: tt)*) ($($arg: ident : $arg_ty: ty),*) -> $t: ty),*);*;) => {
+	($_t:ident $($name: ident $($op: ident ($($generics: tt)*) ($($generics_use: tt)*) ($($arg: ident : $arg_ty: ty),*) where ($($where_ty:ty : $implements: tt),*)  -> $t: ty),*);*;) => {
         pub trait Backend<$_t>: Default{
             $($(
-                fn $op<$($generics)*>(&self, $($arg : $arg_ty),*) -> $t where Self: operations::$name<$_t>{
-                    <Self as operations::$name<$_t>>::$op(self, $($arg),*)
+                fn $op<$($generics)*>(&self, $($arg : $arg_ty),*) -> $t where Self: operations::$name<$_t>, $($where_ty : $implements),*{
+                    <Self as operations::$name<$_t>>::$op::<$($generics_use)*>(self, $($arg),*)
                 }
             )*)*
         }
@@ -50,22 +50,34 @@ macro_rules! impl_operations {
             use super::*;
 
             $(pub trait $name<$_t>{
-                $(fn $op<$($generics)*>(&self, $($arg : $arg_ty),*) -> $t;)*
+                $(fn $op<$($generics)*>(&self, $($arg : $arg_ty),*) -> $t where $($where_ty : $implements),*;)*
             })*
         }
 	};
 }
 
-impl_operations!(T:
+impl_operations!(T
     DotProduct
-        dot(const LEN: usize)(
+        dot(const LEN: usize)()(
             a: &impl StaticVec<T, LEN>,
             b: &impl StaticVec<T, LEN>
-        ) -> T;
+        ) where () -> T;
 
     Normalize
-        norm(const LEN: usize)(a: &impl StaticVec<T, LEN>) -> T,
-        normalize(const LEN: usize)(a: &mut impl StaticVec<T, LEN>) -> ();
+        norm(const LEN: usize)()(a: &impl StaticVec<T, LEN>) where () -> T,
+        normalize(const LEN: usize)()(a: &mut impl StaticVec<T, LEN>) where () -> ();
+
+    MatrixMul
+        matrix_mul(A: StaticVec<T, {M*K}>, B: StaticVec<T, {N*K}>, const M: usize, const N: usize, const K: usize)
+        (A, B, M, N, K)
+        (a: &A, b: &B)
+        where (
+            A: Sized,
+            B: Sized,
+            T: Copy,
+            [T; N*M]: Sized
+        )
+        ->  [T; N*M];
 );
 
 /// Perform opertaions on a [`StaticVec`] with a static backend.
