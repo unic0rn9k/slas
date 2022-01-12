@@ -195,8 +195,8 @@ pub mod matrix {
         const NDIM: usize,
         const LEN: usize,
     > {
-        data: WithStaticBackend<T, U, B, LEN>,
-        shape: &'static dyn Shape<NDIM>,
+        pub data: WithStaticBackend<T, U, B, LEN>,
+        pub shape: &'static dyn Shape<NDIM>,
     }
 
     impl<T: Float, B: Backend<T>, U: StaticVec<T, LEN> + 'static, const LEN: usize>
@@ -245,13 +245,12 @@ pub mod matrix {
 
     #[cfg(test)]
     pub mod tests {
-        use crate::matrix::Tensor;
-
         #[test]
         fn bruh() {
-            use super::super::*;
-            let a = Tensor::matrix::<2, 3>(moo![f32: 1..=6].static_backend::<Blas>());
-            let b = Tensor::matrix::<3, 2>(moo![f32: 1..=6].static_backend());
+            use crate::prelude::*;
+            use slas_backend::*;
+            let a = moo![f32: 1..=6].matrix::<Blas, 2, 3>();
+            let b = moo![f32: 1..=6].matrix::<Blas, 3, 2>();
             let c: [f32; 4] = a.matrix_mul(&b);
             assert_eq!(c, [22., 28., 49., 64.]);
         }

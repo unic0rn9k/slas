@@ -89,6 +89,17 @@
 //!
 //! **The underlying code for matricies and tensors are currently being developed, and will likely be working soon.**
 //!
+//! ```rust
+//! use slas::prelude::*;
+//! use slas_backend::*;
+//!
+//! let a = moo![f32: 1..=6].matrix::<Blas, 2, 3>();
+//! let b = moo![f32: 1..=6].matrix::<Blas, 3, 2>();
+//! let c: [f32; 4] = a.matrix_mul(&b);
+//!
+//! assert_eq!(c, [22., 28., 49., 64.]);
+//! ```
+//!
 //! If you want a look at whats to come in the future,
 //! you can go [here](https://github.com/unic0rn9k/slas/tree/experimental/src/experimental)
 //! for some *very* experimental source code for the project.
@@ -234,6 +245,15 @@ impl<'a, T: Copy, const LEN: usize> StaticCowVec<'a, T, LEN> {
     /// **Very** **very** **very** unsafe.
     pub unsafe fn from_ptr_unchecked(ptr: *const T) -> Self {
         Self::from(transmute::<*const T, &[T; LEN]>(ptr))
+    }
+
+    pub fn matrix<B: backends::Backend<T>, const M: usize, const K: usize>(
+        self,
+    ) -> backends::matrix::Tensor<T, Self, B, 2, LEN> {
+        backends::matrix::Tensor {
+            data: self.static_backend::<B>(),
+            shape: &matrix::MatrixShape::<M, K>,
+        }
     }
 }
 

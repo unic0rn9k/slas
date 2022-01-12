@@ -1,5 +1,3 @@
-# slas
-
 <div align="center">
 
 ## SLAS
@@ -90,6 +88,17 @@ As of now there is a Matrix type, but no tensor type on the master branch.
 The stable matricies are very basic, as I hopefully will be able to replace them with a more generic tensor type soon...
 
 **The underlying code for matricies and tensors are currently being developed, and will likely be working soon.**
+
+```rust
+use slas::prelude::*;
+use slas_backend::*;
+
+let a = moo![f32: 1..=6].matrix::<Blas, 2, 3>();
+let b = moo![f32: 1..=6].matrix::<Blas, 3, 2>();
+let c: [f32; 4] = a.matrix_mul(&b);
+
+assert_eq!(c, [22., 28., 49., 64.]);
+```
 
 If you want a look at whats to come in the future,
 you can go [here](https://github.com/unic0rn9k/slas/tree/experimental/src/experimental)
