@@ -199,10 +199,10 @@ pub mod matrix {
         shape: &'static dyn Shape<NDIM>,
     }
 
-    impl<T: Float, B: Backend<T>, const LEN: usize> Tensor<T, [T; LEN], B, 2, LEN> {
-        pub fn matrix<const M: usize, const K: usize>(
-            data: WithStaticBackend<T, [T; LEN], B, LEN>,
-        ) -> Self
+    impl<T: Float, B: Backend<T>, U: StaticVec<T, LEN> + 'static, const LEN: usize>
+        Tensor<T, U, B, 2, LEN>
+    {
+        pub fn matrix<const M: usize, const K: usize>(data: WithStaticBackend<T, U, B, LEN>) -> Self
         where
             [T; M * K]: Sized,
         {
@@ -250,8 +250,8 @@ pub mod matrix {
         #[test]
         fn bruh() {
             use super::super::*;
-            let a = Tensor::matrix::<2, 3>([1., 2., 3., 4., 5., 6.].static_backend::<Blas>());
-            let b = Tensor::matrix::<3, 2>([1., 2., 3., 4., 5., 6.].static_backend());
+            let a = Tensor::matrix::<2, 3>(moo![f32: 1..=6].static_backend::<Blas>());
+            let b = Tensor::matrix::<3, 2>(moo![f32: 1..=6].static_backend());
             let c: [f32; 4] = a.matrix_mul(&b);
             assert_eq!(c, [22., 28., 49., 64.]);
         }
