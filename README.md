@@ -26,11 +26,13 @@ println!("Dot product of {:?} and {:?} is {:?}", a, b, a.dot(&b));
 ```
 You can also choose a static backend yourself
 ```rust
+use slas::prelude::*;
 let a = moo![on slas_backend::Rust:f32: 1, 2, 3.2];
 // This will only use rust code for all operations on a
 ```
 
 ```rust
+use slas::prelude::*;
 let a = moo![on slas_backend::Blas:f32: 1, 2, 3.2];
 // This will always use blas for all operations on a
 ```
@@ -87,20 +89,7 @@ For now I'm going to try to create a temporary, and more stable, way of dealing 
 As of now there is a Matrix type, but no tensor type on the master branch.
 The stable matricies are very basic, as I hopefully will be able to replace them with a more generic tensor type soon...
 
-```rust
-use slas::{prelude::*, matrix::Matrix};
-
-let m: Matrix<f32, 2, 3> = [
- 1., 2., 3.,
- 4., 5., 6.
-].into();
-
-assert!(m[[1, 0]] == 2.);
-
-let k: Matrix<f32, 3, 2> = moo![f32: 0..6].into();
-
-println!("Product of {:?} and {:?} is {:?}", m, k, m * k);
-```
+**The underlying code for matricies and tensors are currently being developed, and will likely be working soon.**
 
 If you want a look at whats to come in the future,
 you can go [here](https://github.com/unic0rn9k/slas/tree/experimental/src/experimental)
