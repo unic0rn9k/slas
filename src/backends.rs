@@ -168,14 +168,6 @@ pub mod matrix {
     }
 
     pub struct MatrixShape<const M: usize, const K: usize>;
-    impl<const M: usize, const K: usize> MatrixShape<M, K> {
-        fn as_dyn() -> &'static dyn Shape<2>
-        where
-            [(); M * K]: Sized,
-        {
-            &Self
-        }
-    }
 
     impl<const M: usize, const K: usize> Shape<2> for MatrixShape<M, K> {
         fn len(&self, n: usize) -> usize {
@@ -216,7 +208,7 @@ pub mod matrix {
         {
             Self {
                 data,
-                shape: MatrixShape::<M, K>::as_dyn(),
+                shape: &MatrixShape::<M, K>,
             }
         }
     }
@@ -259,7 +251,7 @@ pub mod matrix {
         fn bruh() {
             use super::super::*;
             let a = Tensor::matrix::<2, 3>([1., 2., 3., 4., 5., 6.].static_backend::<Blas>());
-            let b = Tensor::matrix::<3, 2>([1., 2., 3., 4., 5., 6.].static_backend::<Blas>());
+            let b = Tensor::matrix::<3, 2>([1., 2., 3., 4., 5., 6.].static_backend());
             let c: [f32; 4] = a.matrix_mul(&b);
             assert_eq!(c, [22., 28., 49., 64.]);
         }
