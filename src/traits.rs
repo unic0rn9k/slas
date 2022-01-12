@@ -91,15 +91,6 @@ pub trait StaticVec<T, const LEN: usize> {
             _pd: PhantomData::<T>,
         }
     }
-
-    fn matrix<'a, const M: usize, const K: usize>(&self) -> crate::matrix::Matrix<'a, T, M, K>
-    where
-        T: Copy,
-        StaticVecUnion<'a, T, { K * M }>: Sized,
-    {
-        use crate::matrix::Matrix;
-        unsafe { Matrix(transmute_copy(self.moo_ref())) }
-    }
 }
 
 macro_rules! dyn_cast_panic {
@@ -145,14 +136,18 @@ macro_rules! dyn_cast_panic {
 pub trait DynamicVec<T> {
     fn len(&self) -> usize;
     unsafe fn as_ptr(&self) -> *const T;
-    fn pretend_static<const LEN: usize>(&self) -> PretendStaticVec<'_, T, Self, LEN> {
+    fn pretend_static<const LEN: usize>(self) -> PretendStaticVec<T, Self, LEN>
+    where
+        Self: Clone,
+    {
         dyn_cast_panic!(self.len(), LEN);
-        PretendStaticVec(self, PhantomData)
+        PretendStaticVec(Box::new(self.clone()), PhantomData)
     }
-    unsafe fn pretend_static_unchecked<const LEN: usize>(
-        &self,
-    ) -> PretendStaticVec<'_, T, Self, LEN> {
-        PretendStaticVec(self, PhantomData)
+    unsafe fn pretend_static_unchecked<const LEN: usize>(self) -> PretendStaticVec<T, Self, LEN>
+    where
+        Self: Clone,
+    {
+        PretendStaticVec(Box::new(self.clone()), PhantomData)
     }
 
     /// Return a reference to self with the type of [`StaticVecUnion`]
@@ -186,14 +181,9 @@ impl<T, const LEN: usize> StaticVec<T, LEN> for [T; LEN] {
 }
 
 /// Pretend dynamically shaped data is statical, meaning it implements [`StaticVec`].
-pub struct PretendStaticVec<'a, I, T: DynamicVec<I> + ?Sized, const LEN: usize>(
-    &'a T,
-    PhantomData<I>,
-);
+pub struct PretendStaticVec<I, T: DynamicVec<I> + ?Sized, const LEN: usize>(Box<T>, PhantomData<I>);
 
-impl<'a, I, T: DynamicVec<I>, const LEN: usize> StaticVec<I, LEN>
-    for PretendStaticVec<'a, I, T, LEN>
-{
+impl<I, T: DynamicVec<I>, const LEN: usize> StaticVec<I, LEN> for PretendStaticVec<I, T, LEN> {
     unsafe fn as_ptr(&self) -> *const I {
         self.0.as_ptr()
     }

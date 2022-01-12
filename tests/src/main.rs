@@ -187,6 +187,7 @@ mod moo {
     }
 }
 
+/*
 #[cfg(test)]
 mod matrix {
     use slas::{matrix::Matrix, prelude::*};
@@ -265,6 +266,7 @@ mod matrix {
     //    assert_eq!(**(m * n), k);
     //}
 }
+*/
 
 #[cfg(all(test, feature = "versus"))]
 mod versus {

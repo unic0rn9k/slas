@@ -87,20 +87,7 @@
 //! As of now there is a Matrix type, but no tensor type on the master branch.
 //! The stable matricies are very basic, as I hopefully will be able to replace them with a more generic tensor type soon...
 //!
-//! ```rust
-//! use slas::{prelude::*, matrix::Matrix};
-//!
-//! let m: Matrix<f32, 2, 3> = [
-//!  1., 2., 3.,
-//!  4., 5., 6.
-//! ].matrix();
-//!
-//! assert!(m[[1, 0]] == 2.);
-//!
-//! //let k: Matrix<f32, 3, 2> = moo![f32: 0..6].into();
-//!
-//! //println!("Product of {:?} and {:?} is {:?}", m, k, m * k);
-//! ```
+//! **The underlying code for matricies and tensors are currently being developed, and will likely be working soon.**
 //!
 //! If you want a look at whats to come in the future,
 //! you can go [here](https://github.com/unic0rn9k/slas/tree/experimental/src/experimental)
@@ -156,8 +143,9 @@
 #![allow(incomplete_features)]
 #![feature(generic_const_exprs, portable_simd)]
 
-mod matrix_stable;
-pub use matrix_stable::matrix;
+//mod matrix_stable;
+//pub use matrix_stable::matrix;
+pub use backends::matrix;
 pub mod prelude;
 
 pub mod backends;
@@ -187,6 +175,21 @@ impl<'a, T: Copy, const LEN: usize> StaticVecUnion<'a, T, LEN> {
     pub fn slice(&'a self) -> &'a [T; LEN] {
         unsafe { transmute(self.as_ptr()) }
     }
+
+    //pub fn matrix<const M: usize, const K: usize>(self) -> crate::matrix::Matrix<'a, T, M, K>
+    //where
+    //    StaticVecUnion<'a, T, { K * M }>: Sized,
+    //{
+    //    use crate::matrix::Matrix;
+    //    use std::mem::transmute_copy;
+    //    unsafe {
+    //        Matrix(transmute_copy(
+    //            self.as_ptr()
+    //                .as_ref()
+    //                .expect("Cannot convert null to matrix"),
+    //        ))
+    //    }
+    //}
 }
 
 impl<'a, T: Copy + PartialEq, const LEN: usize> std::cmp::PartialEq<StaticVecUnion<'a, T, LEN>>

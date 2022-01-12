@@ -68,16 +68,15 @@ impl_operations!(T
         normalize(const LEN: usize)()(a: &mut impl StaticVec<T, LEN>) where () -> ();
 
     MatrixMul
-        matrix_mul(A: StaticVec<T, {M*K}>, B: StaticVec<T, {N*K}>, const M: usize, const N: usize, const K: usize)
-        (A, B, M, N, K)
-        (a: &A, b: &B)
+        matrix_mul(A: StaticVec<T, ALEN>, B: StaticVec<T, BLEN>, const ALEN: usize, const BLEN: usize, const OLEN: usize)
+        (A, B, ALEN, BLEN, OLEN)
+        (a: &A, b: &B, m: usize, n: usize, k: usize)
         where (
             A: Sized,
             B: Sized,
-            T: Copy,
-            [T; N*M]: Sized
+            T: Copy
         )
-        ->  [T; N*M];
+        ->  [T; OLEN];
 );
 
 /// Perform opertaions on a [`StaticVec`] with a static backend.
@@ -156,3 +155,113 @@ pub use blas::Blas;
 
 mod rust;
 pub use rust::Rust;
+
+pub mod matrix {
+    use super::*;
+    use std::hint::unreachable_unchecked;
+
+    pub trait Shape<const NDIM: usize> {
+        fn len(&self, n: usize) -> usize;
+        fn volume(&self) -> usize {
+            (0..NDIM).map(|n| self.len(n)).product()
+        }
+    }
+
+    pub struct MatrixShape<const M: usize, const K: usize>;
+    impl<const M: usize, const K: usize> MatrixShape<M, K> {
+        fn as_dyn() -> &'static dyn Shape<2>
+        where
+            [(); M * K]: Sized,
+        {
+            &Self
+        }
+    }
+
+    impl<const M: usize, const K: usize> Shape<2> for MatrixShape<M, K> {
+        fn len(&self, n: usize) -> usize {
+            match n {
+                0 => K,
+                1 => M,
+                _ => unsafe { unreachable_unchecked() },
+            }
+        }
+    }
+
+    impl dyn Shape<2> {
+        fn rows(&self) -> usize {
+            self.len(1)
+        }
+        fn columns(&self) -> usize {
+            self.len(0)
+        }
+    }
+
+    pub struct Tensor<
+        T,
+        U: StaticVec<T, LEN> + 'static,
+        B: Backend<T>,
+        const NDIM: usize,
+        const LEN: usize,
+    > {
+        data: WithStaticBackend<T, U, B, LEN>,
+        shape: &'static dyn Shape<NDIM>,
+    }
+
+    impl<T: Float, B: Backend<T>, const LEN: usize> Tensor<T, [T; LEN], B, 2, LEN> {
+        pub fn matrix<const M: usize, const K: usize>(
+            data: WithStaticBackend<T, [T; LEN], B, LEN>,
+        ) -> Self
+        where
+            [T; M * K]: Sized,
+        {
+            Self {
+                data,
+                shape: MatrixShape::<M, K>::as_dyn(),
+            }
+        }
+    }
+
+    impl<
+            T: Float + Sized,
+            U: StaticVec<T, LEN>,
+            B: Backend<T> + operations::MatrixMul<T>,
+            const LEN: usize,
+        > Tensor<T, U, B, 2, LEN>
+    {
+        pub fn matrix_mul<U2: StaticVec<T, LEN2>, const LEN2: usize, const OLEN: usize>(
+            &self,
+            other: &Tensor<T, U2, B, 2, LEN2>,
+        ) -> [T; OLEN] {
+            let m = self.shape.rows();
+            let k = self.shape.columns();
+            let n = other.shape.columns();
+
+            debug_assert_eq!(self.shape.volume(), LEN);
+            debug_assert_eq!(other.shape.volume(), LEN2);
+            debug_assert_eq!(m * n, OLEN);
+
+            <B as Backend<T>>::matrix_mul(
+                &self.data.backend,
+                &self.data.data,
+                &other.data.data,
+                m,
+                n,
+                k,
+            )
+        }
+    }
+
+    #[cfg(test)]
+    pub mod tests {
+        use crate::matrix::Tensor;
+
+        #[test]
+        fn bruh() {
+            use super::super::*;
+            let a = Tensor::matrix::<2, 3>([1., 2., 3., 4., 5., 6.].static_backend::<Blas>());
+            let b = Tensor::matrix::<3, 2>([1., 2., 3., 4., 5., 6.].static_backend::<Blas>());
+            let c: [f32; 4] = a.matrix_mul(&b);
+            assert_eq!(c, [22., 28., 49., 64.]);
+        }
+    }
+}

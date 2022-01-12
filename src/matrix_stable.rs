@@ -1,4 +1,5 @@
 use crate::{prelude::*, StaticVecUnion};
+use std::marker::{PhantomData, PhantomPinned};
 use std::mem::transmute_copy;
 use std::ops::*;
 
@@ -18,11 +19,11 @@ use std::ops::*;
 /// let m: Matrix<f32, 2, 3> = [
 ///  1., 2., 3.,
 ///  4., 5., 6.
-/// ].matrix();
+/// ].moo_owned().matrix();
 ///
 /// assert!(m[[1, 0]] == 2.);
 ///
-/// let k: Matrix::<f32, 3, 2> = [1.2; 6].matrix();
+/// let k = Matrix::<f32, 3, 2>(moo![f32: 0..6].moo_owned());
 ///
 /// println!("Product of {:?} and {:?} is {:?}", m, k, m * k);
 ///```
@@ -30,26 +31,31 @@ use std::ops::*;
 ///I found that [Khan Academy](https://www.khanacademy.org/math/precalculus/x9e81a4f98389efdf:matrices/x9e81a4f98389efdf:properties-of-matrix-multiplication/a/matrix-multiplication-dimensions)
 ///was a good resource for better understanding matricies.
 #[derive(Copy, Clone)]
-pub struct Matrix<'a, T: Copy, const M: usize, const K: usize>(
-    pub StaticVecUnion<'a, T, { K * M }>,
-)
-where
-    StaticVecUnion<'a, T, { K * M }>: Sized;
+pub struct Matrix<'a, T: Copy + 'a, const M: usize, const K: usize>(pub *mut T, pub &'a ());
 
 impl<'a, T: Copy, const M: usize, const K: usize> Matrix<'a, T, M, K>
 where
-    StaticCowVec<'a, T, { K * M }>: Sized,
     T: Float,
+    StaticVecUnion<'a, T, { M * K }>: Sized,
+    [T; M * K]: Sized,
 {
-    pub fn zeros() -> Self {
-        unsafe { Self(transmute_copy(&[T::zero(); K * M])) }
+    pub fn moo(&self) -> StaticCowVec<'a, T, { M * K }> {
+        unsafe { StaticCowVec::from_ptr(self.0) }
+    }
+    pub fn moo_ref(&self) -> &'a StaticVecUnion<'a, T, { M * K }> {
+        use std::mem::transmute;
+        unsafe { transmute(self.0) }
+    }
+    pub fn mut_moo_ref(&self) -> &'a mut StaticVecUnion<'a, T, { M * K }> {
+        use std::mem::transmute;
+        unsafe { transmute(self.0) }
     }
 
     pub unsafe fn get_unchecked_mut(&mut self, n: [usize; 2]) -> &mut T {
-        self.0.get_unchecked_mut(n[0] + n[1] * K)
+        self.mut_moo_ref().get_unchecked_mut(n[0] + n[1] * K)
     }
     pub unsafe fn get_unchecked(&self, n: [usize; 2]) -> &T {
-        self.0.get_unchecked(n[0] + n[1] * K)
+        self.mut_moo_ref().get_unchecked(n[0] + n[1] * K)
     }
 
     /// Very slow, quick and dirty matrix transpose. It just switches the x and y axis...
@@ -57,7 +63,10 @@ where
     where
         StaticCowVec<'a, T, { M * K }>: Sized,
     {
-        let mut buffer = Matrix::<T, K, M>::zeros();
+        let mut buffer = [0f32; M * K];
+        use std::mem::transmute;
+        let mut buffer = unsafe { Matrix(transmute(&mut buffer), &()) };
+
         for x in 0..K {
             for y in 0..M {
                 unsafe { *buffer.get_unchecked_mut([y, x]) = *self.get_unchecked([x, y]) }
@@ -206,5 +215,5 @@ impl_gemm!(f32, cblas_sgemm);
 impl_gemm!(f64, cblas_dgemm);
 
 pub mod matrix {
-    pub use super::Matrix;
+    pub use super::*;
 }

@@ -66,39 +66,41 @@ macro_rules! impl_gemm {
         /// It's notable that your left hand matrix needs to be as wide as the right hand matrix is tall.
         impl operations::MatrixMul<$t> for Blas {
             fn matrix_mul<
-                A: StaticVec<$t, { M * K }>,
-                B: StaticVec<$t, { N * K }>,
-                const M: usize,
-                const N: usize,
-                const K: usize,
+                A: StaticVec<$t, ALEN>,
+                B: StaticVec<$t, BLEN>,
+                const ALEN: usize,
+                const BLEN: usize,
+                const OLEN: usize,
             >(
                 &self,
                 a: &A,
                 b: &B,
-            ) -> [$t; N * M]
+                m: usize,
+                n: usize,
+                k: usize,
+            ) -> [$t; OLEN]
             where
                 A: Sized,
                 B: Sized,
-                [$t; N * M]: Sized,
             {
-                let mut buffer = [<$t>::zero(); N * M];
+                let mut buffer = [<$t>::zero(); OLEN];
                 unsafe {
                     // TODO: gemv should be used here when other's dimensions are a transpose of self.
                     cblas_sys::$f(
                         cblas_sys::CBLAS_LAYOUT::CblasRowMajor,
                         cblas_sys::CBLAS_TRANSPOSE::CblasNoTrans,
                         cblas_sys::CBLAS_TRANSPOSE::CblasNoTrans,
-                        M as i32,
-                        N as i32,
-                        K as i32,
+                        m as i32,
+                        n as i32,
+                        k as i32,
                         1.,
                         a.as_ptr(),
-                        K as i32,
+                        k as i32,
                         b.as_ptr(),
-                        N as i32,
+                        n as i32,
                         0.,
                         buffer.as_mut_ptr(),
-                        N as i32,
+                        n as i32,
                     )
                 }
                 buffer
