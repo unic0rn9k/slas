@@ -169,7 +169,7 @@ pub mod matrix {
 
     pub struct MatrixShape<const M: usize, const K: usize>;
 
-    impl<const M: usize, const K: usize> Shape<2> for MatrixShape<M, K> {
+    impl<const M: usize, const K: usize> const Shape<2> for MatrixShape<M, K> {
         fn len(&self, n: usize) -> usize {
             match n {
                 0 => K,
@@ -177,14 +177,8 @@ pub mod matrix {
                 _ => unsafe { unreachable_unchecked() },
             }
         }
-    }
-
-    impl dyn Shape<2> {
-        fn rows(&self) -> usize {
-            self.len(1)
-        }
-        fn columns(&self) -> usize {
-            self.len(0)
+        fn volume(&self) -> usize {
+            M * K
         }
     }
 
@@ -224,9 +218,9 @@ pub mod matrix {
             &self,
             other: &Tensor<T, U2, B, 2, LEN2>,
         ) -> [T; OLEN] {
-            let m = self.shape.rows();
-            let k = self.shape.columns();
-            let n = other.shape.columns();
+            let m = self.shape.len(1);
+            let k = self.shape.len(0);
+            let n = other.shape.len(0);
 
             debug_assert_eq!(self.shape.volume(), LEN);
             debug_assert_eq!(other.shape.volume(), LEN2);
@@ -251,7 +245,12 @@ pub mod matrix {
             use slas_backend::*;
             let a = moo![f32: 1..=6].matrix::<Blas, 2, 3>();
             let b = moo![f32: 1..=6].matrix::<Blas, 3, 2>();
-            let c: [f32; 4] = a.matrix_mul(&b);
+
+            // TODO: Use buffer here (type StaticVec),
+            // and implement multiplication for matricies without a buffer.
+            // Also tensor should implement StaticVec.
+            let c = a.matrix_mul(&b);
+
             assert_eq!(c, [22., 28., 49., 64.]);
         }
     }

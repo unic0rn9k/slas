@@ -152,7 +152,12 @@
 //! - ~~`Normalize` operation for backends - to prove mutable access to vectors also work in backends, even with StaticCowVecs.~~
 
 #![allow(incomplete_features)]
-#![feature(generic_const_exprs, portable_simd)]
+#![feature(
+    generic_const_exprs,
+    portable_simd,
+    const_fn_trait_bound,
+    const_trait_impl
+)]
 
 //mod matrix_stable;
 //pub use matrix_stable::matrix;
