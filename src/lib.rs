@@ -10,7 +10,7 @@
 //!
 //! </div>
 //!
-//! Provides statically allocated vector, matrix and tensor types, for interfacing with blas/blis, in a performant manor, using copy-on-write (aka cow) behavior.
+//! Provides statically allocated vector, matrix and tensor types, for interfacing with blas/blis, in a performant manor, using copy-on-write (aka cow) behavior by default.
 //!
 //! [What is BLAS?](http://www.netlib.org/blas/)
 //!
