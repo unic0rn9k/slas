@@ -98,6 +98,7 @@ pub trait StaticVec<T, const LEN: usize> {
     where
         Self: Sized,
     {
+        assert_eq!(M * K, LEN);
         Tensor {
             data: crate::backends::WithStaticBackend::from_static_vec(self, B::default()),
             shape: &crate::tensor::MatrixShape::<M, K>,

@@ -203,6 +203,22 @@ mod tensors {
 
         assert_eq!(c, [22., 28., 49., 64.]);
     }
+
+    #[test]
+    #[should_panic]
+    fn wrong_size() {
+        use slas::prelude::*;
+        use slas_backend::*;
+        let a = moo![f32: 1..6].matrix::<Blas, 2, 3>();
+        let b = moo![f32: 1..6].matrix::<Blas, 3, 2>();
+
+        // TODO: Use buffer here (type StaticVec),
+        // and implement multiplication for matricies without a buffer.
+        // Also tensor should implement StaticVec.
+        let c = a.matrix_mul(&b);
+
+        assert_eq!(c, [22., 28., 49., 64.]);
+    }
 }
 
 #[cfg(all(test, feature = "versus"))]
