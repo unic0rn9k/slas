@@ -20,7 +20,7 @@ Provides statically allocated vector, matrix and tensor types, for interfacing w
 use slas::prelude::*;
 let a = moo![f32: 1, 2, 3.2];
 let b = moo![f32: 3, 0.4, 5];
-println!("Dot product of {:?} and {:?} is {:?}", a, b, a.dot(&b));
+println!("Dot product of {a:?} and {b:?} is {:?}", a.dot(&b));
 ```
 You can also choose a static backend yourself
 ```rust
@@ -80,14 +80,7 @@ assert_eq!(source, vec![1., 3., 4.]);
 In the example above, you can see `v` changed value the first time `source` was mutated, but not the second time.
 This is because `v` was copied when it was mutated at the line after the first mutation of `source`.
 
-### Matricies, tensors and other mathematical types
-At the moment the way I want to implement these types, causes a compiler crash, when trying to create 2 objects with the same shape.
-For now I'm going to try to create a temporary, and more stable, way of dealing with these variations of static multi dimensional arrays.
-
-As of now there is a Matrix type, but no tensor type on the master branch.
-The stable matricies are very basic, as I hopefully will be able to replace them with a more generic tensor type soon...
-
-**The underlying code for matricies and tensors are currently being developed, and will likely be working soon.**
+### Matrix example
 
 ```rust
 use slas::prelude::*;
