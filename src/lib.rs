@@ -20,7 +20,7 @@
 //! use slas::prelude::*;
 //! let a = moo![f32: 1, 2, 3.2];
 //! let b = moo![f32: 3, 0.4, 5];
-//! println!("Dot product of {:?} and {:?} is {:?}", a, b, a.dot(&b));
+//! println!("Dot product of {a:?} and {b:?} is {:?}", a.dot(&b));
 //! ```
 //! You can also choose a static backend yourself
 //! ```rust
@@ -156,13 +156,15 @@
     generic_const_exprs,
     portable_simd,
     const_fn_trait_bound,
-    const_trait_impl
+    const_trait_impl,
+    const_ptr_as_ref,
+    const_option
 )]
 
 //mod matrix_stable;
 //pub use matrix_stable::matrix;
-pub use backends::matrix;
 pub mod prelude;
+pub mod tensor;
 
 pub mod backends;
 pub mod num;
@@ -172,7 +174,7 @@ use std::{mem::transmute, ops::*};
 extern crate blis_src;
 extern crate cblas_sys;
 mod traits;
-use traits::*;
+use prelude::*;
 
 /// StaticVectorUnion is always owned when it is not found in a StaticCowVec, therefore we have this type alias to make it less confisung when dealing with references to owned vectors.
 pub type StaticVecRef<'a, T, const LEN: usize> = &'a StaticVecUnion<'a, T, LEN>;
@@ -225,7 +227,7 @@ pub struct StaticCowVec<'a, T: Copy, const LEN: usize> {
 }
 
 impl<'a, T: Copy, const LEN: usize> StaticCowVec<'a, T, LEN> {
-    pub fn len(&self) -> usize {
+    pub const fn len(&self) -> usize {
         LEN
     }
 
@@ -238,7 +240,7 @@ impl<'a, T: Copy, const LEN: usize> StaticCowVec<'a, T, LEN> {
     }
 
     /// Cast StaticCowVec from pointer.
-    pub unsafe fn from_ptr(ptr: *const T) -> Self {
+    pub const unsafe fn from_ptr(ptr: *const T) -> Self {
         Self::from(
             (ptr as *const [T; LEN])
                 .as_ref()
@@ -248,17 +250,8 @@ impl<'a, T: Copy, const LEN: usize> StaticCowVec<'a, T, LEN> {
 
     /// Cast StaticCowVec from pointer without checking if it is null.
     /// **Very** **very** **very** unsafe.
-    pub unsafe fn from_ptr_unchecked(ptr: *const T) -> Self {
+    pub const unsafe fn from_ptr_unchecked(ptr: *const T) -> Self {
         Self::from(transmute::<*const T, &[T; LEN]>(ptr))
-    }
-
-    pub fn matrix<B: backends::Backend<T>, const M: usize, const K: usize>(
-        self,
-    ) -> backends::matrix::Tensor<T, Self, B, 2, LEN> {
-        backends::matrix::Tensor {
-            data: self.static_backend::<B>(),
-            shape: &matrix::MatrixShape::<M, K>,
-        }
     }
 }
 
@@ -300,7 +293,7 @@ impl<'a, T: Copy, const LEN: usize> DerefMut for StaticCowVec<'a, T, LEN> {
     }
 }
 
-impl<'a, T: Copy, const LEN: usize> From<[T; LEN]> for StaticCowVec<'a, T, LEN> {
+impl<'a, T: Copy, const LEN: usize> const From<[T; LEN]> for StaticCowVec<'a, T, LEN> {
     fn from(s: [T; LEN]) -> Self {
         Self {
             data: StaticVecUnion { owned: s },
@@ -308,7 +301,7 @@ impl<'a, T: Copy, const LEN: usize> From<[T; LEN]> for StaticCowVec<'a, T, LEN> 
         }
     }
 }
-impl<'a, T: Copy, const LEN: usize> From<&'a [T; LEN]> for StaticCowVec<'a, T, LEN> {
+impl<'a, T: Copy, const LEN: usize> const From<&'a [T; LEN]> for StaticCowVec<'a, T, LEN> {
     fn from(s: &'a [T; LEN]) -> Self {
         Self {
             data: StaticVecUnion { borrowed: s },
@@ -316,9 +309,9 @@ impl<'a, T: Copy, const LEN: usize> From<&'a [T; LEN]> for StaticCowVec<'a, T, L
         }
     }
 }
-impl<'a, T: Copy, const LEN: usize> From<&'a [T]> for StaticCowVec<'a, T, LEN> {
+impl<'a, T: Copy, const LEN: usize> const From<&'a [T]> for StaticCowVec<'a, T, LEN> {
     fn from(s: &'a [T]) -> Self {
-        assert_eq!(s.len(), LEN);
+        //assert_eq!(s.len(), LEN);
         Self::from(unsafe { transmute::<*const T, &'a [T; LEN]>(s.as_ptr()) })
     }
 }

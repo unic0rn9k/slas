@@ -91,6 +91,18 @@ pub trait StaticVec<T, const LEN: usize> {
             _pd: PhantomData::<T>,
         }
     }
+
+    fn matrix<B: crate::backends::Backend<T>, const M: usize, const K: usize>(
+        self,
+    ) -> crate::tensor::Tensor<T, Self, B, 2, LEN>
+    where
+        Self: Sized,
+    {
+        Tensor {
+            data: crate::backends::WithStaticBackend::from_static_vec(self, B::default()),
+            shape: &crate::tensor::MatrixShape::<M, K>,
+        }
+    }
 }
 
 macro_rules! dyn_cast_panic {

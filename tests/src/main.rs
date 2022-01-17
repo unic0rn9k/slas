@@ -187,86 +187,23 @@ mod moo {
     }
 }
 
-/*
 #[cfg(test)]
-mod matrix {
-    use slas::{matrix::Matrix, prelude::*};
-
+mod tensors {
     #[test]
-    fn zero() {
-        let m = Matrix::<f32, 2, 2>::zeros();
-        let n: Matrix<f32, 2, 2> = [0.; 4].moo().matrix();
-        assert_eq!(m[[0, 0]], 0.);
-        assert_eq!(**m, **n)
-    }
-
-    #[test]
-    fn mul() {
-        let m: Matrix<f32, 2, 3> = [1., 2., 3., 4., 5., 6.].into();
-        let n: Matrix<f32, 3, 2> = [10., 11., 20., 21., 30., 31.].into();
-        let k = [140., 146., 320., 335.].moo_owned();
-
-        assert_eq!(*(m * n), k);
-    }
-
-    #[test]
-    fn mul2() {
-        let m: Matrix<f32, 4, 3> = [1., 2., 3., 4., 5., 6., 7., 8., 9., 10., 11., 12.].into();
-        let n: Matrix<f32, 3, 2> = [3., 6., 8., 10., 9., 17.].into();
-        let k = [46., 77., 106., 176., 166., 275., 226., 374.].moo_owned();
-        assert_eq!(*(m * n), k);
-    }
-
-    #[test]
-    fn from_readme() {
+    fn matrix() {
         use slas::prelude::*;
-        let m: Matrix<f32, 2, 3> = [1., 2., 3., 4., 5., 6.].into();
-        assert_eq!(m[[1, 0]], 2.);
-        let k: Matrix<f32, 3, 2> = moo![f32: 0..6].matrix();
+        use slas_backend::*;
+        let a = moo![f32: 1..=6].matrix::<Blas, 2, 3>();
+        let b = moo![f32: 1..=6].matrix::<Blas, 3, 2>();
 
-        println!("Product of {:?} and {:?} is {:?}", m, k, m * k);
+        // TODO: Use buffer here (type StaticVec),
+        // and implement multiplication for matricies without a buffer.
+        // Also tensor should implement StaticVec.
+        let c = a.matrix_mul(&b);
+
+        assert_eq!(c, [22., 28., 49., 64.]);
     }
-
-    fn approx_equal(a: f32, b: f32, decimal_places: i32) -> bool {
-        let factor = 10f32.powi(decimal_places);
-        let a = (a * factor).trunc();
-        let b = (b * factor).trunc();
-        a == b
-    }
-
-    #[test]
-    fn unprecise() {
-        use slas::prelude::*;
-        assert!(approx_equal(
-            moo![f32: 0..4].dot([1.2; 4].moo_ref()),
-            7.2,
-            8
-        ))
-    }
-
-    //#[test]
-    //fn mul3() { // Doesn't work. Might just be an incorrect expected result.
-    //    let m: Matrix<f32, 5, 6> = [
-    //        1.0, 2.0, -1.0, -1.0, 4.0, 2.0, 0.0, 1.0, 1.0, -1.0, 1.0, -1.0, -1.0, 1.0, 2.0, -3.0,
-    //        2.0, 2.0, 2.0, 0.0, 4.0, 0.0, -2.0, 1.0, -1.0, -1.0, -1.0, 1.0, -3.0, 2.0,
-    //    ]
-    //    .into();
-
-    //    let n: Matrix<f32, 4, 5> = [
-    //        1.0, -1.0, 0.0, 2.0, 2.0, 2.0, -1.0, -2.0, 1.0, 0.0, -1.0, 1.0, -3.0, -1.0, 1.0, -1.0,
-    //        4.0, 2.0, -1.0, 1.0,
-    //    ]
-    //    .into();
-
-    //    let k = [
-    //        24.0, 13.0, -5.0, 3.0, -3.0, -4.0, 2.0, 4.0, 4.0, 1.0, 2.0, 5.0, -2.0, 6.0, -1.0, -9.0,
-    //        -4.0, -6.0, 5.0, 5.0, 16.0, 7.0, -4.0, 7.0,
-    //    ];
-
-    //    assert_eq!(**(m * n), k);
-    //}
 }
-*/
 
 #[cfg(all(test, feature = "versus"))]
 mod versus {

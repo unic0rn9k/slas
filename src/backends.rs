@@ -87,6 +87,16 @@ pub struct WithStaticBackend<T, U: StaticVec<T, LEN>, B: Backend<T>, const LEN: 
     pub _pd: PhantomData<T>,
 }
 
+impl<T, U: StaticVec<T, LEN>, B: Backend<T>, const LEN: usize> WithStaticBackend<T, U, B, LEN> {
+    pub const fn from_static_vec(v: U, b: B) -> Self {
+        Self {
+            data: v,
+            backend: b,
+            _pd: PhantomData,
+        }
+    }
+}
+
 impl<T, U: StaticVec<T, LEN>, B: Backend<T>, const LEN: usize> StaticVec<T, LEN>
     for WithStaticBackend<T, U, B, LEN>
 {
@@ -155,103 +165,3 @@ pub use blas::Blas;
 
 mod rust;
 pub use rust::Rust;
-
-pub mod matrix {
-    use super::*;
-    use std::hint::unreachable_unchecked;
-
-    pub trait Shape<const NDIM: usize> {
-        fn len(&self, n: usize) -> usize;
-        fn volume(&self) -> usize {
-            (0..NDIM).map(|n| self.len(n)).product()
-        }
-    }
-
-    pub struct MatrixShape<const M: usize, const K: usize>;
-
-    impl<const M: usize, const K: usize> const Shape<2> for MatrixShape<M, K> {
-        fn len(&self, n: usize) -> usize {
-            match n {
-                0 => K,
-                1 => M,
-                _ => unsafe { unreachable_unchecked() },
-            }
-        }
-        fn volume(&self) -> usize {
-            M * K
-        }
-    }
-
-    pub struct Tensor<
-        T,
-        U: StaticVec<T, LEN> + 'static,
-        B: Backend<T>,
-        const NDIM: usize,
-        const LEN: usize,
-    > {
-        pub data: WithStaticBackend<T, U, B, LEN>,
-        pub shape: &'static dyn Shape<NDIM>,
-    }
-
-    impl<T: Float, B: Backend<T>, U: StaticVec<T, LEN> + 'static, const LEN: usize>
-        Tensor<T, U, B, 2, LEN>
-    {
-        pub fn matrix<const M: usize, const K: usize>(data: WithStaticBackend<T, U, B, LEN>) -> Self
-        where
-            [T; M * K]: Sized,
-        {
-            Self {
-                data,
-                shape: &MatrixShape::<M, K>,
-            }
-        }
-    }
-
-    impl<
-            T: Float + Sized,
-            U: StaticVec<T, LEN>,
-            B: Backend<T> + operations::MatrixMul<T>,
-            const LEN: usize,
-        > Tensor<T, U, B, 2, LEN>
-    {
-        pub fn matrix_mul<U2: StaticVec<T, LEN2>, const LEN2: usize, const OLEN: usize>(
-            &self,
-            other: &Tensor<T, U2, B, 2, LEN2>,
-        ) -> [T; OLEN] {
-            let m = self.shape.len(1);
-            let k = self.shape.len(0);
-            let n = other.shape.len(0);
-
-            debug_assert_eq!(self.shape.volume(), LEN);
-            debug_assert_eq!(other.shape.volume(), LEN2);
-            debug_assert_eq!(m * n, OLEN);
-
-            <B as Backend<T>>::matrix_mul(
-                &self.data.backend,
-                &self.data.data,
-                &other.data.data,
-                m,
-                n,
-                k,
-            )
-        }
-    }
-
-    #[cfg(test)]
-    pub mod tests {
-        #[test]
-        fn bruh() {
-            use crate::prelude::*;
-            use slas_backend::*;
-            let a = moo![f32: 1..=6].matrix::<Blas, 2, 3>();
-            let b = moo![f32: 1..=6].matrix::<Blas, 3, 2>();
-
-            // TODO: Use buffer here (type StaticVec),
-            // and implement multiplication for matricies without a buffer.
-            // Also tensor should implement StaticVec.
-            let c = a.matrix_mul(&b);
-
-            assert_eq!(c, [22., 28., 49., 64.]);
-        }
-    }
-}
