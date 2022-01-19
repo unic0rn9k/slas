@@ -91,6 +91,8 @@ let b = moo![f32: 1..=6].matrix::<Blas, 3, 2>();
 let c: [f32; 4] = a.matrix_mul(&b);
 
 assert_eq!(c, [22., 28., 49., 64.]);
+
+println!("{a:.0?} * {b:.0?} = {:.0?}", c.matrix::<Blas, 2, 2>());
 ```
 
 If you want a look at whats to come in the future,
@@ -123,6 +125,7 @@ For now, if you want to use the git version of slas, you need to install blis on
 - [Benchmarks, tests and related](https://github.com/unic0rn9k/slas/tree/master/tests)
 
 ### TODO
+- Matrix multiplication operation should use a buffer and `*` operator should return matrix with correct shape
 - ~~Rust version of blas functions allowing for loop unrolling - also compile time checks for choosing fastest function~~
 - Feature support for conversion between [ndarray](lib.rs/ndarray) types
 - Allow for use on stable channel - perhabs with a stable feature

@@ -2,21 +2,32 @@
 //!
 //! ## [`operations`]
 //!
-//! The first argument of an operations, should be the backend to run the operation on.
+//! The first argument of an operations, should be a reference to an instance of the backend to run the operation on.
 //! The following arguments should just be the arguments of the operation.
 //!
-//! The possible operations that can be implemented for a backend and its associated functions are
+//! The possible operations that can be implemented for a backend and its associated functions are:
 //!
 //! ### [`operations::DotProduct`]
+//! Implemented for complex and real floats on [`slas_backend::Blas`].
+//!
+//! Implemented for real floats on [`slas_backend::Rust`].
+//!
 //! #### dot
 //! Should take two vectors of equal length, and return their dot product.
 //!
 //! ### [`operations::Normalize`]
+//! Implemented for real floats on [`slas_backend::Rust`].
+//!
 //! #### norm
 //! Should return the euclidean length of a vector.
 //!
 //! #### normalize
 //! Should normalize self (devide each element by the norm of the vector)
+//!
+//! ### [`operations::MatrixMul`]
+//! Implemented for real floats on [`slas_backend::Blas`].
+//!
+//! #### matrix_mul
 //!
 //! ## How to specify backend
 //!
@@ -129,6 +140,7 @@ macro_rules! impl_default_ops {
             /// ```
             pub fn dot(&self, other: &Self) -> $t {
                 if LEN > 750 {
+                    // FIXME: This should not always be 750.
                     Blas.dot(self, other)
                 } else {
                     Rust.dot(self, other)
