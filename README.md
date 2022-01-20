@@ -38,12 +38,21 @@ let a = moo![on slas_backend::Blas:f32: 1, 2, 3.2];
 [More example code here.](https://github.com/unic0rn9k/slas/blob/master/tests/src/main.rs)
 
 
-### What is a COW?
+### What is a COW and when is it usefull?
 The copy-on-write functionality is inspired by [std::borrow::cow](https://doc.rust-lang.org/std/borrow/enum.Cow.html).
 The idea is simply that allocations (and time) can be saved, by figuring out when to copy at runtime instead of at compiletime.
-This can be memory inefficient at times (as an enum takes the size of its largest field + tag size), but I'm planing on making ways around this in the future.
+This can be memory inefficient at times (as an enum takes the size of its largest field + tag size), which is why you can optionally use `StaticVecUnion`s and `StaticVec`s instead.
+You can call `moo`, `moo_ref` and `mut_moo_ref` on any type that implements `StaticVec` to cast it to a appropriate type for it's use-case, with zero overhead.
 
-**NOTICE:** If you're using the git version of slas, you can now use `StaticVecRef`'s instead of `StaticCowVecs`, when you don't want the cow behavior.
+**moo_ref** returns a `StaticVecRef`, which is just a type alias for a reference to a `StaticVecUnion`.
+This is most efficient when you know you don't need mutable access or ownership of a vector.
+
+**mut_moo_ref** returns a `MutStaticVecRef`.
+This is a lot like `moo_ref`, but is usefull when you want to mutate you data in place (fx if you wan't to normalize a vector).
+You should only use this if you want mutable access to a vector WITH sideeffects.
+
+**moo** returns a `StaticCowVec` that references `self`. This is usefull if you don't know if you need mutable access to you vector and you don't want sideeffects.
+If you want to copy data into a `StaticCowVec` then `StaticCowVec::from` is what you need.
 
  ### In code...
 ```rust
