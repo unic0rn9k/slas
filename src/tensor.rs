@@ -1,8 +1,29 @@
 use crate::{backends::*, prelude::*};
 use std::hint::unreachable_unchecked;
 
+/// Tensor shape with static dimensions but with optionally dynamic shape.
+/// To achive a static shape the trait should be const implemented.
 pub trait Shape<const NDIM: usize> {
+    /// Length in the nth dimension.
+    ///
+    /// ## Example
+    /// ```rust
+    /// use slas::tensor::Shape;
+    /// let s = slas::tensor::MatrixShape::<2, 3>;
+    /// assert_eq!(s.axis_len(0), 3);
+    /// ```
+    ///
+    /// For a matrix the height is specified before the width.
+    /// axis_len(0) is should always be the width of a tensor.
     fn axis_len(&self, n: usize) -> usize;
+
+    /// Total amount of elements in a tensor with shape.
+    /// ## Example
+    /// ```rust
+    /// use slas::tensor::Shape;
+    /// let s = slas::tensor::MatrixShape::<2, 3>;
+    /// assert_eq!(s.volume(), 6);
+    /// ```
     fn volume(&self) -> usize {
         (0..NDIM).map(|n| self.axis_len(n)).product()
     }
@@ -14,6 +35,7 @@ impl<const LEN: usize> Shape<LEN> for [usize; LEN] {
     }
 }
 
+/// Static matrix shape.
 pub struct MatrixShape<const M: usize, const K: usize>;
 
 impl<const M: usize, const K: usize> const Shape<2> for MatrixShape<M, K> {
@@ -29,6 +51,8 @@ impl<const M: usize, const K: usize> const Shape<2> for MatrixShape<M, K> {
     }
 }
 
+/// Statically allocated tensor.
+/// See [`StaticVec::reshape`] for constructing a tensor.
 pub struct Tensor<
     T,
     U: StaticVec<T, LEN> + 'static,

@@ -92,6 +92,7 @@ pub trait StaticVec<T, const LEN: usize> {
         }
     }
 
+    /// Return [`crate::tensor::Tensor`] with shape [`crate::tensor::MatrixShape::<M, K>`]
     fn matrix<B: crate::backends::Backend<T>, const M: usize, const K: usize>(
         self,
     ) -> crate::tensor::Tensor<T, Self, B, 2, LEN>
@@ -102,6 +103,32 @@ pub trait StaticVec<T, const LEN: usize> {
         Tensor {
             data: crate::backends::WithStaticBackend::from_static_vec(self, B::default()),
             shape: &crate::tensor::MatrixShape::<M, K>,
+        }
+    }
+
+    /// ## Example
+    /// ```rust
+    /// use slas::prelude::*;
+    ///
+    /// let a = moo![f32: 0..6].reshape(&[3, 2], slas_backend::Blas);
+    /// let b = [0.; 6].reshape(&[2, 3], slas_backend::Blas);
+    ///
+    /// assert_eq!(a.matrix_mul(&b), [0.; 4]);
+    /// ```
+    /// In this example the matricies `a` and `b` have dynamic shapes.
+    /// If you wan't to create matricies with static shapes, you should use [`StaticVec::matrix`].
+    fn reshape<B: crate::backends::Backend<T>, S: crate::tensor::Shape<NDIM>, const NDIM: usize>(
+        self,
+        shape: &'static S,
+        backend: B,
+    ) -> crate::tensor::Tensor<T, Self, B, NDIM, LEN>
+    where
+        Self: Sized,
+    {
+        assert_eq!(shape.volume(), LEN);
+        Tensor {
+            data: crate::backends::WithStaticBackend::from_static_vec(self, backend),
+            shape,
         }
     }
 }
