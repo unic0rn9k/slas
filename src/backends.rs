@@ -116,6 +116,25 @@ impl<T, U: StaticVec<T, LEN>, B: Backend<T>, const LEN: usize> StaticVec<T, LEN>
     }
 }
 
+impl<T, U: StaticVec<T, LEN>, B: Backend<T>, const LEN: usize> WithStaticBackend<T, U, B, LEN> {
+    pub fn matrix<const M: usize, const K: usize>(self) -> crate::tensor::Tensor<T, U, B, 2, LEN>
+    where
+        Self: Sized,
+    {
+        self.data.reshape(&MatrixShape::<M, K>, self.backend)
+    }
+
+    pub fn reshape<S: crate::tensor::Shape<NDIM>, const NDIM: usize>(
+        self,
+        shape: &'static S,
+    ) -> crate::tensor::Tensor<T, U, B, NDIM, LEN>
+    where
+        Self: Sized,
+    {
+        self.data.reshape(shape, self.backend)
+    }
+}
+
 macro_rules! impl_default_ops {
     ($t: ty) => {
         impl<'a, const LEN: usize> StaticVecUnion<'a, Complex<$t>, LEN> {
@@ -150,6 +169,7 @@ macro_rules! impl_default_ops {
     };
 }
 
+use crate::tensor::MatrixShape;
 use crate::StaticVecUnion;
 impl_default_ops!(f32);
 impl_default_ops!(f64);

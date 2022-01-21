@@ -219,6 +219,14 @@ mod tensors {
 
         assert_eq!(c, [22., 28., 49., 64.]);
     }
+
+    #[test]
+    fn reshape() {
+        use slas::prelude::*;
+        let _ = [0f32; 4]
+            .static_backend::<slas_backend::Blas>()
+            .reshape(&[2, 2]);
+    }
 }
 
 #[cfg(all(test, feature = "versus"))]
