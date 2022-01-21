@@ -48,7 +48,7 @@ You can call `moo`, `moo_ref` and `mut_moo_ref` on any type that implements `Sta
 This is most efficient when you know you don't need mutable access or ownership of a vector.
 
 **mut_moo_ref** returns a `MutStaticVecRef`.
-This is a lot like `moo_ref`, but is usefull when you want to mutate you data in place (fx if you wan't to normalize a vector).
+This is a lot like `moo_ref`, but is usefull when you want to mutate your data in place (fx if you wan't to normalize a vector).
 You should only use this if you want mutable access to a vector WITH sideeffects.
 
 **moo** returns a `StaticCowVec` that references `self`. This is usefull if you don't know if you need mutable access to you vector and you don't want sideeffects.
@@ -59,7 +59,7 @@ If you want to copy data into a `StaticCowVec` then `StaticCowVec::from` is what
 use slas::prelude::*;
 
 let source: Vec<f32> = vec![1., 2., 3.];
-let mut v = moo![_ source.as_slice()];
+let mut v = source.moo();
 
 // Here we mutate v,
 // so the content of source will be copied into v before the mutation occours.

@@ -64,22 +64,6 @@ pub struct Tensor<
     pub shape: &'static dyn Shape<NDIM>,
 }
 
-impl<T: Float, B: Backend<T>, U: StaticVec<T, LEN> + 'static, const LEN: usize>
-    Tensor<T, U, B, 2, LEN>
-{
-    pub const fn matrix<const M: usize, const K: usize>(
-        data: WithStaticBackend<T, U, B, LEN>,
-    ) -> Self
-    where
-        [T; M * K]: Sized,
-    {
-        Self {
-            data,
-            shape: &MatrixShape::<M, K>,
-        }
-    }
-}
-
 impl<
         T: Float + std::fmt::Debug,
         B: Backend<T>,

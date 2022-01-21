@@ -48,7 +48,7 @@
 //! This is most efficient when you know you don't need mutable access or ownership of a vector.
 //!
 //! **mut_moo_ref** returns a `MutStaticVecRef`.
-//! This is a lot like `moo_ref`, but is usefull when you want to mutate you data in place (fx if you wan't to normalize a vector).
+//! This is a lot like `moo_ref`, but is usefull when you want to mutate your data in place (fx if you wan't to normalize a vector).
 //! You should only use this if you want mutable access to a vector WITH sideeffects.
 //!
 //! **moo** returns a `StaticCowVec` that references `self`. This is usefull if you don't know if you need mutable access to you vector and you don't want sideeffects.
@@ -59,7 +59,7 @@
 //! use slas::prelude::*;
 //!
 //! let source: Vec<f32> = vec![1., 2., 3.];
-//! let mut v = moo![_ source.as_slice()];
+//! let mut v = source.moo();
 //!
 //! // Here we mutate v,
 //! // so the content of source will be copied into v before the mutation occours.
@@ -198,21 +198,6 @@ impl<'a, T: Copy, const LEN: usize> StaticVecUnion<'a, T, LEN> {
     pub fn slice(&'a self) -> &'a [T; LEN] {
         unsafe { transmute(self.as_ptr()) }
     }
-
-    //pub fn matrix<const M: usize, const K: usize>(self) -> crate::matrix::Matrix<'a, T, M, K>
-    //where
-    //    StaticVecUnion<'a, T, { K * M }>: Sized,
-    //{
-    //    use crate::matrix::Matrix;
-    //    use std::mem::transmute_copy;
-    //    unsafe {
-    //        Matrix(transmute_copy(
-    //            self.as_ptr()
-    //                .as_ref()
-    //                .expect("Cannot convert null to matrix"),
-    //        ))
-    //    }
-    //}
 }
 
 impl<'a, T: Copy + PartialEq, const LEN: usize> std::cmp::PartialEq<StaticVecUnion<'a, T, LEN>>
@@ -339,7 +324,7 @@ impl<'a, T: Copy + std::fmt::Debug, const LEN: usize> std::fmt::Debug
     }
 }
 
-/// Macro for creating [`StaticCowVec`]'s
+/// Macro for creating [`StaticCowVec`]s
 ///
 /// ## Example
 /// ```rust
@@ -348,8 +333,6 @@ impl<'a, T: Copy + std::fmt::Debug, const LEN: usize> std::fmt::Debug
 /// moo![f32: 1..4];
 /// moo![f32: 1..=3];
 /// moo![0f32; 4];
-// moo![_ source.as_slice()];
-// moo![_: 1f32, 2, 3];
 /// ```
 #[macro_export]
 macro_rules! moo {
