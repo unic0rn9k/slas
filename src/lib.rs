@@ -263,10 +263,9 @@ impl<'a, T: Copy, const LEN: usize> Deref for StaticCowVec<'a, T, LEN> {
     type Target = StaticVecUnion<'a, T, LEN>;
 
     fn deref(&self) -> &Self::Target {
-        match self.is_owned {
-            true => &self.data,
-            false => unsafe { transmute(self.data.borrowed) },
-        }
+        if self.is_owned {
+            &self.data
+        } else
     }
 }
 

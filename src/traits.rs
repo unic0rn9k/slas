@@ -249,9 +249,10 @@ impl<T> DynamicVec<T> for Vec<T> {
 
 impl<'a, T: Copy, const LEN: usize> StaticVec<T, LEN> for StaticCowVec<'a, T, LEN> {
     unsafe fn as_ptr(&self) -> *const T {
-        match self.is_owned {
-            true => self.data.as_ptr(),
-            false => self.data.borrowed as *const T,
+        if self.is_owned {
+            self.data.as_ptr()
+        } else {
+            self.data.borrowed as *const T
         }
     }
 
