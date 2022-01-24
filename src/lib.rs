@@ -56,6 +56,9 @@
 //! **moo** returns a `StaticCowVec` that references `self`. This is usefull if you don't know if you need mutable access to you vector and you don't want sideeffects.
 //! If you want to copy data into a `StaticCowVec` then `StaticCowVec::from` is what you need.
 //!
+//! **moo_owned** will just return a `StaticVecUnion`. This is usefull when you really just wan't a [T; LEN],
+//! but you need methods only implemented for a `StaticVecUnion`.
+//!
 //!  ### Example of cow behavior
 //! ```rust
 //! use slas::prelude::*;
@@ -160,12 +163,11 @@
 //! - ~~Refactor backends to make it more generic~~
 //!     - Default backend for default operations
 //!
-//! ## TODO Before v0.2.0
+//! ## TODO Before v0.2.0 🎉
 //! - ~~Feature flag for choosing own blas provider~~
 //! - ~~More operations implemented for backends~~
 //! - ~~Rewrite documentation~~
 //! - ~~`WithStaticBackend` struct for vectors with associated backends~~
-//! - Write unit tests to make sure unsafe functions can't produce ub.
 //! - ~~Make less terrible benchmarks~~
 //! - ~~`Normalize` operation for backends - to prove mutable access to vectors also work in backends, even with StaticCowVecs.~~
 

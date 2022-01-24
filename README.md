@@ -56,6 +56,9 @@ You should only use this if you want mutable access to a vector WITH sideeffects
 **moo** returns a `StaticCowVec` that references `self`. This is usefull if you don't know if you need mutable access to you vector and you don't want sideeffects.
 If you want to copy data into a `StaticCowVec` then `StaticCowVec::from` is what you need.
 
+**moo_owned** will just return a `StaticVecUnion`. This is usefull when you really just wan't a [T; LEN],
+but you need methods only implemented for a `StaticVecUnion`.
+
  ### Example of cow behavior
 ```rust
 use slas::prelude::*;
