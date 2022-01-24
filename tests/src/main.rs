@@ -101,6 +101,17 @@ mod thin_blas {
 }
 
 #[cfg(test)]
+mod numbers {
+    #[test]
+    fn complex_mul() {
+        use slas::prelude::*;
+        let a = Complex::<f32> { re: 1., im: 4. };
+        let b = Complex::<f32> { re: 5., im: 1. };
+        assert_eq!(a * b, Complex { re: 1., im: 21. });
+    }
+}
+
+#[cfg(test)]
 mod moo {
     use crate::*;
 

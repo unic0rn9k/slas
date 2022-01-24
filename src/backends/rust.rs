@@ -40,7 +40,8 @@ macro_rules! impl_dot {
 
 impl<T: Float + std::iter::Sum> operations::Normalize<T> for Rust {
     fn norm<const LEN: usize>(&self, a: &impl StaticVec<T, LEN>) -> T {
-        a.moo_ref().iter().map(|n| n.powi_(2)).sum::<T>().sqrt_()
+        //TODO: use hypot function here. This will require implementing hypot for all float types first.
+        a.moo_ref().iter().map(|n| *n * *n).sum::<T>().sqrt_()
     }
 
     fn normalize<const LEN: usize>(&self, a: &mut impl StaticVec<T, LEN>) {
