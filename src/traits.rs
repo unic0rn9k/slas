@@ -247,6 +247,15 @@ impl<T> DynamicVec<T> for Vec<T> {
     }
 }
 
+impl<T> DynamicVec<T> for Box<[T]> {
+    fn len(&self) -> usize {
+        self.as_ref().len()
+    }
+    unsafe fn as_ptr(&self) -> *const T {
+        self as *const Box<[T]> as *const T
+    }
+}
+
 impl<'a, T: Copy, const LEN: usize> StaticVec<T, LEN> for StaticCowVec<'a, T, LEN> {
     unsafe fn as_ptr(&self) -> *const T {
         match self.is_owned {
