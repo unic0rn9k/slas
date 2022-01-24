@@ -79,15 +79,15 @@ impl_operations!(T
         normalize(const LEN: usize)()(a: &mut impl StaticVec<T, LEN>) where () -> ();
 
     MatrixMul
-        matrix_mul(A: StaticVec<T, ALEN>, B: StaticVec<T, BLEN>, const ALEN: usize, const BLEN: usize, const OLEN: usize)
-        (A, B, ALEN, BLEN, OLEN)
-        (a: &A, b: &B, m: usize, n: usize, k: usize)
+        matrix_mul(A: StaticVec<T, ALEN>, B: StaticVec<T, BLEN>, C: StaticVec<T, CLEN>, const ALEN: usize, const BLEN: usize, const CLEN: usize)
+        (A, B, C, ALEN, BLEN, CLEN)
+        (a: &A, b: &B, buffer: &mut C, m: usize, n: usize, k: usize)
         where (
             A: Sized,
             B: Sized,
+            C: Sized,
             T: Copy
-        )
-        ->  [T; OLEN];
+        ) -> ();
 );
 
 /// Perform opertaions on a [`StaticVec`] with a static backend.
@@ -173,6 +173,21 @@ use crate::tensor::MatrixShape;
 use crate::StaticVecUnion;
 impl_default_ops!(f32);
 impl_default_ops!(f64);
+
+impl<'a, T: Float + std::iter::Sum, const LEN: usize> StaticVecUnion<'a, T, LEN>
+where
+    Rust: Backend<T>,
+{
+    /// Normalize vector. Uses rust by default, as Normalize is not implemented for blas yet.
+    pub fn normalize(&mut self) {
+        Rust.normalize(self)
+    }
+
+    /// Returns norm of vector. Uses rust by default, as Normalize is not implemented for blas yet.
+    pub fn norm(&mut self) -> T {
+        Rust.norm(self)
+    }
+}
 
 impl<T, U: StaticVec<T, LEN>, B: Backend<T> + operations::DotProduct<T>, const LEN: usize>
     WithStaticBackend<T, U, B, LEN>

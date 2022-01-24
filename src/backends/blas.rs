@@ -68,22 +68,22 @@ macro_rules! impl_gemm {
             fn matrix_mul<
                 A: StaticVec<$t, ALEN>,
                 B: StaticVec<$t, BLEN>,
+                C: StaticVec<$t, CLEN>,
                 const ALEN: usize,
                 const BLEN: usize,
-                const OLEN: usize,
+                const CLEN: usize,
             >(
                 &self,
                 a: &A,
                 b: &B,
+                buffer: &mut C,
                 m: usize,
                 n: usize,
                 k: usize,
-            ) -> [$t; OLEN]
-            where
+            ) where
                 A: Sized,
                 B: Sized,
             {
-                let mut buffer = [<$t>::zero(); OLEN];
                 unsafe {
                     // TODO: gemv should be used here when other's dimensions are a transpose of self.
                     cblas_sys::$f(
@@ -99,11 +99,10 @@ macro_rules! impl_gemm {
                         b.as_ptr(),
                         n as i32,
                         0.,
-                        buffer.as_mut_ptr(),
+                        buffer.as_ptr() as *mut $t,
                         n as i32,
                     )
                 }
-                buffer
             }
         }
     };

@@ -96,10 +96,16 @@ impl<
         const LEN: usize,
     > Tensor<T, U, B, 2, LEN>
 {
-    pub fn matrix_mul<U2: StaticVec<T, LEN2>, const LEN2: usize, const OLEN: usize>(
+    pub fn matrix_mul_buffer<
+        U2: StaticVec<T, LEN2>,
+        U3: StaticVec<T, OLEN>,
+        const LEN2: usize,
+        const OLEN: usize,
+    >(
         &self,
         other: &Tensor<T, U2, B, 2, LEN2>,
-    ) -> [T; OLEN] {
+        buffer: &mut U3,
+    ) {
         let m = self.shape.axis_len(1);
         let k = self.shape.axis_len(0);
         let n = other.shape.axis_len(0);
@@ -112,9 +118,19 @@ impl<
             &self.data.backend,
             &self.data.data,
             &other.data.data,
+            buffer,
             m,
             n,
             k,
         )
+    }
+
+    pub fn matrix_mul<U2: StaticVec<T, LEN2>, const LEN2: usize, const OLEN: usize>(
+        &self,
+        other: &Tensor<T, U2, B, 2, LEN2>,
+    ) -> [T; OLEN] {
+        let mut buffer = [T::zero(); OLEN];
+        self.matrix_mul_buffer(other, &mut buffer);
+        buffer
     }
 }
