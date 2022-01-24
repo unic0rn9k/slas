@@ -35,10 +35,12 @@
 //! // This will always use blas for all operations on a
 //! ```
 //!
+//! The `StaticCowVec` derefences to `StaticVecUnino`, which in turn dereferences to `[T; LEN]`,
+//! so any method implemented for `[T;LEN]` can also be called on `StaticCowVec` and `StaticVecUnion`.
+//!
 //! [More example code here.](https://github.com/unic0rn9k/slas/blob/master/tests/src/main.rs)
 //!
-//!
-//! ## What is a COW and when is it usefull?
+//! ## What is a cow and when is it usefull?
 //! The copy-on-write functionality is inspired by [std::borrow::cow](https://doc.rust-lang.org/std/borrow/enum.Cow.html).
 //! The idea is simply that allocations (and time) can be saved, by figuring out when to copy at runtime instead of at compiletime.
 //! This can be memory inefficient at times (as an enum takes the size of its largest field + tag size), which is why you can optionally use `StaticVecUnion`s and `StaticVec`s instead.
@@ -54,7 +56,7 @@
 //! **moo** returns a `StaticCowVec` that references `self`. This is usefull if you don't know if you need mutable access to you vector and you don't want sideeffects.
 //! If you want to copy data into a `StaticCowVec` then `StaticCowVec::from` is what you need.
 //!
-//!  ### In code...
+//!  ### Example of cow behavior
 //! ```rust
 //! use slas::prelude::*;
 //!
@@ -87,7 +89,7 @@
 //! assert_eq!(source, vec![1., 3., 4.]);
 //! ```
 //! In the example above, you can see `v` changed value the first time `source` was mutated, but not the second time.
-//! This is because `v` was copied when it was mutated at the line after the first mutation of `source`.
+//! This is because `v` was copied when it was mutated.
 //!
 //! ## Matrix example
 //!
@@ -97,24 +99,33 @@
 //!
 //! let a = moo![f32: 1..=6].matrix::<Blas, 2, 3>();
 //! let b = moo![f32: 1..=6].matrix::<Blas, 3, 2>();
-//! let c: [f32; 4] = a.matrix_mul(&b);
+//! let c = a.matrix_mul(&b);
 //!
 //! assert_eq!(c, [22., 28., 49., 64.]);
 //!
 //! println!("{a:.0?} * {b:.0?} = {:.0?}", c.matrix::<Blas, 2, 2>());
 //! ```
 //!
-//! If you want a look at whats to come in the future,
-//! you can go [here](https://github.com/unic0rn9k/slas/tree/experimental/src/experimental)
-//! for some *very* experimental source code for the project.
+//! ## Tensor example
+//! At the moment tensors can't do much
+//! ```
+//! use slas::prelude::*;
+//! let t = moo![f32: 0..27].reshape(&[3, 3, 3], slas_backend::Rust);
+//! ```
+//! Thats pretty much it for now...
 //!
 //! ## Why not just use ndarray (or alike)?
 //! Slas can be faster than ndarray in some specific use cases, like when having to do a lot of allocations, or when using referenced data in vector operations.
 //! Besides slas should always be atleast as fast as ndarray, so it can't hurt.
 //!
+//! Ndarray will always use the backend you choose in your cargo.toml.
+//! With slas you can choose a backend in code and even create your own backend that fits your needs.
+//!
 //! Statical allocation and the way slas cow behavior works with the borrow checker,
 //! also means that you might catch a lot of bugs at compiletime,
 //! where ndarray most of the time will let you get away with pretty much anything.
+//! For example taking the dot product of two vectors with different sizes,
+//! will cause a panic in ndarray and a compiletime error in slas.
 //!
 //! ## Installation
 //! By default slas will assume you have blis installed on your system.
@@ -125,12 +136,14 @@
 //! On the crates.io version of slas (v0.1.0 and 0.1.1) blis is compiled automatically.
 //!
 //! For now, if you want to use the git version of slas, you need to install blis on your system.
-//! - On Arch linux `blis-cblas` v0.7.0 from the AUR has been tested and works fine.
+//! - On Arch linux [blis-cblas](https://aur.archlinux.org/packages/blis-cblas/) v0.7.0 from the AUR has been tested and works fine.
 //! - On Debian you can simply run `apt install libblis-dev`.
+//! - On Windows [openblas-src](https://github.com/blas-lapack-rs/openblas-src) has been tested.
+//! This mean you will need to disable slas default features,
+//! follow the installation instructions in the openblas readme and add `extern crate openblas_src` to your main file.
 //!
-//! ## General info...
+//! ## Misc
 //! - Slas is still in very early days, and is subject to a lot of breaking changes.
-//! - The `StaticCowVec` type implements `deref` and `deref_mut`, so any method implemented for `[T;LEN]` is also implemented for `StaticCowVec`.
 //! - [Benchmarks, tests and related](https://github.com/unic0rn9k/slas/tree/master/tests)
 //!
 //! ## TODO
@@ -149,11 +162,11 @@
 //!
 //! ## TODO Before v0.2.0
 //! - ~~Feature flag for choosing own blas provider~~
-//! - More operations implemented for backends
-//! - Rewrite documentation
+//! - ~~More operations implemented for backends~~
+//! - ~~Rewrite documentation~~
 //! - ~~`WithStaticBackend` struct for vectors with associated backends~~
 //! - Write unit tests to make sure unsafe functions can't produce ub.
-//! - Make less terrible benchmarks
+//! - ~~Make less terrible benchmarks~~
 //! - ~~`Normalize` operation for backends - to prove mutable access to vectors also work in backends, even with StaticCowVecs.~~
 
 #![allow(incomplete_features)]

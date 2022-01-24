@@ -295,7 +295,7 @@ mod versus {
         use slas::prelude::*;
 
         #[bench]
-        fn dot(be: &mut Bencher) {
+        fn dot_default(be: &mut Bencher) {
             let a = super::RAND_VECS[0].moo();
             let b = super::RAND_VECS[1].moo();
 
@@ -311,7 +311,7 @@ mod versus {
         }
 
         #[bench]
-        fn dot_slas(be: &mut Bencher) {
+        fn dot_rust(be: &mut Bencher) {
             let a = super::RAND_VECS[0];
             let b = super::RAND_VECS[1];
 

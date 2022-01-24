@@ -9,35 +9,43 @@ If you want to compare performance of slas, [ndarray](https://lib.rs/ndarray) an
 
 
 # Dot product benchmarks
-## Benchmark 1
-**This is a bad benchmark, and I know it. This is mostly just here as a place holder until I a) have more stuff to benchmark, and b) I actually start optimizing the code beyond the initial performance focused design.**
+All benchmarks are for 32-bit real floats using blis as a blas provider.
+Allocations are not being benchmarked, only the actual dot product function. 
+Benchmarks have been run for vectors of multiple different sizes, the most relevant results are shown bellow.
 
-On my machine slas got slightly better performance when benchmarking dot products of vectors larger than 300 elements.
-The performance advantage was only present when allocating inside the benchmark loop.
-This is reasonable, since slas and ndarray both call blis. So the only part of slas that is faster is allocation, which is to be expected, since it is entirely statically allocated, whereas ndarray is dynamically allocated.
-
-``` text
-test vs_ndarray::ndarray::dot   ... bench:       5,719 ns/iter (+/- 1,185)
-test vs_ndarray::slas::dot      ... bench:       5,455 ns/iter (+/- 755)
+## 100
 ```
-*Benchmark for 500 elements and 32-bit floats using blis as backend for both slas and ndarray.*
+test versus::nalgebra::dot     ... bench:          18 ns/iter (+/- 2)
+test versus::ndarray::dot      ... bench:          53 ns/iter (+/- 8)
+test versus::slas::dot_blas    ... bench:          52 ns/iter (+/- 8)
+test versus::slas::dot_default ... bench:          19 ns/iter (+/- 3)
+test versus::slas::dot_rust    ... bench:          19 ns/iter (+/- 2)
+```
 
-## Benchmark 2
+## 750
+```
+test versus::nalgebra::dot     ... bench:         136 ns/iter (+/- 26)
+test versus::ndarray::dot      ... bench:         128 ns/iter (+/- 14)
+test versus::slas::dot_blas    ... bench:         126 ns/iter (+/- 20)
+test versus::slas::dot_default ... bench:         126 ns/iter (+/- 16)
+test versus::slas::dot_rust    ... bench:         230 ns/iter (+/- 29)
+```
 
-After some tweaking slas now outperforms nalgebra and ndarray for vectors of 750 or more elements.
-Slas gets 2x the performance of nalgebra with 10,000 elements.
-nalgebra still gets about 3x performance for 100 elements and 10x for 10 elements.
+## 10000
+```
+test versus::nalgebra::dot     ... bench:       1,700 ns/iter (+/- 305)
+test versus::ndarray::dot      ... bench:       1,044 ns/iter (+/- 69)
+test versus::slas::dot_blas    ... bench:       1,086 ns/iter (+/- 113)
+test versus::slas::dot_default ... bench:       1,077 ns/iter (+/- 233)
+test versus::slas::dot_rust    ... bench:       3,403 ns/iter (+/- 538)
+```
 
-I think this is because nalgebra's dot function is written in rust,
-so it can do loop unrolling, as the vectors are statically allocated.
-
-So my goal for now is to write a rust implementation of the dot product with loop unrolling and simd,
-which will be used for vectors smaller than ~750 elements.
+## 20000
 
 ```
-test versus::nalgebra::dot  ... bench:         159 ns/iter (+/- 6)
-test versus::ndarray::dot   ... bench:         149 ns/iter (+/- 58)
-test versus::slas::dot      ... bench:         146 ns/iter (+/- 4)
-test versus::slas::dot_fast ... bench:         126 ns/iter (+/- 2)
+test versus::nalgebra::dot     ... bench:       3,494 ns/iter (+/- 529)
+test versus::ndarray::dot      ... bench:       2,452 ns/iter (+/- 449)
+test versus::slas::dot_blas    ... bench:       2,090 ns/iter (+/- 277)
+test versus::slas::dot_default ... bench:       2,252 ns/iter (+/- 375)
+test versus::slas::dot_rust    ... bench:       6,897 ns/iter (+/- 886)
 ```
-*Benchmark for 750 elements and 32-bit floats using blis as backend for both slas and ndarray.*

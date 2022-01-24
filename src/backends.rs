@@ -43,6 +43,27 @@
 //!     20.
 //! );
 //! ```
+//!
+//! # Custom backend example
+//! ```rust
+//! use slas::prelude::*;
+//! use slas::backends::operations;
+//!
+//! #[derive(Default)]
+//! pub struct CustomBackend;
+//!
+//! impl<T: Float + std::iter::Sum> operations::DotProduct<T> for CustomBackend {
+//!     fn dot<const LEN: usize>(
+//!         &self,
+//!         a: &impl StaticVec<T, LEN>,
+//!         b: &impl StaticVec<T, LEN>,
+//!     ) -> T {
+//!         a.moo_ref().iter().zip(b.moo_ref().iter()).map(|(&a, &b)| a * b).sum()
+//!     }
+//! }
+//!
+//! impl<T> Backend<T> for CustomBackend{}
+//! ```
 
 use std::marker::PhantomData;
 
@@ -158,7 +179,7 @@ macro_rules! impl_default_ops {
             /// assert!(moo![f32: 0..4].dot([1.2; 4].moo_ref()) - 7.2 < 0.000003)
             /// ```
             pub fn dot(&self, other: &Self) -> $t {
-                if LEN > 750 {
+                if LEN >= 750 {
                     // FIXME: This should not always be 750.
                     Blas.dot(self, other)
                 } else {
