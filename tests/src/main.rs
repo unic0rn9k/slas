@@ -238,6 +238,14 @@ mod tensors {
             .static_backend::<slas_backend::Blas>()
             .reshape(&[2, 2]);
     }
+
+    #[test]
+    #[should_panic]
+    fn wrong_index() {
+        use slas::prelude::*;
+        let t = moo![f32: 0..27].reshape(&[3, 3, 3], slas_backend::Rust);
+        assert_eq!(t[[3, 0, 0]], 9.);
+    }
 }
 
 #[cfg(all(test, feature = "versus"))]

@@ -114,6 +114,7 @@
 //! ```
 //! use slas::prelude::*;
 //! let t = moo![f32: 0..27].reshape(&[3, 3, 3], slas_backend::Rust);
+//! assert_eq!(t[[0, 0, 1]], 9.);
 //! ```
 //! Thats pretty much it for now...
 //!

@@ -53,23 +53,13 @@ impl<const M: usize, const K: usize> const Shape<2> for MatrixShape<M, K> {
 
 /// Statically allocated tensor.
 /// See [`StaticVec::reshape`] for constructing a tensor.
-pub struct Tensor<
-    T,
-    U: StaticVec<T, LEN> + 'static,
-    B: Backend<T>,
-    const NDIM: usize,
-    const LEN: usize,
-> {
+pub struct Tensor<T, U: StaticVec<T, LEN>, B: Backend<T>, const NDIM: usize, const LEN: usize> {
     pub data: WithStaticBackend<T, U, B, LEN>,
     pub shape: &'static dyn Shape<NDIM>,
 }
 
-impl<
-        T: Float + std::fmt::Debug,
-        B: Backend<T>,
-        U: StaticVec<T, LEN> + 'static,
-        const LEN: usize,
-    > std::fmt::Debug for Tensor<T, U, B, 2, LEN>
+impl<T: Float + std::fmt::Debug, B: Backend<T>, U: StaticVec<T, LEN>, const LEN: usize>
+    std::fmt::Debug for Tensor<T, U, B, 2, LEN>
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str("[\n")?;
@@ -86,6 +76,59 @@ impl<
         }
         f.write_str("]")?;
         Ok(())
+    }
+}
+
+fn debug_shape<const NDIM: usize>(s: &dyn Shape<NDIM>) -> String {
+    (0..NDIM)
+        .map(|n| s.axis_len(n).to_string())
+        .collect::<Vec<_>>()
+        .join(",")
+}
+
+fn tensor_index<T: Shape<NDIM>, const NDIM: usize>(s: &dyn Shape<NDIM>, o: &T) -> usize {
+    let mut sum = 0;
+    let mut product = 1;
+    for n in 0..NDIM {
+        let i = o.axis_len(n);
+        let j = s.axis_len(n);
+        assert!(
+            i < j,
+            "Index {} out of bounds {}",
+            debug_shape(o),
+            debug_shape(s)
+        );
+        sum += i * product;
+        product *= j;
+    }
+    sum
+}
+
+impl<
+        T,
+        U: StaticVec<T, LEN>,
+        B: Backend<T>,
+        S: Shape<NDIM>,
+        const NDIM: usize,
+        const LEN: usize,
+    > std::ops::Index<S> for Tensor<T, U, B, NDIM, LEN>
+{
+    type Output = T;
+    fn index(&self, i: S) -> &T {
+        unsafe { self.data.get_unchecked(tensor_index(self.shape, &i)) }
+    }
+}
+impl<
+        T,
+        U: StaticVec<T, LEN>,
+        B: Backend<T>,
+        S: Shape<NDIM>,
+        const NDIM: usize,
+        const LEN: usize,
+    > std::ops::IndexMut<S> for Tensor<T, U, B, NDIM, LEN>
+{
+    fn index_mut(&mut self, i: S) -> &mut T {
+        unsafe { self.data.get_unchecked_mut(tensor_index(self.shape, &i)) }
     }
 }
 

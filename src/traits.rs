@@ -64,6 +64,11 @@ pub trait StaticVec<T, const LEN: usize> {
         transmute(self.as_ptr().offset(i as isize))
     }
 
+    /// Same as [`get_unchecked`] but mutable.
+    unsafe fn get_unchecked_mut<'a>(&'a mut self, i: usize) -> &'a mut T {
+        transmute(self.as_ptr().offset(i as isize))
+    }
+
     /// Returns a static slice spanning from index i to i+SLEN.
     unsafe fn static_slice_unchecked<'a, const SLEN: usize>(&'a self, i: usize) -> &'a [T; SLEN] {
         transmute::<*const T, &'a [T; SLEN]>(self.as_ptr().offset(i as isize))
