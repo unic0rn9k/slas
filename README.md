@@ -138,7 +138,7 @@ Remember to add `extern crate blas_src;` if you use blas-src as a blas provider.
 
 On the crates.io version of slas (v0.1.0 and 0.1.1) blis is compiled automatically.
 
-For now, if you want to use the git version of slas, you need to install blis on your system.
+For now, if you want to use the newest version of slas, you need to install blis/blas on your system.
 - On Arch linux [blis-cblas](https://aur.archlinux.org/packages/blis-cblas/) v0.7.0 from the AUR has been tested and works fine.
 - On Debian you can simply run `apt install libblis-dev`.
 - On Windows [openblas-src](https://github.com/blas-lapack-rs/openblas-src) has been tested.
@@ -163,12 +163,11 @@ follow the installation instructions in the openblas readme and add `extern crat
 - ~~Refactor backends to make it more generic~~
     - Default backend for default operations
 
-### TODO Before v0.2.0
+### TODO Before v0.2.0 🎉
 - ~~Feature flag for choosing own blas provider~~
 - ~~More operations implemented for backends~~
 - ~~Rewrite documentation~~
 - ~~`WithStaticBackend` struct for vectors with associated backends~~
-- Write unit tests to make sure unsafe functions can't produce ub.
 - ~~Make less terrible benchmarks~~
 - ~~`Normalize` operation for backends - to prove mutable access to vectors also work in backends, even with StaticCowVecs.~~
 
