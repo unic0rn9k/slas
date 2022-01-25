@@ -177,3 +177,10 @@ impl<
         buffer
     }
 }
+
+#[macro_export]
+macro_rules! m {
+    ($m: expr, $k: expr) => {
+        MatrixShape::<$m, $k>
+    };
+}

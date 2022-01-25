@@ -109,6 +109,18 @@
 //! println!("{a:.0?} * {b:.0?} = {:.0?}", c.matrix::<Blas, 2, 2>());
 //! ```
 //!
+//! Indexing into matricies can be done both with columns and rows first.
+//! When indexing with `[usize; 2]` it will take columns first, where as using `m!` will be rows first.
+//!
+//! ```rust
+//! use slas::prelude::*;
+//! use slas_backend::*;
+//!
+//! let a = moo![f32: 1..=6].matrix::<Blas, 2, 3>();
+//!
+//! assert_eq!(a[[0, 1]], a[m![1, 0]]);
+//! ```
+//!
 //! ## Tensor example
 //! At the moment tensors can't do much
 //! ```
