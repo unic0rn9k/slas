@@ -53,6 +53,8 @@ impl<const M: usize, const K: usize> const Shape<2> for MatrixShape<M, K> {
 
 /// Statically allocated tensor.
 /// See [`StaticVec::reshape`] for constructing a tensor.
+/// The use of `&'static dyn Shape<NDIM>` does not mean slower performance,
+/// as long as Shape is [const implemented](https://github.com/rust-lang/rust/issues/67792) for the type of the shape instance.
 pub struct Tensor<T, U: StaticVec<T, LEN>, B: Backend<T>, const NDIM: usize, const LEN: usize> {
     pub data: WithStaticBackend<T, U, B, LEN>,
     pub shape: &'static dyn Shape<NDIM>,
