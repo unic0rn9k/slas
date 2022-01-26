@@ -10,7 +10,7 @@
 
 </div>
 
-Provides statically allocated vector, matrix and tensor types, for interfacing with blas/blis, in a performant manner, using copy-on-write (aka cow) behavior by default.
+Provides statically allocated vector, matrix and tensor types, for interfacing with blas/blis, in a performant manor, using copy-on-write (aka cow) behavior by default.
 
 [What is BLAS?](http://www.netlib.org/blas/)
 
@@ -35,12 +35,12 @@ let a = moo![on slas_backend::Blas:f32: 1, 2, 3.2];
 // This will always use blas for all operations on a
 ```
 
-The `StaticCowVec` derefences to `StaticVecUnino`, which in turn dereferences to `[T; LEN]`,
+The `StaticCowVec` dereferences to `StaticVecUnion`, which in turn dereferences to `[T; LEN]`,
 so any method implemented for `[T;LEN]` can also be called on `StaticCowVec` and `StaticVecUnion`.
 
 [More example code here.](https://github.com/unic0rn9k/slas/blob/master/tests/src/main.rs)
 
-### What is a cow and when is it usefull?
+### What is a cow and when is it useful?
 The copy-on-write functionality is inspired by [std::borrow::cow](https://doc.rust-lang.org/std/borrow/enum.Cow.html).
 The idea is simply that allocations (and time) can be saved, by figuring out when to copy at runtime instead of at compiletime.
 This can be memory inefficient at times (as an enum takes the size of its largest field + tag size), which is why you can optionally use `StaticVecUnion`s and `StaticVec`s instead.
@@ -50,13 +50,13 @@ You can call `moo`, `moo_ref` and `mut_moo_ref` on any type that implements `Sta
 This is most efficient when you know you don't need mutable access or ownership of a vector.
 
 **mut_moo_ref** returns a `MutStaticVecRef`.
-This is a lot like `moo_ref`, but is usefull when you want to mutate your data in place (fx if you wan't to normalize a vector).
-You should only use this if you want mutable access to a vector WITH sideeffects.
+This is a lot like `moo_ref`, but is useful when you want to mutate your data in place (fx if you wan't to normalize a vector).
+You should only use this if you want mutable access to a vector WITH side effects.
 
-**moo** returns a `StaticCowVec` that references `self`. This is usefull if you don't know if you need mutable access to you vector and you don't want sideeffects.
+**moo** returns a `StaticCowVec` that references `self`. This is useful if you don't know if you need mutable access to you vector and you don't want side effects.
 If you want to copy data into a `StaticCowVec` then `StaticCowVec::from` is what you need.
 
-**moo_owned** will just return a `StaticVecUnion`. This is usefull when you really just wan't a [T; LEN],
+**moo_owned** will just return a `StaticVecUnion`. This is useful when you really just want a [T; LEN],
 but you need methods only implemented for a `StaticVecUnion`.
 
  ### Example of cow behavior
@@ -128,16 +128,16 @@ use slas::prelude::*;
 let t = moo![f32: 0..27].reshape(&[3, 3, 3], slas_backend::Rust);
 assert_eq!(t[[0, 0, 1]], 9.);
 ```
-Thats pretty much it for now...
+That's pretty much it for now...
 
 ### Why not just use ndarray (or alike)?
 Slas can be faster than ndarray in some specific use cases, like when having to do a lot of allocations, or when using referenced data in vector operations.
 Besides slas should always be atleast as fast as ndarray, so it can't hurt.
 
-Ndarray will always use the backend you choose in your cargo.toml.
+Ndarray will always use the backend you choose in your `Cargo.toml`.
 With slas you can choose a backend in code and even create your own backend that fits your needs.
 
-Statical allocation and the way slas cow behavior works with the borrow checker,
+Static allocation and the way slas cow behavior works with the borrow checker,
 also means that you might catch a lot of bugs at compiletime,
 where ndarray most of the time will let you get away with pretty much anything.
 For example taking the dot product of two vectors with different sizes,
@@ -171,7 +171,7 @@ follow the installation instructions in the openblas readme and add `extern crat
 - ~~Make StaticCowVec backed by a union - so that vectors that are always owned can also be supported (useful for memory critical systems, fx. embeded devices).~~
 - ~~Modular backends - [like in coaster](https://github.com/spearow/juice/tree/master/coaster)~~
     - GPU support - maybe with cublas
-    - ~~Pure rust support - usefull for irust and jupyter support.~~
+    - ~~Pure rust support - useful for irust and jupyter support.~~
     - `DynacmicBackend` for selecting backends at runtime
 - ~~Refactor backends to make it more generic~~
     - Default backend for default operations
