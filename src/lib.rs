@@ -56,7 +56,7 @@
 //! **moo** returns a `StaticCowVec` that references `self`. This is useful if you don't know if you need mutable access to you vector and you don't want side effects.
 //! If you want to copy data into a `StaticCowVec` then `StaticCowVec::from` is what you need.
 //!
-//! **moo_owned** will just return a `StaticVecUnion`. This is useful when you really just want a [T; LEN],
+//! **moo_owned** will just return a `StaticVecUnion`. This is useful when you really just want a `[T; LEN]`,
 //! but you need methods only implemented for a `StaticVecUnion`.
 //!
 //!  ### Example of cow behavior
