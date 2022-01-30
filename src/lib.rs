@@ -191,7 +191,8 @@
     const_fn_trait_bound,
     const_trait_impl,
     const_ptr_as_ref,
-    const_option
+    const_option,
+    associated_type_defaults
 )]
 
 //mod matrix_stable;
@@ -291,9 +292,10 @@ impl<'a, T: Copy, const LEN: usize> Deref for StaticCowVec<'a, T, LEN> {
     type Target = StaticVecUnion<'a, T, LEN>;
 
     fn deref(&self) -> &Self::Target {
-        match self.is_owned {
-            true => &self.data,
-            false => unsafe { transmute(self.data.borrowed) },
+        if self.is_owned {
+            &self.data
+        } else {
+            unsafe { transmute(self.data.borrowed) }
         }
     }
 }
@@ -371,17 +373,18 @@ macro_rules! moo {
         StaticCowVec::from($($v)*)
     }};
     ($t: ty: $a: literal .. $b: literal) => {{
-        let mut tmp = StaticCowVec::from([0 as $t; $b - $a]);
+        let mut tmp = StaticCowVec::from([<$t>::zero(); $b - $a]);
         tmp.iter_mut().zip($a..$b).for_each(|(o, i)| *o = i as $t);
         tmp
     }};
     ($t: ty: $a: literal ..= $b: literal) => {{
-        let mut tmp = StaticCowVec::from([0 as $t; $b - $a+1]);
+        let mut tmp = StaticCowVec::from([<$t>::zero(); $b - $a+1]);
         tmp.iter_mut().zip($a..=$b).for_each(|(o, i)| *o = i as $t);
         tmp
     }};
     ($t: ty: $($v: expr),* $(,)?) => {{
-        StaticCowVec::from([$({$v} as $t),*])
+        use std::convert::TryFrom;
+        StaticCowVec::from([$( $v as $t ),*])
     }};
     ($($v: tt)*) => {{
         StaticCowVec::from([$($v)*])
