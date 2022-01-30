@@ -163,26 +163,7 @@
 //! - [Benchmarks, tests and related](https://github.com/unic0rn9k/slas/tree/master/tests)
 //!
 //! ## TODO
-//! - Matrix multiplication operation should use a buffer and `*` operator should return matrix with correct shape
-//! - ~~Rust version of blas functions allowing for loop unrolling - also compile time checks for choosing fastest function~~
-//! - Feature support for conversion between [ndarray](lib.rs/ndarray) types
-//! - Allow for use on stable channel - perhabs with a stable feature
-//! - Implement stable tensors - perhabs for predefined dimensions with a macro
-//! - ~~Make StaticCowVec backed by a union - so that vectors that are always owned can also be supported (useful for memory critical systems, fx. embeded devices).~~
-//! - ~~Modular backends - [like in coaster](https://github.com/spearow/juice/tree/master/coaster)~~
-//!     - GPU support - maybe with cublas
-//!     - ~~Pure rust support - useful for irust and jupyter support.~~
-//!     - `DynacmicBackend` for selecting backends at runtime
-//! - ~~Refactor backends to make it more generic~~
-//!     - Default backend for default operations
-//!
-//! ## TODO Before v0.2.0 🎉
-//! - ~~Feature flag for choosing own blas provider~~
-//! - ~~More operations implemented for backends~~
-//! - ~~Rewrite documentation~~
-//! - ~~`WithStaticBackend` struct for vectors with associated backends~~
-//! - ~~Make less terrible benchmarks~~
-//! - ~~`Normalize` operation for backends - to prove mutable access to vectors also work in backends, even with StaticCowVecs.~~
+//! [Progress and todos are now on trello!](https://trello.com/b/iSakt16M/slas%F0%9F%8C%BF)
 
 #![allow(incomplete_features)]
 #![feature(
