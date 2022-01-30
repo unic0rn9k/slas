@@ -226,6 +226,12 @@ impl<T, const LEN: usize> StaticVec<T, LEN> for [T; LEN] {
 }
 
 /// Pretend dynamically shaped data is statical, meaning it implements [`StaticVec`].
+///
+/// ## Example
+/// ```rust
+/// use slas::prelude::*;
+/// moo![f32: 1, 2, 3].dot(vec![1., 2., 3.].pretend_static().moo_ref());
+/// ```
 pub struct PretendStaticVec<I, T: DynamicVec<I> + ?Sized, const LEN: usize>(Box<T>, PhantomData<I>);
 
 impl<I, T: DynamicVec<I>, const LEN: usize> StaticVec<I, LEN> for PretendStaticVec<I, T, LEN> {
@@ -263,12 +269,14 @@ impl<T> DynamicVec<T> for Box<[T]> {
 
 impl<'a, T: Copy, const LEN: usize> StaticVec<T, LEN> for StaticCowVec<'a, T, LEN> {
     unsafe fn as_ptr(&self) -> *const T {
-        match self.is_owned {
-            true => self.data.as_ptr(),
-            false => self.data.borrowed as *const T,
+        if self.is_owned {
+            self.data.as_ptr()
+        } else {
+            self.data.borrowed as *const T
         }
     }
 
+    /// For [`StaticCowVec`] calling mut_moo_ref will dereference self and thereby copy the contents of self.borrowed into self, if self is borrowed.
     fn mut_moo_ref<'b>(&'b mut self) -> MutStaticVecRef<'b, T, LEN>
     where
         T: Copy,
