@@ -137,14 +137,14 @@ mod moo {
 
     #[test]
     fn norm_complex_2d() {
-        //let c = Complex::<f32> { re: 1.2, im: 2.3 };
+        let c = Complex::<f32> { re: 1.2, im: 2.3 };
 
-        //let a = moo![c; 2].static_backend::<slas_backend::Blas>();
-        //assert_eq!(a.norm(), 3.668787265568828);
+        let a = moo![c; 2].static_backend::<slas_backend::Blas>();
+        assert_eq!(a.norm(), 3.668787265568828);
 
         // More accurate on rust, but much slower.
-        //let a = moo![c; 2].static_backend::<slas_backend::Rust>();
-        //assert_eq!(a.norm(), 3.668787265568828);
+        let a = moo![c; 2].static_backend::<slas_backend::Rust>();
+        assert_eq!(a.norm(), 3.668787265568828);
     }
 
     #[test]
