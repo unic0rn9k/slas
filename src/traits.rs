@@ -1,5 +1,6 @@
 use crate::prelude::*;
 use crate::StaticVecUnion;
+use paste::paste;
 use std::marker::PhantomData;
 use std::mem::transmute;
 use std::mem::transmute_copy;
@@ -25,6 +26,34 @@ use std::ops::DerefMut;
 ///     }
 /// }
 /// ```
+
+macro_rules! impl_reshape_unchecked_ref {
+	($($mut: tt)?) => {
+        paste!{
+		    unsafe fn [<reshape_unchecked_ref $(_$mut)?>]<
+                'a,
+                B: crate::backends::Backend<T>,
+                S: crate::tensor::Shape<NDIM>,
+                const NDIM: usize,
+            >(
+                &'a $($mut)? self,
+                shape: &'static S,
+                backend: B,
+            ) -> crate::tensor::Tensor<T, & $($mut)? [T; LEN], B, NDIM, LEN>
+            where
+                Self: Sized,
+            {
+                Tensor {
+                    data: crate::backends::WithStaticBackend::from_static_vec(
+                        transmute(self.[< as $(_$mut)? _ptr>]()),
+                        backend,
+                    ),
+                    shape,
+                }
+            }
+        }
+	};
+}
 
 //TODO: Likely need to move deref and deref_mut into this trait, to avoid weird behavior with passing StaticCowVec as &mut impl StaticVec.
 /// Trait for statically shaped, contiguous vectors.
@@ -160,27 +189,8 @@ pub trait StaticVec<T, const LEN: usize> {
         }
     }
 
-    unsafe fn reshape_unchecked_ref<
-        'a,
-        B: crate::backends::Backend<T>,
-        S: crate::tensor::Shape<NDIM>,
-        const NDIM: usize,
-    >(
-        &'a self,
-        shape: &'static S,
-        backend: B,
-    ) -> crate::tensor::Tensor<T, &[T; LEN], B, NDIM, LEN>
-    where
-        Self: Sized,
-    {
-        Tensor {
-            data: crate::backends::WithStaticBackend::from_static_vec(
-                transmute(self.as_ptr()),
-                backend,
-            ),
-            shape,
-        }
-    }
+    impl_reshape_unchecked_ref!(mut);
+    impl_reshape_unchecked_ref!();
 }
 
 macro_rules! dyn_cast_panic {
@@ -296,22 +306,38 @@ impl<T, const LEN: usize> StaticVec<T, LEN> for [T; LEN] {
         self as *const T
     }
 }
-impl<T, const LEN: usize> StaticVec<T, LEN> for &[T; LEN] {
-    unsafe fn as_ptr(&self) -> *const T {
-        *self as *const T
-    }
-    unsafe fn as_mut_ptr(&mut self) -> *mut T {
-        panic!("Cannot get mutable pointer from &[T; LEN]. Maybe try &mut [T; LEN] instead.")
-    }
+
+macro_rules! impl_vec_for_refs {
+	($($mut: tt)?) => {
+		impl<T, const LEN: usize> StaticVec<T, LEN> for & $($mut)? [T; LEN] {
+            unsafe fn as_ptr(&self) -> *const T {
+                (**self).as_ptr()
+            }
+            unsafe fn as_mut_ptr(&mut self) -> *mut T {
+                if stringify!($($mut)?) == "mut"{
+                    (*self).as_mut_ptr()
+                }else{
+                    panic!("Cannot get mutable pointer from &[T; LEN]. Maybe try &mut [T; LEN] instead.")
+                }
+            }
+        }
+        impl<'a, T: Copy, const LEN: usize> StaticVec<T, LEN> for paste!([<$($mut:camel)? StaticVecRef>]<'a, T, LEN>) {
+            unsafe fn as_ptr(&self) -> *const T {
+                (**self).as_ptr()
+            }
+            unsafe fn as_mut_ptr(&mut self) -> *mut T {
+                if stringify!($($mut)?) == "mut"{
+                    (*self).as_mut_ptr()
+                }else{
+                    panic!("Cannot get mutable pointer from StaticVecRef<'a, T, LEN>. Maybe try MutStaticVecRef<'a, T, LEN> instead.")
+                }
+            }
+        }
+	};
 }
-impl<'a, T: Copy, const LEN: usize> StaticVec<T, LEN> for StaticVecRef<'a, T, LEN> {
-    unsafe fn as_ptr(&self) -> *const T {
-        transmute(*self)
-    }
-    unsafe fn as_mut_ptr(&mut self) -> *mut T {
-        panic!("Cannot get mutable pointer from StaticVecRef<'a, T, LEN>. Maybe try MutStaticVecRef<'a, T, LEN> instead.")
-    }
-}
+
+impl_vec_for_refs!();
+impl_vec_for_refs!(mut);
 
 /// Pretend dynamically shaped data is statical, meaning it implements [`StaticVec`].
 ///

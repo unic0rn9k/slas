@@ -309,6 +309,18 @@ mod tensors {
     }
 
     #[test]
+    fn sub_tensors_mutation() {
+        use slas::prelude::*;
+
+        let mut t = moo![f32: 0..27]
+            .moo_owned()
+            .reshape(&[3, 3, 3], slas_backend::Rust);
+        let mut t = t.index_slice_mut(1);
+        t[[0, 0]] = 8.;
+        assert_eq!(t[[0, 0]], 8.);
+    }
+
+    #[test]
     #[should_panic]
     fn sub_tensors_index_out_of_bounds() {
         use slas::prelude::*;

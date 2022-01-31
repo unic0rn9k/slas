@@ -1,4 +1,5 @@
 use crate::{backends::*, prelude::*};
+use paste::paste;
 use std::hint::unreachable_unchecked;
 
 /// Tensor shape with static dimensions but with optionally dynamic shape.
@@ -160,31 +161,39 @@ where
     }
 }
 
-impl<'a, T, U: StaticVec<T, LEN> + 'a, B: Backend<T>, const NDIM: usize, const LEN: usize>
-    Tensor<T, U, B, NDIM, LEN>
-where
-    [(); NDIM - 1]: Sized,
-    &'a U: StaticVec<T, LEN>,
-{
-    pub fn index_slice(&'a self, i: usize) -> Tensor<T, &'a [T; LEN], B, { NDIM - 1 }, LEN> {
-        assert!(NDIM > 1);
-        assert!(i < self.shape.axis_len(0));
+macro_rules! impl_index_slice {
+	($($mut: tt)?) => {
+		impl<'a, T, U: StaticVec<T, LEN> + 'a, B: Backend<T>, const NDIM: usize, const LEN: usize>
+            Tensor<T, U, B, NDIM, LEN>
+        where
+            [(); NDIM - 1]: Sized,
+            &'a $($mut)? U: StaticVec<T, LEN>,
+        {
+            paste!{pub fn [<index_slice $(_$mut)?>] (&'a $($mut)? self, i: usize) -> Tensor<T, &'a $($mut)? [T; LEN], B, { NDIM - 1 }, LEN> {
+                assert!(NDIM > 1);
+                assert!(i < self.shape.axis_len(0));
 
-        unsafe {
-            std::mem::transmute::<*const T, &'a [T; LEN]>(
-                self.data
-                    .as_ptr()
-                    .add(i * (self.shape.volume() / self.shape.axis_len(NDIM - 1))),
-            )
-            .reshape_unchecked_ref(
-                std::mem::transmute::<*const usize, &[usize; NDIM - 1]>(
-                    self.shape.slice()[0..NDIM - 1].as_ptr(),
-                ),
-                B::default(),
-            )
+                unsafe {
+                    std::mem::transmute::<*const T, &'a $($mut)? [T; LEN]>(
+                        self.data
+                            .[< as $(_$mut)? _ptr>]()
+                            .add(i * (self.shape.volume() / self.shape.axis_len(NDIM - 1))),
+                    )
+                    .[<reshape_unchecked_ref $(_$mut)? >](
+                        std::mem::transmute::<*const usize, &[usize; NDIM - 1]>(
+                            self.shape.slice()[0..NDIM - 1].as_ptr(),
+                        ),
+                        B::default(),
+                    )
+                }
+            }
+            }
         }
-    }
+	};
 }
+
+impl_index_slice!();
+impl_index_slice!(mut);
 
 impl<
         T: Float + Sized,
