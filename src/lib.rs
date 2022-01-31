@@ -127,6 +127,10 @@
 //! use slas::prelude::*;
 //! let t = moo![f32: 0..27].reshape(&[3, 3, 3], slas_backend::Rust);
 //! assert_eq!(t[[0, 0, 1]], 9.);
+//!
+//! let mut s = t.index_slice(1);
+//!
+//! assert_eq!(s[m![0, 0]], 9.);
 //! ```
 //! That's pretty much it for now...
 //!

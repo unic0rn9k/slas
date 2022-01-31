@@ -115,7 +115,7 @@ pub trait StaticVec<T, const LEN: usize> {
     where
         T: Copy,
     {
-        &mut *self.mut_moo_ref().as_mut_ptr().add(i)
+        &mut *self.as_mut_ptr().add(i)
     }
 
     /// Returns a static slice spanning from index i to i+SLEN.
@@ -321,7 +321,21 @@ macro_rules! impl_vec_for_refs {
                 }
             }
         }
+
         impl<'a, T: Copy, const LEN: usize> StaticVec<T, LEN> for paste!([<$($mut:camel)? StaticVecRef>]<'a, T, LEN>) {
+            unsafe fn as_ptr(&self) -> *const T {
+                (**self).as_ptr()
+            }
+            unsafe fn as_mut_ptr(&mut self) -> *mut T {
+                if stringify!($($mut)?) == "mut"{
+                    (*self).as_mut_ptr()
+                }else{
+                    panic!("Cannot get mutable pointer from StaticVecRef<'a, T, LEN>. Maybe try MutStaticVecRef<'a, T, LEN> instead.")
+                }
+            }
+        }
+
+        impl<'a, T: Copy, const LEN: usize> StaticVec<T, LEN> for & $($mut)? StaticCowVec<'a, T, LEN> {
             unsafe fn as_ptr(&self) -> *const T {
                 (**self).as_ptr()
             }
@@ -390,7 +404,16 @@ impl<'a, T: Copy, const LEN: usize> StaticVec<T, LEN> for StaticCowVec<'a, T, LE
         }
     }
 
-    /// For [`StaticCowVec`] calling mut_moo_ref will dereference self and thereby copy the contents of self.borrowed into self, if self is borrowed.
+    /// For [`StaticCowVec`] calling `as_mut_ptr` will dereference self and thereby copy the contents of self.borrowed into self, if self is borrowed.
+    unsafe fn as_mut_ptr(&mut self) -> *mut T {
+        if self.is_owned {
+            self.data.as_mut_ptr()
+        } else {
+            transmute(self.mut_moo_ref())
+        }
+    }
+
+    /// For [`StaticCowVec`] calling `mut_moo_ref` will dereference self and thereby copy the contents of self.borrowed into self, if self is borrowed.
     fn mut_moo_ref<'b>(&'b mut self) -> MutStaticVecRef<'b, T, LEN>
     where
         T: Copy,
