@@ -15,11 +15,13 @@ readme = "README.md"
 
 [dependencies]
 blis-src = { version = "0.2.0", features = ["system"], optional = true}
-cblas-sys = "0.1.4"
+cblas-sys = { version = "0.1.4", optional = true }
+paste = "1.0.6"
 
 [workspace]
 members = ["tests"]
 
 [features]
 default = ["blis-sys"]
-blis-sys = ["blis-src"]
+blis-sys = ["blis-src", "blas"]
+blas = ["cblas-sys"]

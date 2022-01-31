@@ -108,13 +108,36 @@ macro_rules! impl_gemm {
     };
 }
 
+macro_rules! impl_norm {
+    ($t: ty, $t2: ty, $t3: ty, $blas_fn: ident) => {
+        impl operations::Normalize<$t> for Blas {
+            type NormOutput = $t3;
+            fn norm<const LEN: usize>(&self, a: &impl StaticVec<$t, LEN>) -> $t3 {
+                unsafe { cblas_sys::$blas_fn(LEN as i32, a.as_ptr() as *const $t2, 1) }.into()
+            }
+
+            fn normalize<const LEN: usize>(&self, a: &mut impl StaticVec<$t, LEN>) {
+                let norm = <$t>::from(Backend::norm(self, a));
+                a.mut_moo_ref().iter_mut().for_each(|n| *n = *n / norm);
+            }
+        }
+    };
+}
+
 impl_gemm!(f32, cblas_sgemm);
 impl_gemm!(f64, cblas_dgemm);
 
 impl_dot!(f32, cblas_sdot);
 impl_dot!(f64, cblas_ddot);
+
 impl_dot_comp!(f32, cblas_cdotu_sub);
 impl_dot_comp!(f64, cblas_zdotu_sub);
+
+impl_norm!(f32, f32, f32, cblas_snrm2);
+impl_norm!(f64, f64, f64, cblas_dnrm2);
+impl_norm!(Complex<f32>, [f32; 2], f32, cblas_scnrm2);
+impl_norm!(Complex<f64>, [f64; 2], f64, cblas_dznrm2);
+
 impl Backend<f32> for Blas {}
 impl Backend<f64> for Blas {}
 impl Backend<Complex<f32>> for Blas {}

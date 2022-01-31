@@ -167,7 +167,7 @@ impl<
             m,
             n,
             k,
-        )
+        );
     }
 
     pub fn matrix_mul<U2: StaticVec<T, LEN2>, const LEN2: usize, const OLEN: usize>(

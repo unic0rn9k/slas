@@ -68,12 +68,16 @@
 use std::marker::PhantomData;
 
 use crate::prelude::*;
+use paste::paste;
 
 macro_rules! impl_operations {
-	($_t:ident $($name: ident $($op: ident ($($generics: tt)*) ($($generics_use: tt)*) ($($arg: ident : $arg_ty: ty),*) where ($($where_ty:ty : $implements: tt),*)  -> $t: ty),*);*;) => {
+	($_t:ident $($name: ident $($op: ident ($($generics: tt)*) ($($generics_use: tt)*) ($($arg: ident : $arg_ty: ty),*) where ($($where_ty:ty : $implements: path),*)  -> $t: ty),*);*;) => {
         pub trait Backend<$_t>: Default{
             $($(
-                fn $op<$($generics)*>(&self, $($arg : $arg_ty),*) -> $t where Self: operations::$name<$_t>, $($where_ty : $implements),*{
+                fn $op<$($generics)*>(&self, $($arg : $arg_ty),*) -> paste!( <Self as operations::$name<$_t>>::[<$op:camel Output>] )
+                where
+                    Self: operations::$name<$_t>, $($where_ty : $implements),*
+                {
                     <Self as operations::$name<$_t>>::$op::<$($generics_use)*>(self, $($arg),*)
                 }
             )*)*
@@ -82,7 +86,10 @@ macro_rules! impl_operations {
             use super::*;
 
             $(pub trait $name<$_t>{
-                $(fn $op<$($generics)*>(&self, $($arg : $arg_ty),*) -> $t where $($where_ty : $implements),*;)*
+                $(
+                    paste!( type [<$op:camel Output>] = $t; );
+                    fn $op<$($generics)*>(&self, $($arg : $arg_ty),*) -> paste!(Self::[<$op:camel Output>]) where $($where_ty : $implements),*;
+                )*
             })*
         }
 	};
@@ -96,8 +103,8 @@ impl_operations!(T
         ) where () -> T;
 
     Normalize
-        norm(const LEN: usize)()(a: &impl StaticVec<T, LEN>) where () -> T,
-        normalize(const LEN: usize)()(a: &mut impl StaticVec<T, LEN>) where () -> ();
+        norm(const LEN: usize)()(a: &impl StaticVec<T, LEN>) where () -> <Self as operations::Normalize<T>>::NormOutput,
+        normalize(const LEN: usize)()(a: &mut impl StaticVec<T, LEN>) where (T: From<<Self as operations::Normalize<T>>::NormOutput>) -> ();
 
     MatrixMul
         matrix_mul(A: StaticVec<T, ALEN>, B: StaticVec<T, BLEN>, C: StaticVec<T, CLEN>, const ALEN: usize, const BLEN: usize, const CLEN: usize)
@@ -198,33 +205,44 @@ impl_default_ops!(f64);
 impl<'a, T: Float + std::iter::Sum, const LEN: usize> StaticVecUnion<'a, T, LEN>
 where
     Rust: Backend<T>,
+    Rust: operations::Normalize<T>,
+    T: From<<Rust as operations::Normalize<T>>::NormOutput>,
 {
     /// Normalize vector. Uses rust by default, as Normalize is not implemented for blas yet.
     pub fn normalize(&mut self) {
-        Rust.normalize(self)
+        Rust.normalize(self);
     }
 
     /// Returns norm of vector. Uses rust by default, as Normalize is not implemented for blas yet.
-    pub fn norm(&mut self) -> T {
+    pub fn norm(&mut self) -> <Rust as operations::Normalize<T>>::NormOutput {
         Rust.norm(self)
     }
 }
 
-impl<T, U: StaticVec<T, LEN>, B: Backend<T> + operations::DotProduct<T>, const LEN: usize>
-    WithStaticBackend<T, U, B, LEN>
+impl<
+        T,
+        U: StaticVec<T, LEN>,
+        B: Backend<T> + operations::DotProduct<T, DotOutput = T>,
+        const LEN: usize,
+    > WithStaticBackend<T, U, B, LEN>
 {
     pub fn dot<U2: StaticVec<T, LEN>>(&self, other: &WithStaticBackend<T, U2, B, LEN>) -> T {
         operations::DotProduct::<T>::dot(&self.backend, &self.data, &other.data)
     }
 }
-impl<T, U: StaticVec<T, LEN>, B: Backend<T> + operations::Normalize<T>, const LEN: usize>
-    WithStaticBackend<T, U, B, LEN>
+impl<
+        T: From<NormOutput>,
+        NormOutput,
+        U: StaticVec<T, LEN>,
+        B: Backend<T> + operations::Normalize<T, NormOutput = NormOutput>,
+        const LEN: usize,
+    > WithStaticBackend<T, U, B, LEN>
 {
-    pub fn norm(&self) -> T {
+    pub fn norm(&self) -> NormOutput {
         operations::Normalize::<T>::norm(&self.backend, &self.data)
     }
     pub fn normalize(&mut self) {
-        operations::Normalize::<T>::normalize(&mut self.backend, &mut self.data)
+        operations::Normalize::<T>::normalize(&self.backend, &mut self.data);
     }
 }
 
