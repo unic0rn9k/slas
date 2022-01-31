@@ -59,7 +59,7 @@ pub trait StaticVec<T, const LEN: usize> {
     where
         T: Copy,
     {
-        unsafe { &mut *(self.as_ptr() as *mut StaticVecUnion<T, LEN>) }
+        unsafe { &mut *(self.as_mut_ptr() as *mut StaticVecUnion<T, LEN>) }
     }
 
     /// Return a cow vector containing a reference to self.
@@ -78,7 +78,7 @@ pub trait StaticVec<T, const LEN: usize> {
         &*self.as_ptr().add(i)
     }
 
-    /// Same as [`get_unchecked`] but mutable.
+    /// Same as [`Self::get_unchecked`] but mutable.
     ///
     /// # Safety
     /// is safe as long as `i < self.len()`
@@ -156,6 +156,28 @@ pub trait StaticVec<T, const LEN: usize> {
         assert_eq!(shape.volume(), LEN);
         Tensor {
             data: crate::backends::WithStaticBackend::from_static_vec(self, backend),
+            shape,
+        }
+    }
+
+    unsafe fn reshape_unchecked_ref<
+        'a,
+        B: crate::backends::Backend<T>,
+        S: crate::tensor::Shape<NDIM>,
+        const NDIM: usize,
+    >(
+        &'a self,
+        shape: &'static S,
+        backend: B,
+    ) -> crate::tensor::Tensor<T, &[T; LEN], B, NDIM, LEN>
+    where
+        Self: Sized,
+    {
+        Tensor {
+            data: crate::backends::WithStaticBackend::from_static_vec(
+                transmute(self.as_ptr()),
+                backend,
+            ),
             shape,
         }
     }
@@ -272,6 +294,22 @@ impl<'a, T: Copy, const LEN: usize> StaticVec<T, LEN> for StaticVecUnion<'a, T, 
 impl<T, const LEN: usize> StaticVec<T, LEN> for [T; LEN] {
     unsafe fn as_ptr(&self) -> *const T {
         self as *const T
+    }
+}
+impl<T, const LEN: usize> StaticVec<T, LEN> for &[T; LEN] {
+    unsafe fn as_ptr(&self) -> *const T {
+        *self as *const T
+    }
+    unsafe fn as_mut_ptr(&mut self) -> *mut T {
+        panic!("Cannot get mutable pointer from &[T; LEN]. Maybe try &mut [T; LEN] instead.")
+    }
+}
+impl<'a, T: Copy, const LEN: usize> StaticVec<T, LEN> for StaticVecRef<'a, T, LEN> {
+    unsafe fn as_ptr(&self) -> *const T {
+        transmute(*self)
+    }
+    unsafe fn as_mut_ptr(&mut self) -> *mut T {
+        panic!("Cannot get mutable pointer from StaticVecRef<'a, T, LEN>. Maybe try MutStaticVecRef<'a, T, LEN> instead.")
     }
 }
 

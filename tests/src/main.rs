@@ -269,6 +269,44 @@ mod tensors {
         let t = moo![f32: 0..27].reshape(&[3, 3, 3], slas_backend::Rust);
         assert_eq!(t[[3, 0, 0]], 9.);
     }
+
+    #[test]
+    fn get_row_from_matrix() {
+        use slas::prelude::*;
+
+        let t = moo![f32: 0..9]
+            .moo_owned()
+            .matrix::<slas_backend::Rust, 3, 3>();
+
+        let t = t.index_slice(1);
+
+        assert_eq!(t[[0]], 3.);
+    }
+
+    #[test]
+    fn sub_tensors() {
+        use slas::prelude::*;
+
+        let t = moo![f32: 0..27]
+            .moo_owned()
+            .reshape(&[3, 3, 3], slas_backend::Rust);
+        let t = t.index_slice(1);
+
+        assert_eq!(t[[0, 0]], 9.);
+    }
+
+    #[test]
+    #[should_panic]
+    fn sub_tensors_index_out_of_bounds() {
+        use slas::prelude::*;
+
+        let t = moo![f32: 0..27]
+            .moo_owned()
+            .reshape(&[3, 3, 3], slas_backend::Rust);
+        let t = t.index_slice(3);
+
+        assert_eq!(t[[2, 2]], 9.);
+    }
 }
 
 #[cfg(all(test, feature = "versus"))]

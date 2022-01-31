@@ -27,11 +27,28 @@ pub trait Shape<const NDIM: usize> {
     fn volume(&self) -> usize {
         (0..NDIM).map(|n| self.axis_len(n)).product()
     }
+
+    fn slice(&self) -> &[usize; NDIM];
 }
 
 impl<const LEN: usize> Shape<LEN> for [usize; LEN] {
     fn axis_len(&self, n: usize) -> usize {
         self[n]
+    }
+
+    fn slice(&self) -> &[usize; LEN] {
+        self
+    }
+}
+
+impl<const LEN: usize> Shape<LEN> for [usize] {
+    fn axis_len(&self, n: usize) -> usize {
+        self[n]
+    }
+
+    fn slice(&self) -> &[usize; LEN] {
+        assert_eq!(self.len(), LEN);
+        unsafe { std::mem::transmute(self.as_ptr()) }
     }
 }
 
@@ -48,6 +65,9 @@ impl<const M: usize, const K: usize> const Shape<2> for MatrixShape<M, K> {
     }
     fn volume(&self) -> usize {
         M * K
+    }
+    fn slice(&self) -> &[usize; 2] {
+        &[K, M]
     }
 }
 
@@ -133,6 +153,32 @@ where
 {
     fn index_mut(&mut self, i: S) -> &mut T {
         unsafe { self.data.get_unchecked_mut(tensor_index(self.shape, &i)) }
+    }
+}
+
+impl<'a, T, U: StaticVec<T, LEN> + 'a, B: Backend<T>, const NDIM: usize, const LEN: usize>
+    Tensor<T, U, B, NDIM, LEN>
+where
+    [(); NDIM - 1]: Sized,
+    &'a U: StaticVec<T, LEN>,
+{
+    pub fn index_slice(&'a self, i: usize) -> Tensor<T, &'a [T; LEN], B, { NDIM - 1 }, LEN> {
+        assert!(NDIM > 1);
+        assert!(i < self.shape.axis_len(0));
+
+        unsafe {
+            std::mem::transmute::<*const T, &'a [T; LEN]>(
+                self.data
+                    .as_ptr()
+                    .add(i * (self.shape.volume() / self.shape.axis_len(NDIM - 1))),
+            )
+            .reshape_unchecked_ref(
+                std::mem::transmute::<*const usize, &[usize; NDIM - 1]>(
+                    self.shape.slice()[0..NDIM - 1].as_ptr(),
+                ),
+                B::default(),
+            )
+        }
     }
 }
 
