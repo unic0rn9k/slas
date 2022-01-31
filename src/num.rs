@@ -14,18 +14,22 @@ pub trait Float:
     fn zero() -> Self {
         Self::from(0f32)
     }
-    fn sqrt_(&self) -> Self;
-    fn powi_(&self, p: i32) -> Self;
+    fn sqrt_(self) -> Self;
+    fn powi_(self, p: i32) -> Self;
+    fn hypot_(self, other: Self) -> Self;
 }
 
 macro_rules! impl_float {
     ($t: ty) => {
         impl Float for $t {
-            fn sqrt_(&self) -> Self {
+            fn sqrt_(self) -> Self {
                 self.sqrt()
             }
-            fn powi_(&self, p: i32) -> Self {
+            fn powi_(self, p: i32) -> Self {
                 self.powi(p)
+            }
+            fn hypot_(self, other: Self) -> Self {
+                self.hypot(other)
             }
         }
     };
@@ -34,7 +38,7 @@ macro_rules! impl_float {
 impl_float!(f32);
 impl_float!(f64);
 
-macro_rules! unimplemented_complex_plus_min {
+macro_rules! impl_complex_plus_min {
     ($op: tt, $trait: ident, $fn: ident) => {
         impl<T: Float> $trait<Self> for Complex<T> {
             type Output = Self;
@@ -45,8 +49,8 @@ macro_rules! unimplemented_complex_plus_min {
     };
 }
 
-unimplemented_complex_plus_min!(+, Add, add);
-unimplemented_complex_plus_min!(-, Sub, sub);
+impl_complex_plus_min!(+, Add, add);
+impl_complex_plus_min!(-, Sub, sub);
 
 impl<T: Float> Mul<Self> for Complex<T> {
     type Output = Self;
@@ -65,15 +69,15 @@ impl<T: Float> Div<Self> for Complex<T> {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[repr(C)]
 pub struct Complex<T: Float> {
     pub re: T,
     pub im: T,
 }
 
-impl<T: Float> From<f32> for Complex<T> {
-    fn from(n: f32) -> Self {
+impl<T: Float> From<T> for Complex<T> {
+    fn from(n: T) -> Self {
         Self {
             re: n.into(),
             im: T::zero(),
@@ -81,7 +85,10 @@ impl<T: Float> From<f32> for Complex<T> {
     }
 }
 
-impl<T: Float> Float for Complex<T> {
+impl<T: Float> Float for Complex<T>
+where
+    Complex<T>: From<f32>,
+{
     fn zero() -> Self {
         Self {
             re: T::zero(),
@@ -90,15 +97,32 @@ impl<T: Float> Float for Complex<T> {
     }
 
     /// This function os currently unimplemented for complex numbers, you can still use `number * number`.
-    fn powi_(&self, _: i32) -> Self {
-        unimplemented!()
+    fn powi_(self, n: i32) -> Self {
+        let mut prod = Complex::<T> {
+            re: T::from(1.),
+            im: T::from(0.),
+        };
+        for _ in 0..n {
+            prod = prod * self
+        }
+        prod
     }
 
-    fn sqrt_(&self) -> Self {
-        let norm = (self.re.powi_(2) + self.im.powi_(2)).sqrt_();
+    fn sqrt_(self) -> Self {
+        let norm = self.re.hypot_(self.im);
         Self {
             re: ((norm + self.re) / 2f32.into()).sqrt_(),
             im: ((norm - self.re) / 2f32.into()).sqrt_(),
         }
+    }
+
+    fn hypot_(self, _: Self) -> Self {
+        unimplemented!()
+    }
+}
+
+impl<T: Float> From<[T; 2]> for Complex<T> {
+    fn from(n: [T; 2]) -> Self {
+        Complex { re: n[0], im: n[1] }
     }
 }
