@@ -93,14 +93,13 @@ mod thin_blas {
             20.
         );
 
-        // Does not work at the moment:
-        // assert_eq!(
-        //     [1., 2., 3., 4.]
-        //         .moo_ref()
-        //         .static_backend()
-        //         .dot(moo![on slas_backend::Blas:f32: 0..4]),
-        //     20.
-        // );
+        assert_eq!(
+            [1., 2., 3., 4.]
+                .moo_ref()
+                .static_backend()
+                .dot(&moo![on slas_backend::Blas:f32: 0..4]),
+            20.
+        );
     }
 }
 
