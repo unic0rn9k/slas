@@ -137,7 +137,7 @@ impl<
 {
     type Output = T;
     fn index(&self, i: S) -> &T {
-        unsafe { self.data.get_unchecked(tensor_index(self.shape, &i)) }
+        unsafe { self.data.data.get_unchecked(tensor_index(self.shape, &i)) }
     }
 }
 impl<
@@ -152,7 +152,11 @@ where
     T: Copy,
 {
     fn index_mut(&mut self, i: S) -> &mut T {
-        unsafe { self.data.get_unchecked_mut(tensor_index(self.shape, &i)) }
+        unsafe {
+            self.data
+                .data
+                .get_unchecked_mut(tensor_index(self.shape, &i))
+        }
     }
 }
 
