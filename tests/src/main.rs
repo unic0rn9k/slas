@@ -109,23 +109,43 @@ mod numbers {
         let b = Complex::<f32> { re: 5., im: 1. };
         assert_eq!(a * b, Complex { re: 1., im: 21. });
     }
+
+    #[test]
+    fn complex_pow() {
+        use slas::prelude::*;
+
+        assert_eq!(
+            Complex::<f32> { re: 1., im: 4. }.powi_(2),
+            Complex { re: -15., im: 8. }
+        );
+
+        assert_eq!(
+            Complex::<f32> { re: 1., im: 4. }.powi_(0),
+            Complex { re: 1., im: 0. }
+        );
+
+        assert_eq!(
+            Complex::<f32> { re: 1., im: 4. }.powi_(1),
+            Complex { re: 1., im: 4. }
+        );
+    }
 }
 
 #[cfg(test)]
 mod moo {
     use crate::*;
 
-    //#[test]
-    //fn norm_complex() {
-    //    let c = Complex::<f32> { re: 1.2, im: 2.3 };
+    #[test]
+    fn norm_complex_2d() {
+        //let c = Complex::<f32> { re: 1.2, im: 2.3 };
 
-    //    let mut a = moo![c;5];
-    //    let mut b = moo![c;5];
-    //    a.norm();
-    //    b.norm();
+        //let a = moo![c; 2].static_backend::<slas_backend::Blas>();
+        //assert_eq!(a.norm(), 3.668787265568828);
 
-    //    assert_eq!(a.dot(&b), 0.);
-    //}
+        // More accurate on rust, but much slower.
+        //let a = moo![c; 2].static_backend::<slas_backend::Rust>();
+        //assert_eq!(a.norm(), 3.668787265568828);
+    }
 
     #[test]
     fn vec_ref_dot() {
