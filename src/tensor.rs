@@ -128,6 +128,8 @@ impl<
         const NDIM: usize,
         const LEN: usize,
     > std::ops::IndexMut<S> for Tensor<T, U, B, NDIM, LEN>
+where
+    T: Copy,
 {
     fn index_mut(&mut self, i: S) -> &mut T {
         unsafe { self.data.get_unchecked_mut(tensor_index(self.shape, &i)) }

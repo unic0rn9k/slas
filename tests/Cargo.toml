@@ -10,5 +10,8 @@ ndarray = {version = "0.15.4", optional = true, features = ["blas"]}
 rand = {version = "0.8.4", optional = true}
 slas = {path = "../"}
 
+[dev-dependencies]
+pretty_assertions = "1.0.0"
+
 [features]
 versus = ["ndarray", "rand", "nalgebra", "lazy_static"]

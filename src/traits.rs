@@ -30,14 +30,25 @@ use std::ops::DerefMut;
 /// Trait for statically shaped, contiguous vectors.
 pub trait StaticVec<T, const LEN: usize> {
     /// Return pointer to first element.
+    ///
+    /// # Safety
+    /// Is safe as long as `self` is contiguous.
     unsafe fn as_ptr(&self) -> *const T;
+
+    /// Return mutable pointer to first element.
+    ///
+    /// # Safety
+    /// Is safe as long as `self` is contiguous.
+    unsafe fn as_mut_ptr(&mut self) -> *mut T {
+        transmute(self.as_ptr())
+    }
 
     /// Return a reference to self with the type of [`StaticVecUnion`]
     fn moo_ref<'a>(&'a self) -> StaticVecRef<'a, T, LEN>
     where
         T: Copy,
     {
-        unsafe { transmute(self.as_ptr()) }
+        unsafe { &*(self.as_ptr() as *const StaticVecUnion<T, LEN>) }
     }
 
     /// Return a mutable reference to self with the type of [`StaticVecUnion`].
@@ -48,7 +59,7 @@ pub trait StaticVec<T, const LEN: usize> {
     where
         T: Copy,
     {
-        unsafe { transmute(self.as_ptr()) }
+        unsafe { &mut *(self.as_ptr() as *mut StaticVecUnion<T, LEN>) }
     }
 
     /// Return a cow vector containing a reference to self.
@@ -60,18 +71,30 @@ pub trait StaticVec<T, const LEN: usize> {
     }
 
     /// Indexing without bounds checking.
+    ///
+    /// # Safety
+    /// is safe as long as `i < self.len()`
     unsafe fn get_unchecked<'a>(&'a self, i: usize) -> &'a T {
-        transmute(self.as_ptr().offset(i as isize))
+        &*self.as_ptr().add(i)
     }
 
     /// Same as [`get_unchecked`] but mutable.
-    unsafe fn get_unchecked_mut<'a>(&'a mut self, i: usize) -> &'a mut T {
-        transmute(self.as_ptr().offset(i as isize))
+    ///
+    /// # Safety
+    /// is safe as long as `i < self.len()`
+    unsafe fn get_unchecked_mut<'a>(&'a mut self, i: usize) -> &'a mut T
+    where
+        T: Copy,
+    {
+        &mut *self.mut_moo_ref().as_mut_ptr().add(i)
     }
 
     /// Returns a static slice spanning from index i to i+SLEN.
+    ///
+    /// # Safety
+    /// is safe as long as `i+SLEN < self.len()`
     unsafe fn static_slice_unchecked<'a, const SLEN: usize>(&'a self, i: usize) -> &'a [T; SLEN] {
-        transmute::<*const T, &'a [T; SLEN]>(self.as_ptr().offset(i as isize))
+        &*(self.as_ptr().add(i) as *const [T; SLEN])
     }
 
     /// Copies self into a StaticVecUnion.
@@ -97,7 +120,7 @@ pub trait StaticVec<T, const LEN: usize> {
         }
     }
 
-    /// Return [`crate::tensor::Tensor`] with shape [`crate::tensor::MatrixShape::<M, K>`]
+    /// Return [`crate::tensor::Tensor`] with shape [`crate::tensor::MatrixShape::<M, K>`].
     fn matrix<B: crate::backends::Backend<T>, const M: usize, const K: usize>(
         self,
     ) -> crate::tensor::Tensor<T, Self, B, 2, LEN>
@@ -180,19 +203,46 @@ macro_rules! dyn_cast_panic {
 /// ```
 pub trait DynamicVec<T> {
     fn len(&self) -> usize;
+    fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
+    /// Pointer to first element in a dynamic vector.
+    ///
+    /// # Safety
+    /// is safe as long as `self` is contiguous.
     unsafe fn as_ptr(&self) -> *const T;
+
+    /// Mutable pointer to first element in a dynamic vector.
+    ///
+    /// # Safety
+    /// is safe as long as `self` is contiguous.
+    unsafe fn as_mut_ptr(&mut self) -> *mut T {
+        transmute(self.as_ptr())
+    }
+
+    /// Pretend a dynamic vector is static.
+    ///
+    /// # Safety
+    /// is safe as long as `self` is contiguous.
+    /// will panic if `self.len() != LEN`
     fn pretend_static<const LEN: usize>(self) -> PretendStaticVec<T, Self, LEN>
     where
         Self: Clone,
     {
         dyn_cast_panic!(self.len(), LEN);
-        PretendStaticVec(Box::new(self.clone()), PhantomData)
+        PretendStaticVec(Box::new(self), PhantomData)
     }
+
+    /// Pretend a dynamic vector is static without checking if `self.len() == LEN`.
+    ///
+    /// # Safety
+    /// is safe as long as `self.len() == LEN` and `self` is contiguous.
     unsafe fn pretend_static_unchecked<const LEN: usize>(self) -> PretendStaticVec<T, Self, LEN>
     where
         Self: Clone,
     {
-        PretendStaticVec(Box::new(self.clone()), PhantomData)
+        PretendStaticVec(Box::new(self), PhantomData)
     }
 
     /// Return a reference to self with the type of [`StaticVecUnion`]

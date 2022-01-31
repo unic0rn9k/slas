@@ -79,7 +79,7 @@ pub struct Complex<T: Float> {
 impl<T: Float> From<T> for Complex<T> {
     fn from(n: T) -> Self {
         Self {
-            re: n.into(),
+            re: n,
             im: T::zero(),
         }
     }

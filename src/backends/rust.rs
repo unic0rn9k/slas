@@ -50,7 +50,7 @@ macro_rules! impl_norm {
 
             fn normalize<const LEN: usize>(&self, a: &mut impl StaticVec<$t, LEN>) {
                 let norm = operations::Normalize::norm(self, a);
-                a.mut_moo_ref().iter_mut().for_each(|n| *n = *n / norm);
+                a.mut_moo_ref().iter_mut().for_each(|n| *n /= norm);
             }
         }
 

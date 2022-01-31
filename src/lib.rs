@@ -206,7 +206,7 @@ pub union StaticVecUnion<'a, T: Copy, const LEN: usize> {
 
 impl<'a, T: Copy, const LEN: usize> StaticVecUnion<'a, T, LEN> {
     pub fn slice(&'a self) -> &'a [T; LEN] {
-        unsafe { transmute(self.as_ptr()) }
+        unsafe { &*(self.as_ptr() as *const [T; LEN]) }
     }
 }
 
@@ -230,6 +230,9 @@ impl<'a, T: Copy, const LEN: usize> StaticCowVec<'a, T, LEN> {
     pub const fn len(&self) -> usize {
         LEN
     }
+    pub const fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
 
     pub fn is_borrowed(&self) -> bool {
         !self.is_owned()
@@ -240,6 +243,9 @@ impl<'a, T: Copy, const LEN: usize> StaticCowVec<'a, T, LEN> {
     }
 
     /// Cast StaticCowVec from pointer.
+    ///
+    /// # Safety
+    /// Is safe as long as `*ptr` is contiguous and `*ptr` has a length of `LEN`.
     pub const unsafe fn from_ptr(ptr: *const T) -> Self {
         Self::from(
             (ptr as *const [T; LEN])
@@ -250,8 +256,11 @@ impl<'a, T: Copy, const LEN: usize> StaticCowVec<'a, T, LEN> {
 
     /// Cast StaticCowVec from pointer without checking if it is null.
     /// **Very** **very** **very** unsafe.
+    ///
+    /// # Safety
+    /// Is safe as long as `*ptr` is contiguous, `*ptr` has a length of `LEN` and `ptr` is not NULL.
     pub const unsafe fn from_ptr_unchecked(ptr: *const T) -> Self {
-        Self::from(transmute::<*const T, &[T; LEN]>(ptr))
+        Self::from(&*(ptr as *const [T; LEN]))
     }
 }
 
@@ -313,7 +322,7 @@ impl<'a, T: Copy, const LEN: usize> const From<&'a [T; LEN]> for StaticCowVec<'a
 impl<'a, T: Copy, const LEN: usize> const From<&'a [T]> for StaticCowVec<'a, T, LEN> {
     fn from(s: &'a [T]) -> Self {
         //assert_eq!(s.len(), LEN);
-        Self::from(unsafe { transmute::<*const T, &'a [T; LEN]>(s.as_ptr()) })
+        Self::from(unsafe { &*(s.as_ptr() as *const [T; LEN]) })
     }
 }
 
