@@ -343,7 +343,7 @@ macro_rules! impl_vec_for_refs {
                 if stringify!($($mut)?) == "mut"{
                     (*self).as_mut_ptr()
                 }else{
-                    panic!("Cannot get mutable pointer from StaticVecRef<'a, T, LEN>. Maybe try MutStaticVecRef<'a, T, LEN> instead.")
+                    panic!("Cannot get mutable pointer from &StaticCowVec<'a, T, LEN>. Maybe try &mut StaticCowVec<'a, T, LEN> instead.")
                 }
             }
         }
