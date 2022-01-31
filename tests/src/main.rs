@@ -3,6 +3,10 @@
 
 use slas::prelude::*;
 
+#[cfg(test)]
+#[macro_use]
+extern crate pretty_assertions;
+
 #[cfg(versus)]
 fn main() {
     extern crate test;

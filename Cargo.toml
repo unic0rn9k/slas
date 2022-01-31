@@ -18,6 +18,9 @@ blis-src = { version = "0.2.0", features = ["system"], optional = true}
 cblas-sys = { version = "0.1.4", optional = true }
 paste = "1.0.6"
 
+[dev-dependencies]
+pretty_assertions = "1.0.0"
+
 [workspace]
 members = ["tests"]
 
