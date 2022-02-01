@@ -82,7 +82,7 @@ pub struct Tensor<T, U: StaticVec<T, LEN>, B: Backend<T>, const NDIM: usize, con
 }
 
 impl<T: Float + std::fmt::Debug, B: Backend<T>, U: StaticVec<T, LEN>, const LEN: usize>
-    std::fmt::Debug for Tensor<T, U, B, 2, LEN>
+    std::fmt::Debug for Matrix<T, U, B, LEN>
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str("[\n")?;
@@ -186,8 +186,7 @@ macro_rules! impl_index_slice {
                         B::default(),
                     )
                 }
-            }
-            }
+            }}
         }
 	};
 }
@@ -200,7 +199,7 @@ impl<
         U: StaticVec<T, LEN>,
         B: Backend<T> + operations::MatrixMul<T>,
         const LEN: usize,
-    > Tensor<T, U, B, 2, LEN>
+    > Matrix<T, U, B, LEN>
 {
     pub fn matrix_mul_buffer<
         U2: StaticVec<T, LEN2>,
@@ -209,7 +208,7 @@ impl<
         const OLEN: usize,
     >(
         &self,
-        other: &Tensor<T, U2, B, 2, LEN2>,
+        other: &Matrix<T, U2, B, LEN2>,
         buffer: &mut U3,
     ) {
         let m = self.shape.axis_len(1);
@@ -233,7 +232,7 @@ impl<
 
     pub fn matrix_mul<U2: StaticVec<T, LEN2>, const LEN2: usize, const OLEN: usize>(
         &self,
-        other: &Tensor<T, U2, B, 2, LEN2>,
+        other: &Matrix<T, U2, B, LEN2>,
     ) -> [T; OLEN] {
         let mut buffer = [T::zero(); OLEN];
         self.matrix_mul_buffer(other, &mut buffer);
@@ -247,3 +246,6 @@ macro_rules! m {
         MatrixShape::<$m, $k>
     };
 }
+
+/// Just a type alias for a 2D tensor.
+pub type Matrix<T, U, B, const LEN: usize> = Tensor<T, U, B, 2, LEN>;

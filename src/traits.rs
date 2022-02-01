@@ -152,12 +152,12 @@ pub trait StaticVec<T, const LEN: usize> {
     /// Return [`crate::tensor::Tensor`] with shape [`crate::tensor::MatrixShape::<M, K>`].
     fn matrix<B: crate::backends::Backend<T>, const M: usize, const K: usize>(
         self,
-    ) -> crate::tensor::Tensor<T, Self, B, 2, LEN>
+    ) -> crate::tensor::Matrix<T, Self, B, LEN>
     where
         Self: Sized,
     {
         assert_eq!(M * K, LEN);
-        Tensor {
+        crate::tensor::Matrix {
             data: crate::backends::WithStaticBackend::from_static_vec(self, B::default()),
             shape: &crate::tensor::MatrixShape::<M, K>,
         }
