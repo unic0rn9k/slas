@@ -31,3 +31,8 @@ jobs:
       run: sudo apt install libblis-dev
     - name: Run tests
       run: cargo +nightly t
+
+    - name: Coveralls
+      uses: coverallsapp/github-action@master
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
