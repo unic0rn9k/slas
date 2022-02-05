@@ -43,6 +43,8 @@ jobs:
         with:
           toolchain: nightly
           override: true
+      - name: Install blis
+        run: sudo apt install libblis-dev
       - name: Run cargo-tarpaulin
         uses: actions-rs/tarpaulin@v0.1
         with:
