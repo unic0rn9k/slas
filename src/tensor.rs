@@ -1,7 +1,6 @@
-use std::{marker::PhantomData, mem::transmute, ops::Deref, ops::DerefMut};
-
 use crate::{backends::*, prelude::*};
 use paste::paste;
+use std::hint::unreachable_unchecked;
 
 /// Tensor shape with static dimensions but with optionally dynamic shape.
 /// To achive a static shape the trait should be const implemented.
@@ -30,7 +29,6 @@ pub trait Shape<const NDIM: usize> {
         (0..NDIM).map(|n| self.axis_len(n)).product()
     }
 
-    /// Return shape as a slice
     fn slice(&self) -> &[usize; NDIM];
 }
 
@@ -63,7 +61,7 @@ impl<const M: usize, const K: usize> const Shape<2> for MatrixShape<M, K> {
         match n {
             0 => K,
             1 => M,
-            _ => panic!("Cannot get len of axis higher than 1, as a matrix only has 2 axies (rows and columns)"),
+            _ => unsafe { unreachable_unchecked() },
         }
     }
     fn volume(&self) -> usize {
@@ -176,13 +174,13 @@ macro_rules! impl_index_slice {
                 assert!(i < self.shape.axis_len(0));
 
                 unsafe {
-                    transmute::<*const T, &'a $($mut)? [T; LEN]>(
+                    std::mem::transmute::<*const T, &'a $($mut)? [T; LEN]>(
                         self.data
                             .[< as $(_$mut)? _ptr>]()
                             .add(i * (self.shape.volume() / self.shape.axis_len(NDIM - 1))),
                     )
                     .[<reshape_unchecked_ref $(_$mut)? >](
-                        transmute::<*const usize, &[usize; NDIM - 1]>(
+                        std::mem::transmute::<*const usize, &[usize; NDIM - 1]>(
                             self.shape.slice()[0..NDIM - 1].as_ptr(),
                         ),
                         B::default(),
@@ -196,79 +194,46 @@ macro_rules! impl_index_slice {
 impl_index_slice!();
 impl_index_slice!(mut);
 
-pub trait IsTrans {
-    fn is_transposed(&self) -> bool;
-
-    fn const_is_trans() -> bool
-    where
-        Self: ~const IsTrans;
-}
-
-pub trait Matrixish<T, U: StaticVec<T, LEN>, B: Backend<T>, const LEN: usize> {
-    fn rows(&self) -> usize;
-    fn columns(&self) -> usize;
-
-    fn moo_ref(&self) -> StaticVecRef<T, LEN>
-    where
-        T: Copy;
-
-    fn mut_moo_ref(&mut self) -> MutStaticVecRef<T, LEN>
-    where
-        T: Copy;
-
-    fn transpose(self) -> TransposedMatrix<T, U, B, Self, LEN, { !Self::const_is_trans() }>
-    where
-        Self: ~const IsTrans + Sized,
-    {
-        TransposedMatrix(self, PhantomData)
-    }
-
-    fn backend(&self) -> &B;
-
-    fn matrix_mul_buffer<
+impl<
+        T: Float + Sized,
+        U: StaticVec<T, LEN>,
+        B: Backend<T> + operations::MatrixMul<T>,
+        const LEN: usize,
+    > Matrix<T, U, B, LEN>
+{
+    pub fn matrix_mul_buffer<
         U2: StaticVec<T, LEN2>,
         U3: StaticVec<T, OLEN>,
         const LEN2: usize,
         const OLEN: usize,
     >(
         &self,
-        other: &(impl Matrixish<T, U2, B, LEN2> + IsTrans),
+        other: &Matrix<T, U2, B, LEN2>,
         buffer: &mut U3,
-    ) where
-        B: operations::MatrixMul<T>,
-        T: Copy + Float,
-        Self: IsTrans,
-    {
-        let m = self.rows();
-        let k = self.columns();
-        let n = other.columns();
+    ) {
+        let m = self.shape.axis_len(1);
+        let k = self.shape.axis_len(0);
+        let n = other.shape.axis_len(0);
 
-        debug_assert_eq!(self.rows() * self.columns(), LEN);
-        debug_assert_eq!(other.rows() * other.columns(), LEN2);
+        debug_assert_eq!(self.shape.volume(), LEN);
+        debug_assert_eq!(other.shape.volume(), LEN2);
         debug_assert_eq!(m * n, OLEN);
 
         <B as Backend<T>>::matrix_mul(
-            self.backend(),
-            self.moo_ref(),
-            other.moo_ref(),
+            &self.data.backend,
+            &self.data.data,
+            &other.data.data,
             buffer,
             m,
             n,
             k,
-            self.is_transposed(),
-            other.is_transposed(),
         );
     }
 
-    fn matrix_mul<U2: StaticVec<T, LEN2>, const LEN2: usize, const OLEN: usize>(
+    pub fn matrix_mul<U2: StaticVec<T, LEN2>, const LEN2: usize, const OLEN: usize>(
         &self,
-        other: &(impl Matrixish<T, U2, B, LEN2> + IsTrans),
-    ) -> [T; OLEN]
-    where
-        B: operations::MatrixMul<T>,
-        T: Copy + Float,
-        Self: IsTrans,
-    {
+        other: &Matrix<T, U2, B, LEN2>,
+    ) -> [T; OLEN] {
         let mut buffer = [T::zero(); OLEN];
         self.matrix_mul_buffer(other, &mut buffer);
         buffer
@@ -282,137 +247,5 @@ macro_rules! m {
     };
 }
 
+/// Just a type alias for a 2D tensor.
 pub type Matrix<T, U, B, const LEN: usize> = Tensor<T, U, B, 2, LEN>;
-
-pub struct TransposedMatrix<
-    T,
-    U: StaticVec<T, LEN>,
-    B: Backend<T>,
-    M: Matrixish<T, U, B, LEN>,
-    const LEN: usize,
-    const IS_TRANS: bool = false,
->(M, PhantomData<(T, U, B)>);
-
-impl<T, U: StaticVec<T, LEN>, B: Backend<T>, const LEN: usize, const IS_TRANS: bool> Deref
-    for TransposedMatrix<T, U, B, Matrix<T, U, B, LEN>, LEN, IS_TRANS>
-{
-    type Target = Matrix<T, U, B, LEN>;
-    fn deref(&self) -> &Self::Target {
-        if IS_TRANS {
-            todo!()
-        } else {
-            &self.0
-        }
-    }
-}
-
-impl<T, U: StaticVec<T, LEN>, B: Backend<T>, const LEN: usize, const IS_TRANS: bool> DerefMut
-    for TransposedMatrix<T, U, B, Matrix<T, U, B, LEN>, LEN, IS_TRANS>
-{
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        if IS_TRANS {
-            todo!()
-        } else {
-            &mut self.0
-        }
-    }
-}
-
-impl<
-        T,
-        U: StaticVec<T, LEN>,
-        B: Backend<T>,
-        M: Matrixish<T, U, B, LEN>,
-        const LEN: usize,
-        const IS_TRANS: bool,
-    > const IsTrans for TransposedMatrix<T, U, B, M, LEN, IS_TRANS>
-{
-    fn is_transposed(&self) -> bool {
-        IS_TRANS
-    }
-    fn const_is_trans() -> bool {
-        IS_TRANS
-    }
-}
-
-impl<T, U: StaticVec<T, LEN>, B: Backend<T>, const LEN: usize> const IsTrans
-    for Matrix<T, U, B, LEN>
-{
-    fn is_transposed(&self) -> bool {
-        false
-    }
-    fn const_is_trans() -> bool {
-        false
-    }
-}
-
-impl<T, U: StaticVec<T, LEN>, B: Backend<T>, const LEN: usize> Matrixish<T, U, B, LEN>
-    for Matrix<T, U, B, LEN>
-{
-    fn moo_ref(&self) -> StaticVecRef<T, LEN>
-    where
-        T: Copy,
-    {
-        self.data.data.moo_ref()
-    }
-
-    fn mut_moo_ref(&mut self) -> MutStaticVecRef<T, LEN>
-    where
-        T: Copy,
-    {
-        self.data.data.mut_moo_ref()
-    }
-
-    fn backend(&self) -> &B {
-        &self.data.backend
-    }
-
-    fn rows(&self) -> usize {
-        self.shape.axis_len(1)
-    }
-    fn columns(&self) -> usize {
-        self.shape.axis_len(0)
-    }
-}
-
-impl<
-        T,
-        U: StaticVec<T, LEN>,
-        B: Backend<T>,
-        M: Matrixish<T, U, B, LEN>,
-        const LEN: usize,
-        const IS_TRANS: bool,
-    > Matrixish<T, U, B, LEN> for TransposedMatrix<T, U, B, M, LEN, IS_TRANS>
-{
-    fn rows(&self) -> usize {
-        if IS_TRANS {
-            self.0.columns()
-        } else {
-            self.0.rows()
-        }
-    }
-    fn columns(&self) -> usize {
-        if !IS_TRANS {
-            self.0.columns()
-        } else {
-            self.0.rows()
-        }
-    }
-
-    fn moo_ref(&self) -> StaticVecRef<T, LEN>
-    where
-        T: Copy,
-    {
-        self.0.moo_ref()
-    }
-    fn mut_moo_ref(&mut self) -> MutStaticVecRef<T, LEN>
-    where
-        T: Copy,
-    {
-        self.0.mut_moo_ref()
-    }
-
-    fn backend(&self) -> &B {
-        self.0.backend()
-    }
-}

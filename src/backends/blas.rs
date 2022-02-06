@@ -80,19 +80,16 @@ macro_rules! impl_gemm {
                 m: usize,
                 n: usize,
                 k: usize,
-                a_trans: bool,
-                b_trans: bool,
             ) where
                 A: Sized,
                 B: Sized,
             {
-                use cblas_sys::CBLAS_TRANSPOSE::*;
                 unsafe {
                     // TODO: gemv should be used here when other's dimensions are a transpose of self.
                     cblas_sys::$f(
                         cblas_sys::CBLAS_LAYOUT::CblasRowMajor,
-                        if a_trans { CblasTrans } else { CblasNoTrans },
-                        if b_trans { CblasTrans } else { CblasNoTrans },
+                        cblas_sys::CBLAS_TRANSPOSE::CblasNoTrans,
+                        cblas_sys::CBLAS_TRANSPOSE::CblasNoTrans,
                         m as i32,
                         n as i32,
                         k as i32,

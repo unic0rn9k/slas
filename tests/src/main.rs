@@ -234,10 +234,8 @@ mod tensors {
         // and implement multiplication for matricies without a buffer.
         // Also tensor should implement StaticVec.
         let c = a.matrix_mul(&b);
-        let d = a.transpose().matrix_mul(&*b.transpose());
 
         assert_eq!(c, [22., 28., 49., 64.]);
-        assert_eq!(d, [1.; 9]);
     }
 
     #[test]
