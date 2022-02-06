@@ -71,7 +71,9 @@ use crate::prelude::*;
 use paste::paste;
 
 macro_rules! impl_operations {
-	($_t:ident $($name: ident $($op: ident ($($generics: tt)*) ($($generics_use: tt)*) ($($arg: ident : $arg_ty: ty),*) where ($($where_ty:ty : $implements: path),*)  -> $t: ty),*);*;) => {
+	($_t:ident $($name: ident $($op: ident ($($generics: tt)*) ($($generics_use: tt)*) ($($arg: ident : $arg_ty: ty),*)
+        where ($($where_ty:ty : $implements: path),*)  -> $t: ty),*);*;) => {
+
         pub trait Backend<$_t>: Default{
             $($(
                 fn $op<$($generics)*>(&self, $($arg : $arg_ty),*) -> paste!( <Self as operations::$name<$_t>>::[<$op:camel Output>] )
@@ -109,7 +111,7 @@ impl_operations!(T
     MatrixMul
         matrix_mul(A: StaticVec<T, ALEN>, B: StaticVec<T, BLEN>, C: StaticVec<T, CLEN>, const ALEN: usize, const BLEN: usize, const CLEN: usize)
         (A, B, C, ALEN, BLEN, CLEN)
-        (a: &A, b: &B, buffer: &mut C, m: usize, n: usize, k: usize)
+        (a: &A, b: &B, buffer: &mut C, m: usize, n: usize, k: usize, a_trans: bool, b_trans: bool)
         where (
             A: Sized,
             B: Sized,

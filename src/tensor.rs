@@ -1,6 +1,6 @@
 use crate::{backends::*, prelude::*};
 use paste::paste;
-use std::hint::unreachable_unchecked;
+use std::mem::transmute;
 
 /// Tensor shape with static dimensions but with optionally dynamic shape.
 /// To achive a static shape the trait should be const implemented.
@@ -49,7 +49,7 @@ impl<const LEN: usize> Shape<LEN> for [usize] {
 
     fn slice(&self) -> &[usize; LEN] {
         assert_eq!(self.len(), LEN);
-        unsafe { std::mem::transmute(self.as_ptr()) }
+        unsafe { transmute(self.as_ptr()) }
     }
 }
 
@@ -61,7 +61,7 @@ impl<const M: usize, const K: usize> const Shape<2> for MatrixShape<M, K> {
         match n {
             0 => K,
             1 => M,
-            _ => unsafe { unreachable_unchecked() },
+            _ => panic!("Cannot get len of axis higher than 1, as a matrix only has 2 axies (rows and columns)"),
         }
     }
     fn volume(&self) -> usize {
@@ -174,13 +174,13 @@ macro_rules! impl_index_slice {
                 assert!(i < self.shape.axis_len(0));
 
                 unsafe {
-                    std::mem::transmute::<*const T, &'a $($mut)? [T; LEN]>(
+                    transmute::<*const T, &'a $($mut)? [T; LEN]>(
                         self.data
                             .[< as $(_$mut)? _ptr>]()
                             .add(i * (self.shape.volume() / self.shape.axis_len(NDIM - 1))),
                     )
                     .[<reshape_unchecked_ref $(_$mut)? >](
-                        std::mem::transmute::<*const usize, &[usize; NDIM - 1]>(
+                        transmute::<*const usize, &[usize; NDIM - 1]>(
                             self.shape.slice()[0..NDIM - 1].as_ptr(),
                         ),
                         B::default(),
@@ -227,6 +227,8 @@ impl<
             m,
             n,
             k,
+            false,
+            false,
         );
     }
 
