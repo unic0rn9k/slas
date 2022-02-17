@@ -30,29 +30,6 @@ fn main() {
 }
 
 #[cfg(test)]
-mod benches {
-    extern crate test;
-
-    use crate::*;
-    use test::{black_box, Bencher};
-
-    #[bench]
-    fn norm(b: &mut Bencher) {
-        b.iter(|| {
-            let mut a = StaticCowVec::from(&[1f32, 2., 3.2]).static_backend();
-            let mut b = moo![on slas_backend::Rust:f32: 3, 0.4, 5];
-
-            assert!(a.data.is_borrowed());
-            a.normalize();
-            assert!(a.data.is_owned());
-            b.normalize();
-
-            black_box(a.dot(&b));
-        });
-    }
-}
-
-#[cfg(test)]
 mod thin_blas {
     use crate::*;
 
@@ -331,6 +308,22 @@ mod tensors {
         let t = t.index_slice(3);
 
         assert_eq!(t[[2, 2]], 9.);
+    }
+
+    #[test]
+    fn tensor_2d_to_matrix() {
+        use slas::prelude::*;
+
+        let a = moo![f32: 0..6]
+            .reshape(&[2, 3], slas_backend::Rust)
+            .matrix();
+
+        let b = moo![f32: 0..6]
+            .static_backend::<slas_backend::Rust>()
+            .matrix::<2, 3>();
+
+        assert_eq!(a.vec_ref().slice(), moo![f32: 0..6].slice());
+        assert_eq!(b.vec_ref().slice(), moo![f32: 0..6].slice());
     }
 }
 

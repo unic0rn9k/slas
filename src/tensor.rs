@@ -76,9 +76,42 @@ impl<const M: usize, const K: usize> const Shape<2> for MatrixShape<M, K> {
 /// See [`StaticVec::reshape`] for constructing a tensor.
 /// The use of `&'static dyn Shape<NDIM>` does not mean slower performance,
 /// as long as Shape is [const implemented](https://github.com/rust-lang/rust/issues/67792) for the type of the shape instance.
+#[derive(Clone, Copy)]
 pub struct Tensor<T, U: StaticVec<T, LEN>, B: Backend<T>, const NDIM: usize, const LEN: usize> {
     pub data: WithStaticBackend<T, U, B, LEN>,
     pub shape: &'static dyn Shape<NDIM>,
+}
+
+impl<T, U: StaticVec<T, LEN>, B: Backend<T>, const LEN: usize> Tensor<T, U, B, 2, LEN> {
+    pub const fn matrix(self) -> Matrix<T, U, B, LEN> {
+        Matrix(self)
+    }
+    pub const fn backend(&self) -> &B {
+        &self.data.backend
+    }
+    pub const fn vec_ref(&self) -> &U {
+        &self.data.data
+    }
+    pub const fn mut_vec_ref(&mut self) -> &mut U {
+        &mut self.data.data
+    }
+}
+
+impl<T, U: StaticVec<T, LEN>, B: Backend<T>, const LEN: usize> const std::ops::Index<()>
+    for Tensor<T, U, B, 2, LEN>
+{
+    type Output = Matrix<T, U, B, LEN>;
+    fn index<'a>(&'a self, _: ()) -> &'a Self::Output {
+        unsafe { transmute(self) }
+    }
+}
+
+impl<T, U: StaticVec<T, LEN>, B: Backend<T>, const LEN: usize> const std::ops::IndexMut<()>
+    for Tensor<T, U, B, 2, LEN>
+{
+    fn index_mut<'a>(&'a mut self, _: ()) -> &'a mut Self::Output {
+        unsafe { transmute(self) }
+    }
 }
 
 impl<T: Float + std::fmt::Debug, B: Backend<T>, U: StaticVec<T, LEN>, const LEN: usize>
@@ -237,7 +270,7 @@ impl<
         other: &Matrix<T, U2, B, LEN2>,
     ) -> [T; OLEN] {
         let mut buffer = [T::zero(); OLEN];
-        self.matrix_mul_buffer(other, &mut buffer);
+        <Self>::matrix_mul_buffer(self, other, &mut buffer);
         buffer
     }
 }
@@ -250,4 +283,65 @@ macro_rules! m {
 }
 
 /// Just a type alias for a 2D tensor.
-pub type Matrix<T, U, B, const LEN: usize> = Tensor<T, U, B, 2, LEN>;
+/// pub type Matrix<T, U, B, const LEN: usize> = Tensor<T, U, B, 2, LEN>;
+
+#[derive(Clone, Copy)]
+pub struct Matrix<
+    T,
+    U: StaticVec<T, LEN>,
+    B: Backend<T>,
+    const LEN: usize,
+    const IS_TRANS: bool = false,
+>(Tensor<T, U, B, 2, LEN>);
+
+impl<T, U: StaticVec<T, LEN>, B: Backend<T>, const LEN: usize, const IS_TRANS: bool>
+    Matrix<T, U, B, LEN, IS_TRANS>
+{
+    pub fn rows(&self) -> usize {
+        if IS_TRANS {
+            self.0.shape.axis_len(0)
+        } else {
+            self.0.shape.axis_len(1)
+        }
+    }
+    pub fn columns(&self) -> usize {
+        if IS_TRANS {
+            self.0.shape.axis_len(1)
+        } else {
+            self.0.shape.axis_len(0)
+        }
+    }
+}
+
+impl<T, U: StaticVec<T, LEN>, B: Backend<T>, const LEN: usize, const IS_TRANS: bool> const
+    std::ops::Deref for Matrix<T, U, B, LEN, IS_TRANS>
+{
+    type Target = Tensor<T, U, B, 2, LEN>;
+    fn deref(&self) -> &Self::Target {
+        if IS_TRANS {
+            panic!("Cannot deref lazily transposed matrix immutably. Try using &self.deref_mut() instead")
+        } else {
+            &self.0
+        }
+    }
+}
+
+impl<T, U: StaticVec<T, LEN>, B: Backend<T>, const LEN: usize, const IS_TRANS: bool> const
+    std::ops::DerefMut for Matrix<T, U, B, LEN, IS_TRANS>
+{
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        if IS_TRANS {
+            todo!()
+        } else {
+            &mut self.0
+        }
+    }
+}
+
+impl<T, U: StaticVec<T, LEN>, B: Backend<T>, const LEN: usize, const IS_TRANS: bool> const
+    From<Tensor<T, U, B, 2, LEN>> for Matrix<T, U, B, LEN, IS_TRANS>
+{
+    fn from(t: Tensor<T, U, B, 2, LEN>) -> Self {
+        Matrix(t)
+    }
+}

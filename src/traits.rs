@@ -157,10 +157,11 @@ pub trait StaticVec<T, const LEN: usize> {
         Self: Sized,
     {
         assert_eq!(M * K, LEN);
-        crate::tensor::Matrix {
+        crate::tensor::Tensor {
             data: crate::backends::WithStaticBackend::from_static_vec(self, B::default()),
             shape: &crate::tensor::MatrixShape::<M, K>,
         }
+        .into()
     }
 
     /// ## Example
@@ -170,7 +171,7 @@ pub trait StaticVec<T, const LEN: usize> {
     /// let a = moo![f32: 0..6].reshape(&[3, 2], slas_backend::Blas);
     /// let b = [0.; 6].reshape(&[2, 3], slas_backend::Blas);
     ///
-    /// assert_eq!(a.matrix_mul(&b), [0.; 4]);
+    /// assert_eq!(a[()].matrix_mul(&b[()]), [0.; 4]);
     /// ```
     /// In this example the matricies `a` and `b` have dynamic shapes.
     /// If you wan't to create matricies with static shapes, you should use [`StaticVec::matrix`].
@@ -182,7 +183,13 @@ pub trait StaticVec<T, const LEN: usize> {
     where
         Self: Sized,
     {
-        assert_eq!(shape.volume(), LEN);
+        assert_eq!(
+            shape.volume(),
+            LEN,
+            "Cannot reshape vector with lenght {} as {:?}",
+            LEN,
+            shape.slice()
+        );
         Tensor {
             data: crate::backends::WithStaticBackend::from_static_vec(self, backend),
             shape,

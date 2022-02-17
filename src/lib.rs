@@ -178,12 +178,14 @@
     const_trait_impl,
     const_ptr_as_ref,
     const_option,
-    associated_type_defaults
+    associated_type_defaults,
+    const_mut_refs
 )]
 
 //mod matrix_stable;
 //pub use matrix_stable::matrix;
 pub mod prelude;
+pub mod tags;
 pub mod tensor;
 
 pub mod backends;
