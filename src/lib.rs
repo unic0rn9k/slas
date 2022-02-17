@@ -185,7 +185,6 @@
 //mod matrix_stable;
 //pub use matrix_stable::matrix;
 pub mod prelude;
-pub mod tags;
 pub mod tensor;
 
 pub mod backends;
