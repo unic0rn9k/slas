@@ -126,3 +126,29 @@ impl<T: Float> From<[T; 2]> for Complex<T> {
         Complex { re: n[0], im: n[1] }
     }
 }
+
+use paste::paste;
+macro_rules! gen_tests {
+    ($t: ty) => {
+        paste! {
+            #[cfg(test)]
+            #[test]
+            fn [<procedural_tests _ $t>]() {
+                for x in 0..100 {
+                    let x = x as $t / 2.;
+                    for y in 0..100 {
+                        let y = y as $t / 2.;
+                        assert_eq!(x.hypot(y), x.hypot_(y));
+                    }
+                    for n in 0..4 {
+                        assert_eq!(x.powi(n), x.powi_(n));
+                    }
+                    assert_eq!(x.sqrt(), x.sqrt_());
+                }
+            }
+        }
+    };
+}
+
+gen_tests!(f32);
+gen_tests!(f64);
