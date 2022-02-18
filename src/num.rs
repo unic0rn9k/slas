@@ -116,8 +116,8 @@ where
         }
     }
 
-    fn hypot_(self, _: Self) -> Self {
-        unimplemented!()
+    fn hypot_(self, other: Self) -> Self {
+        (self * self + other * other).sqrt_()
     }
 }
 

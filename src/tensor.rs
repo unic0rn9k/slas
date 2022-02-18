@@ -49,7 +49,7 @@ impl<const LEN: usize> Shape<LEN> for [usize] {
 
     fn slice(&self) -> &[usize; LEN] {
         assert_eq!(self.len(), LEN);
-        unsafe { transmute(self.as_ptr()) }
+        unsafe { &*(self.as_ptr() as *const [usize; LEN]) }
     }
 }
 
