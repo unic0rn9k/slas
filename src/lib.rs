@@ -182,8 +182,6 @@
     const_mut_refs
 )]
 
-//mod matrix_stable;
-//pub use matrix_stable::matrix;
 pub mod prelude;
 pub mod tensor;
 
