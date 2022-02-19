@@ -362,14 +362,9 @@ impl<'a, T: Copy + std::fmt::Debug, const LEN: usize> std::fmt::Debug
 /// moo![0f32; 4];
 /// moo![|n|-> f32 { (n as f32).sin() }; 100];
 /// moo![|n| (n as f32).sin(); 100];
-/// moo![len 4: 0f32; 4];
 /// ```
 #[macro_export]
 macro_rules! moo {
-    (len $len: literal : $($v: tt)*) => {{
-        let tmp: StaticCowVec<_, $len> = moo![$($v)*];
-        tmp
-    }};
     (|$n: ident| -> $t: ty $do: block ; $len: expr) => {{
         let mut tmp = StaticCowVec::<$t, $len>::from([<$t>::zero(); $len]);
         (0..$len).map(|$n| -> f32 {$do}).enumerate().for_each(|(n, v)| tmp[n]=v);
