@@ -11,7 +11,8 @@
 //!
 //! </div>
 //!
-//! Provides statically allocated vector, matrix and tensor types, for interfacing with blas/blis, in a performant manor, using copy-on-write (aka cow) behavior by default.
+//! A linear algebra system with a focus on performance, static allocation, statically shaped data and copy-on-write (aka cow) behavior.
+//! Safe and fast bindings for blas/blis are also provided out of the box.
 //!
 //! [What is BLAS?](http://www.netlib.org/blas/)
 //!
@@ -168,7 +169,7 @@
 //! - [Benchmarks, tests and related](https://github.com/unic0rn9k/slas/tree/master/tests)
 //!
 //! ## TODO
-//! [Progress and todos are now on trello!](https://trello.com/b/iSakt16M/slas%F0%9F%8C%BF)
+//! [Progress and todos are on trello!](https://trello.com/b/iSakt16M/slas%F0%9F%8C%BF)
 
 #![allow(incomplete_features)]
 #![feature(
@@ -359,9 +360,19 @@ impl<'a, T: Copy + std::fmt::Debug, const LEN: usize> std::fmt::Debug
 /// moo![f32: 1..4];
 /// moo![f32: 1..=3];
 /// moo![0f32; 4];
+/// moo![|n|-> f32 { (n as f32).sin() }; 100];
+/// moo![|n| (n as f32).sin(); 100];
 /// ```
 #[macro_export]
 macro_rules! moo {
+    (|$n: ident| -> $t: ty $do: block ; $len: expr) => {{
+        let mut tmp = StaticCowVec::from([<$t>::zero(); $len]);
+        (0..$len).map(|$n| -> f32 {$do}).enumerate().for_each(|(n, v)| tmp[n]=v);
+        tmp
+    }};
+    (|$n: ident| $do: expr ; $len: expr) => {{
+        moo![|$n| -> _ {$do}; $len]
+    }};
     (on $backend:ty : $($v: tt)*) => {{
         moo![$($v)*].static_backend::<$backend>()
     }};
@@ -379,7 +390,6 @@ macro_rules! moo {
         tmp
     }};
     ($t: ty: $($v: expr),* $(,)?) => {{
-        use std::convert::TryFrom;
         StaticCowVec::from([$( $v as $t ),*])
     }};
     ($($v: tt)*) => {{
