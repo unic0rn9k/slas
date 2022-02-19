@@ -366,7 +366,7 @@ impl<'a, T: Copy + std::fmt::Debug, const LEN: usize> std::fmt::Debug
 #[macro_export]
 macro_rules! moo {
     (|$n: ident| -> $t: ty $do: block ; $len: expr) => {{
-        let mut tmp = StaticCowVec::from([<$t>::zero(); $len]);
+        let mut tmp = StaticCowVec::<$t, $len>::from([<$t>::zero(); $len]);
         (0..$len).map(|$n| -> f32 {$do}).enumerate().for_each(|(n, v)| tmp[n]=v);
         tmp
     }};
