@@ -325,7 +325,9 @@ impl<'a, T: Copy, const LEN: usize> const From<&'a [T; LEN]> for StaticCowVec<'a
 }
 impl<'a, T: Copy, const LEN: usize> const From<&'a [T]> for StaticCowVec<'a, T, LEN> {
     fn from(s: &'a [T]) -> Self {
-        //assert_eq!(s.len(), LEN);
+        if s.len() != LEN {
+            panic!("Cannot convert slice of incorrect length to StaticCowVec")
+        }
         Self::from(unsafe { &*(s.as_ptr() as *const [T; LEN]) })
     }
 }

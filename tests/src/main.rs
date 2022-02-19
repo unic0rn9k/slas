@@ -196,6 +196,19 @@ mod moo {
         assert_eq!(*v, *[0., 3., 3.].moo_ref());
         assert_eq!(source, vec![1., 3., 4.]);
     }
+
+    #[test]
+    #[should_panic]
+    fn into_is_not_subslice() {
+        let _: StaticCowVec<f32, 2> = (&[1., 2., 3.][..]).into();
+    }
+
+    #[test]
+    fn casting() {
+        let _: StaticCowVec<f32, 3> = (&[1., 2., 3.][..]).into();
+        let _: StaticCowVec<f32, 3> = (&[1., 2., 3.]).into();
+        let _: StaticCowVec<f32, 3> = [1., 2., 3.].into();
+    }
 }
 
 #[cfg(test)]
