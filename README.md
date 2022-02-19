@@ -11,7 +11,8 @@
 
 </div>
 
-Provides statically allocated vector, matrix and tensor types, for interfacing with blas/blis, in a performant manor, using copy-on-write (aka cow) behavior by default.
+A linear algebra system with a focus on performance, static allocation, statically shaped data and copy-on-write (aka cow) behavior.
+Safe and fast bindings for blas/blis are also provided out of the box.
 
 [What is BLAS?](http://www.netlib.org/blas/)
 
@@ -168,6 +169,6 @@ follow the installation instructions in the openblas readme and add `extern crat
 - [Benchmarks, tests and related](https://github.com/unic0rn9k/slas/tree/master/tests)
 
 ### TODO
-[Progress and todos are now on trello!](https://trello.com/b/iSakt16M/slas%F0%9F%8C%BF)
+[Progress and todos are on trello!](https://trello.com/b/iSakt16M/slas%F0%9F%8C%BF)
 
 License: Apache-2.0
