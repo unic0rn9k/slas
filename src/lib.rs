@@ -239,11 +239,11 @@ impl<'a, T: Copy, const LEN: usize> StaticCowVec<'a, T, LEN> {
         self.len() == 0
     }
 
-    pub fn is_borrowed(&self) -> bool {
+    pub const fn is_borrowed(&self) -> bool {
         !self.is_owned()
     }
 
-    pub fn is_owned(&self) -> bool {
+    pub const fn is_owned(&self) -> bool {
         self.is_owned
     }
 
@@ -269,7 +269,7 @@ impl<'a, T: Copy, const LEN: usize> StaticCowVec<'a, T, LEN> {
     }
 }
 
-impl<'a, T: Copy, const LEN: usize> Deref for StaticVecUnion<'a, T, LEN> {
+impl<'a, T: Copy, const LEN: usize> const Deref for StaticVecUnion<'a, T, LEN> {
     type Target = [T; LEN];
 
     fn deref(&self) -> &Self::Target {
@@ -277,13 +277,13 @@ impl<'a, T: Copy, const LEN: usize> Deref for StaticVecUnion<'a, T, LEN> {
     }
 }
 
-impl<'a, T: Copy, const LEN: usize> DerefMut for StaticVecUnion<'a, T, LEN> {
+impl<'a, T: Copy, const LEN: usize> const DerefMut for StaticVecUnion<'a, T, LEN> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         unsafe { transmute::<&mut Self, &'a mut Self::Target>(self) }
     }
 }
 
-impl<'a, T: Copy, const LEN: usize> Deref for StaticCowVec<'a, T, LEN> {
+impl<'a, T: Copy, const LEN: usize> const Deref for StaticCowVec<'a, T, LEN> {
     type Target = StaticVecUnion<'a, T, LEN>;
 
     fn deref(&self) -> &Self::Target {
@@ -295,7 +295,7 @@ impl<'a, T: Copy, const LEN: usize> Deref for StaticCowVec<'a, T, LEN> {
     }
 }
 
-impl<'a, T: Copy, const LEN: usize> DerefMut for StaticCowVec<'a, T, LEN> {
+impl<'a, T: Copy, const LEN: usize> const DerefMut for StaticCowVec<'a, T, LEN> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         unsafe {
             if self.is_owned {
