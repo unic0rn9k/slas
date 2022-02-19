@@ -338,6 +338,23 @@ mod tensors {
         assert_eq!(a.vec_ref().slice(), moo![f32: 0..6].slice());
         assert_eq!(b.vec_ref().slice(), moo![f32: 0..6].slice());
     }
+
+    #[test]
+    fn shape() {
+        use slas::{
+            m,
+            tensor::{MatrixShape, Shape},
+        };
+        let s = [1, 2];
+        assert_eq!(s.slice(), &[1, 2]);
+        assert_eq!(s.axis_len(0), 1);
+        assert_eq!(s.axis_len(1), 2);
+
+        let s = m![2, 1];
+        assert_eq!(s.slice(), &[1, 2]);
+        assert_eq!(s.axis_len(0), 1);
+        assert_eq!(s.axis_len(1), 2);
+    }
 }
 
 #[cfg(all(test, feature = "versus"))]
