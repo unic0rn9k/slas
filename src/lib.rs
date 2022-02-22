@@ -37,6 +37,8 @@
 //! // This will always use blas for all operations on a
 //! ```
 //!
+//! By default slas will choose the backend that is assumed to be the fastest given the amount of elements in the vector.
+//!
 //! The `StaticCowVec` dereferences to `StaticVecUnion`, which in turn dereferences to `[T; LEN]`,
 //! so any method implemented for `[T;LEN]` can also be called on `StaticCowVec` and `StaticVecUnion`.
 //!
@@ -187,7 +189,7 @@ pub mod prelude;
 pub mod tensor;
 
 pub mod backends;
-pub mod num;
+pub use num;
 
 use std::{mem::transmute, ops::*};
 #[cfg(feature = "blis-sys")]
@@ -232,6 +234,7 @@ pub struct StaticCowVec<'a, T: Copy, const LEN: usize> {
 }
 
 impl<'a, T: Copy, const LEN: usize> StaticCowVec<'a, T, LEN> {
+    #[inline(always)]
     pub const fn len(&self) -> usize {
         LEN
     }
@@ -366,7 +369,7 @@ impl<'a, T: Copy + std::fmt::Debug, const LEN: usize> std::fmt::Debug
 #[macro_export]
 macro_rules! moo {
     (|$n: ident| -> $t: ty $do: block ; $len: expr) => {{
-        let mut tmp = StaticCowVec::<$t, $len>::from([<$t>::zero(); $len]);
+        let mut tmp = StaticCowVec::<$t, $len>::from([num!(0); $len]);
         (0..$len).map(|$n| -> f32 {$do}).enumerate().for_each(|(n, v)| tmp[n]=v);
         tmp
     }};
@@ -380,12 +383,12 @@ macro_rules! moo {
         StaticCowVec::from($($v)*)
     }};
     ($t: ty: $a: literal .. $b: literal) => {{
-        let mut tmp = StaticCowVec::from([<$t>::zero(); $b - $a]);
+        let mut tmp = StaticCowVec::from([num!(0); $b - $a]);
         tmp.iter_mut().zip($a..$b).for_each(|(o, i)| *o = i as $t);
         tmp
     }};
     ($t: ty: $a: literal ..= $b: literal) => {{
-        let mut tmp = StaticCowVec::from([<$t>::zero(); $b - $a+1]);
+        let mut tmp = StaticCowVec::from([num!(0); $b - $a+1]);
         tmp.iter_mut().zip($a..=$b).for_each(|(o, i)| *o = i as $t);
         tmp
     }};

@@ -269,7 +269,7 @@ impl<
         &self,
         other: &Matrix<T, U2, B, LEN2>,
     ) -> [T; OLEN] {
-        let mut buffer = [T::zero(); OLEN];
+        let mut buffer = [num::num!(0); OLEN];
         <Self>::matrix_mul_buffer(self, other, &mut buffer);
         buffer
     }
