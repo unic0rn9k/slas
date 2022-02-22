@@ -37,7 +37,7 @@
 //! // This will always use blas for all operations on a
 //! ```
 //!
-//! By default slas will choose the backend that is assumed to be the fastest given the amount of elements in the vector.
+//! By default slas will choose the backend that is assumed to be the fastest, given the amount of elements in the vector.
 //!
 //! The `StaticCowVec` dereferences to `StaticVecUnion`, which in turn dereferences to `[T; LEN]`,
 //! so any method implemented for `[T;LEN]` can also be called on `StaticCowVec` and `StaticVecUnion`.
