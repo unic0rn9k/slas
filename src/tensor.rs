@@ -43,10 +43,12 @@ impl<const LEN: usize> Shape<LEN> for [usize; LEN] {
 }
 
 impl<const LEN: usize> Shape<LEN> for [usize] {
+    #[inline(always)]
     fn axis_len(&self, n: usize) -> usize {
         self[n]
     }
 
+    #[inline(always)]
     fn slice(&self) -> &[usize; LEN] {
         assert_eq!(self.len(), LEN);
         unsafe { &*(self.as_ptr() as *const [usize; LEN]) }
@@ -57,6 +59,7 @@ impl<const LEN: usize> Shape<LEN> for [usize] {
 pub struct MatrixShape<const M: usize, const K: usize>;
 
 impl<const M: usize, const K: usize> const Shape<2> for MatrixShape<M, K> {
+    #[inline(always)]
     fn axis_len(&self, n: usize) -> usize {
         match n {
             0 => K,
@@ -64,9 +67,11 @@ impl<const M: usize, const K: usize> const Shape<2> for MatrixShape<M, K> {
             _ => panic!("Cannot get len of axis higher than 1, as a matrix only has 2 axies (rows and columns)"),
         }
     }
+    #[inline(always)]
     fn volume(&self) -> usize {
         M * K
     }
+    #[inline(always)]
     fn slice(&self) -> &[usize; 2] {
         &[K, M]
     }
@@ -142,6 +147,7 @@ fn debug_shape<const NDIM: usize>(s: &dyn Shape<NDIM>) -> String {
         .join(",")
 }
 
+#[inline(always)]
 fn tensor_index<T: Shape<NDIM>, const NDIM: usize>(s: &dyn Shape<NDIM>, o: &T) -> usize {
     let mut sum = 0;
     let mut product = 1;
@@ -170,6 +176,8 @@ impl<
     > std::ops::Index<S> for Tensor<T, U, B, NDIM, LEN>
 {
     type Output = T;
+
+    #[inline(always)]
     fn index(&self, i: S) -> &T {
         unsafe { self.data.data.get_unchecked(tensor_index(self.shape, &i)) }
     }
@@ -297,6 +305,7 @@ pub struct Matrix<
 impl<T, U: StaticVec<T, LEN>, B: Backend<T>, const LEN: usize, const IS_TRANS: bool>
     Matrix<T, U, B, LEN, IS_TRANS>
 {
+    #[inline(always)]
     pub fn rows(&self) -> usize {
         if IS_TRANS {
             self.0.shape.axis_len(0)
@@ -304,6 +313,8 @@ impl<T, U: StaticVec<T, LEN>, B: Backend<T>, const LEN: usize, const IS_TRANS: b
             self.0.shape.axis_len(1)
         }
     }
+
+    #[inline(always)]
     pub fn columns(&self) -> usize {
         if IS_TRANS {
             self.0.shape.axis_len(1)

@@ -113,6 +113,8 @@ mod numbers {
 
 #[cfg(test)]
 mod moo {
+    use slas::StaticVecUnion;
+
     use crate::*;
 
     #[test]
@@ -208,6 +210,17 @@ mod moo {
         let _: StaticCowVec<f32, 3> = (&[1., 2., 3.][..]).into();
         let _: StaticCowVec<f32, 3> = (&[1., 2., 3.]).into();
         let _: StaticCowVec<f32, 3> = [1., 2., 3.].into();
+    }
+
+    #[test]
+    fn transmute_elements() {
+        use slas::prelude::*;
+
+        let a = moo![f32: 0..3];
+        unsafe {
+            let b: &StaticVecUnion<fast_floats::FF32, 3> = a.transmute_elements();
+            assert_eq!(a[0], *b[0]);
+        }
     }
 }
 

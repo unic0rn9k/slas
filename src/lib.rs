@@ -220,7 +220,7 @@ impl<'a, T: Copy, const LEN: usize> StaticVecUnion<'a, T, LEN> {
     }
 
     pub const unsafe fn transmute_elements<U: Copy>(&'a self) -> &'a StaticVecUnion<'a, U, LEN> {
-        if size_of::<T>() == size_of::<U>() {
+        if size_of::<T>() != size_of::<U>() {
             panic!("Cannot transmute between vectors of different sizes")
         }
         transmute(self)
@@ -244,7 +244,6 @@ pub struct StaticCowVec<'a, T: Copy, const LEN: usize> {
 }
 
 impl<'a, T: Copy, const LEN: usize> StaticCowVec<'a, T, LEN> {
-    #[inline(always)]
     pub const fn len(&self) -> usize {
         LEN
     }
