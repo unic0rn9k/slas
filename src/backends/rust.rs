@@ -2,6 +2,7 @@
 #[derive(Default)]
 pub struct Rust;
 use super::*;
+use operations::*;
 use std::simd::Simd;
 
 // TODO: This needs to check if SIMD is available at compile time.
@@ -15,7 +16,7 @@ macro_rules! impl_dot {
         /// use slas::prelude::*;
         /// assert!(slas_backend::Rust.dot(&[1., 2., 3.], &moo![f32: -1, 2, -1]) == 0.);
         /// ```
-        impl operations::DotProduct<$t> for Rust {
+        impl DotProduct<$t> for Rust {
             fn dot<const LEN: usize>(
                 &self,
                 a: &impl StaticVec<$t, LEN>,
@@ -41,7 +42,7 @@ macro_rules! impl_dot {
 
 macro_rules! impl_norm {
     ($t: ty) => {
-        impl operations::Normalize<$t> for Rust {
+        impl Normalize<$t> for Rust {
             type NormOutput = $t;
             fn norm<const LEN: usize>(&self, a: &impl StaticVec<$t, LEN>) -> $t {
                 //TODO: Use hypot function here. This will require implementing hypot for all float types first.
@@ -49,12 +50,12 @@ macro_rules! impl_norm {
             }
 
             fn normalize<const LEN: usize>(&self, a: &mut impl StaticVec<$t, LEN>) {
-                let norm = operations::Normalize::norm(self, a);
+                let norm = Normalize::norm(self, a);
                 a.mut_moo_ref().iter_mut().for_each(|n| *n /= norm);
             }
         }
 
-        impl operations::Normalize<Complex<$t>> for Rust {
+        impl Normalize<Complex<$t>> for Rust {
             type NormOutput = $t;
             fn norm<const LEN: usize>(&self, a: &impl StaticVec<Complex<$t>, LEN>) -> $t {
                 //TODO: Use hypot function here. This will require implementing hypot for all float types first.
@@ -67,13 +68,32 @@ macro_rules! impl_norm {
             }
 
             fn normalize<const LEN: usize>(&self, a: &mut impl StaticVec<Complex<$t>, LEN>) {
-                let norm = operations::Normalize::norm(self, a);
+                let norm = Normalize::norm(self, a);
                 a.mut_moo_ref()
                     .iter_mut()
                     .for_each(|n| *n = *n / norm.into());
             }
         }
     };
+}
+
+//macro_rules! impl_transpose {
+//	($t: ty) => {
+//
+//	};
+//}
+
+impl Transpose<f32> for Rust {
+    fn transpose_inplace<const LEN: usize>(&self, _a: &mut impl StaticVec<f32, LEN>) -> () {
+        todo!()
+    }
+
+    fn transpose<const LEN: usize>(
+        &self,
+        _a: &impl StaticVec<f32, LEN>,
+        _buffer: &mut impl StaticVec<f32, LEN>,
+    ) -> () {
+    }
 }
 
 impl_norm!(f32);

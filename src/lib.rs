@@ -191,7 +191,10 @@ pub mod tensor;
 pub mod backends;
 pub use num;
 
-use std::{mem::transmute, ops::*};
+use std::{
+    mem::{size_of, transmute},
+    ops::*,
+};
 #[cfg(feature = "blis-sys")]
 extern crate blis_src;
 extern crate cblas_sys;
@@ -214,6 +217,13 @@ pub union StaticVecUnion<'a, T: Copy, const LEN: usize> {
 impl<'a, T: Copy, const LEN: usize> StaticVecUnion<'a, T, LEN> {
     pub fn slice(&'a self) -> &'a [T; LEN] {
         unsafe { &*(self.as_ptr() as *const [T; LEN]) }
+    }
+
+    pub const unsafe fn transmute_elements<U: Copy>(&'a self) -> &'a StaticVecUnion<'a, U, LEN> {
+        if size_of::<T>() == size_of::<U>() {
+            panic!("Cannot transmute between vectors of different sizes")
+        }
+        transmute(self)
     }
 }
 
