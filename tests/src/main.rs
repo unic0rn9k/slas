@@ -269,7 +269,7 @@ mod tensors {
     #[should_panic]
     fn wrong_index() {
         use slas::prelude::*;
-        let t = moo![f32: 0..27].reshape(&[3, 3, 3], slas_backend::Rust);
+        let t = moo![f32: 0..27].reshape([3, 3, 3], slas_backend::Rust);
         assert_eq!(t[[3, 0, 0]], 9.);
     }
 

@@ -1,6 +1,7 @@
 //! <div align="center">
 //!
-//! # SLAS
+//! <img src="logo.png" width="300"/>
+//!
 //! *Static Linear Algebra System*
 //!
 //! [![Crates.io](https://img.shields.io/crates/v/slas?logo=rust)](https://crates.io/crates/slas)
@@ -122,7 +123,7 @@
 //!
 //! let a = moo![f32: 1..=6].matrix::<Blas, 2, 3>();
 //!
-//! assert_eq!(a[[0, 1]], a[m![1, 0]]);
+//! // assert_eq!(a[&[0, 1]], a[(1, 0)]); // Dyn index removed
 //! ```
 //!
 //! ## Tensor example
@@ -130,11 +131,11 @@
 //! ```
 //! use slas::prelude::*;
 //! let t = moo![f32: 0..27].reshape(&[3, 3, 3], slas_backend::Rust);
-//! assert_eq!(t[[0, 0, 1]], 9.);
+//! assert_eq!(t[&[0, 0, 1]], 9.);
 //!
-//! let mut s = t.index_slice(1);
+//! let mut s = t.index_slice(1).matrix();
 //!
-//! assert_eq!(s[m![0, 0]], 9.);
+//! assert_eq!(s[(0, 0)], 9.);
 //! ```
 //! That's pretty much it for now...
 //!
@@ -201,11 +202,18 @@ extern crate cblas_sys;
 mod traits;
 use prelude::*;
 
-/// StaticVectorUnion is always owned when it is not found in a StaticCowVec, therefore we have this type alias to make it less confisung when dealing with references to owned vectors.
+/// StaticVectorUnion is always owned when it is not found in a StaticCowVec,
+/// therefore we have this type alias to make it less confisung when dealing with references to owned vectors.
 pub type StaticVecRef<'a, T, const LEN: usize> = &'a StaticVecUnion<'a, T, LEN>;
 
 /// Same as [`StaticVecRef`], but mutable.
 pub type MutStaticVecRef<'a, T, const LEN: usize> = &'a mut StaticVecUnion<'a, T, LEN>;
+
+// /// [`StaticVecRef`], but with the ability to overwrite mutability at compiletime.
+// #[derive(Clone, Copy)]
+// pub struct MayebeMutStaticVecRef<'a, T, const LEN: usize, const IS_MUT: bool = false>(
+//     StaticVecRef<'a, T, LEN>,
+// );
 
 /// Will always be owned, unless inside a [`StaticCowVec`]
 #[derive(Clone, Copy, Eq)]
@@ -235,7 +243,8 @@ impl<'a, T: Copy + PartialEq, const LEN: usize> std::cmp::PartialEq<StaticVecUni
     }
 }
 
-/// Vectors as copy-on-write smart pointers. Use full for situations where you don't know, if you need mutable access to your data, at compile time.
+/// Vectors as copy-on-write smart pointers. Use full for situations where you don't know,
+/// if you need mutable access to your data, at compile time.
 /// See [`moo`] for how to create a StaticCowVec.
 #[derive(Clone, Copy)]
 pub struct StaticCowVec<'a, T: Copy, const LEN: usize> {

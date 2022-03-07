@@ -1,6 +1,7 @@
 <div align="center">
 
-## SLAS
+<img src="logo.png" width="300"/>
+
 *Static Linear Algebra System*
 
 [![Crates.io](https://img.shields.io/crates/v/slas?logo=rust)](https://crates.io/crates/slas)
@@ -130,9 +131,9 @@ At the moment tensors can't do much
 ```rust
 use slas::prelude::*;
 let t = moo![f32: 0..27].reshape(&[3, 3, 3], slas_backend::Rust);
-assert_eq!(t[[0, 0, 1]], 9.);
+assert_eq!(t[&[0, 0, 1]], 9.);
 
-let mut s = t.index_slice(1);
+let mut s = t.index_slice(1).matrix();
 
 assert_eq!(s[m![0, 0]], 9.);
 ```

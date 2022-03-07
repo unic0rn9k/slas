@@ -42,6 +42,16 @@ impl<const LEN: usize> Shape<LEN> for [usize; LEN] {
     }
 }
 
+impl<const LEN: usize> Shape<LEN> for &[usize; LEN] {
+    fn axis_len(&self, n: usize) -> usize {
+        self[n]
+    }
+
+    fn slice(&self) -> &[usize; LEN] {
+        self
+    }
+}
+
 impl<const LEN: usize> Shape<LEN> for [usize] {
     #[inline(always)]
     fn axis_len(&self, n: usize) -> usize {
@@ -82,13 +92,22 @@ impl<const M: usize, const K: usize> const Shape<2> for MatrixShape<M, K> {
 /// The use of `&'static dyn Shape<NDIM>` does not mean slower performance,
 /// as long as Shape is [const implemented](https://github.com/rust-lang/rust/issues/67792) for the type of the shape instance.
 #[derive(Clone, Copy)]
-pub struct Tensor<T, U: StaticVec<T, LEN>, B: Backend<T>, const NDIM: usize, const LEN: usize> {
+pub struct Tensor<
+    T,
+    U: StaticVec<T, LEN>,
+    B: Backend<T>,
+    const NDIM: usize,
+    const LEN: usize,
+    S: Shape<NDIM> = [usize; NDIM],
+> {
     pub data: WithStaticBackend<T, U, B, LEN>,
-    pub shape: &'static dyn Shape<NDIM>,
+    pub shape: S,
 }
 
-impl<T, U: StaticVec<T, LEN>, B: Backend<T>, const LEN: usize> Tensor<T, U, B, 2, LEN> {
-    pub const fn matrix(self) -> Matrix<T, U, B, LEN> {
+impl<T, U: StaticVec<T, LEN>, B: Backend<T>, const LEN: usize, S: Shape<2>>
+    Tensor<T, U, B, 2, LEN, S>
+{
+    pub const fn matrix(self) -> Matrix<T, U, B, LEN, false, S> {
         Matrix(self)
     }
     pub const fn backend(&self) -> &B {
@@ -102,25 +121,31 @@ impl<T, U: StaticVec<T, LEN>, B: Backend<T>, const LEN: usize> Tensor<T, U, B, 2
     }
 }
 
-impl<T, U: StaticVec<T, LEN>, B: Backend<T>, const LEN: usize> const std::ops::Index<()>
-    for Tensor<T, U, B, 2, LEN>
-{
-    type Output = Matrix<T, U, B, LEN>;
-    fn index<'a>(&'a self, _: ()) -> &'a Self::Output {
-        unsafe { transmute(self) }
-    }
-}
+//impl<T, U: StaticVec<T, LEN>, B: Backend<T>, const LEN: usize> const std::ops::Index<()>
+//    for Tensor<T, U, B, 2, LEN>
+//{
+//    type Output = Matrix<T, U, B, LEN>;
+//    fn index<'a>(&'a self, _: ()) -> &'a Self::Output {
+//        unsafe { transmute(self) }
+//    }
+//}
+//
+//impl<T, U: StaticVec<T, LEN>, B: Backend<T>, const LEN: usize> const std::ops::IndexMut<()>
+//    for Tensor<T, U, B, 2, LEN>
+//{
+//    fn index_mut<'a>(&'a mut self, _: ()) -> &'a mut Self::Output {
+//        unsafe { transmute(self) }
+//    }
+//}
 
-impl<T, U: StaticVec<T, LEN>, B: Backend<T>, const LEN: usize> const std::ops::IndexMut<()>
-    for Tensor<T, U, B, 2, LEN>
-{
-    fn index_mut<'a>(&'a mut self, _: ()) -> &'a mut Self::Output {
-        unsafe { transmute(self) }
-    }
-}
-
-impl<T: Float + std::fmt::Debug, B: Backend<T>, U: StaticVec<T, LEN>, const LEN: usize>
-    std::fmt::Debug for Matrix<T, U, B, LEN>
+impl<
+        T: Float + std::fmt::Debug,
+        B: Backend<T>,
+        S: Shape<2>,
+        U: StaticVec<T, LEN>,
+        const LEN: usize,
+        const IS_TRANS: bool,
+    > std::fmt::Debug for Matrix<T, U, B, LEN, IS_TRANS, S>
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str("[\n")?;
@@ -173,13 +198,13 @@ impl<
         S: Shape<NDIM>,
         const NDIM: usize,
         const LEN: usize,
-    > std::ops::Index<S> for Tensor<T, U, B, NDIM, LEN>
+    > std::ops::Index<S> for Tensor<T, U, B, NDIM, LEN, S>
 {
     type Output = T;
 
     #[inline(always)]
     fn index(&self, i: S) -> &T {
-        unsafe { self.data.data.get_unchecked(tensor_index(self.shape, &i)) }
+        unsafe { self.data.data.get_unchecked(tensor_index(&self.shape, &i)) }
     }
 }
 impl<
@@ -189,7 +214,7 @@ impl<
         S: Shape<NDIM>,
         const NDIM: usize,
         const LEN: usize,
-    > std::ops::IndexMut<S> for Tensor<T, U, B, NDIM, LEN>
+    > std::ops::IndexMut<S> for Tensor<T, U, B, NDIM, LEN, S>
 where
     T: Copy,
 {
@@ -197,15 +222,85 @@ where
         unsafe {
             self.data
                 .data
-                .get_unchecked_mut(tensor_index(self.shape, &i))
+                .get_unchecked_mut(tensor_index(&self.shape, &i))
+        }
+    }
+}
+
+impl<T, U: StaticVec<T, LEN>, B: Backend<T>, S: Shape<2>, const LEN: usize>
+    std::ops::Index<(usize, usize)> for Tensor<T, U, B, 2, LEN, S>
+{
+    type Output = T;
+
+    #[inline(always)]
+    fn index(&self, i: (usize, usize)) -> &T {
+        unsafe {
+            self.data
+                .data
+                .get_unchecked(tensor_index(&self.shape, &[i.1, i.0]))
+        }
+    }
+}
+impl<T, U: StaticVec<T, LEN>, B: Backend<T>, S: Shape<2>, const LEN: usize>
+    std::ops::IndexMut<(usize, usize)> for Tensor<T, U, B, 2, LEN, S>
+where
+    T: Copy,
+{
+    fn index_mut(&mut self, i: (usize, usize)) -> &mut T {
+        unsafe {
+            self.data
+                .data
+                .get_unchecked_mut(tensor_index(&mut self.shape, &[i.1, i.0]))
+        }
+    }
+}
+
+impl<
+        T,
+        U: StaticVec<T, LEN>,
+        B: Backend<T>,
+        S: Shape<2>,
+        const IS_TRANS: bool,
+        const LEN: usize,
+    > std::ops::Index<(usize, usize)> for Matrix<T, U, B, LEN, IS_TRANS, S>
+{
+    type Output = T;
+
+    #[inline(always)]
+    fn index(&self, i: (usize, usize)) -> &T {
+        unsafe {
+            self.0
+                .data
+                .data
+                .get_unchecked(tensor_index(&self.0.shape, &[i.1, i.0]))
+        }
+    }
+}
+impl<
+        T,
+        U: StaticVec<T, LEN>,
+        B: Backend<T>,
+        S: Shape<2>,
+        const IS_TRANS: bool,
+        const LEN: usize,
+    > std::ops::IndexMut<(usize, usize)> for Matrix<T, U, B, LEN, IS_TRANS, S>
+where
+    T: Copy,
+{
+    fn index_mut(&mut self, i: (usize, usize)) -> &mut T {
+        unsafe {
+            self.0
+                .data
+                .data
+                .get_unchecked_mut(tensor_index(&self.0.shape, &[i.1, i.0]))
         }
     }
 }
 
 macro_rules! impl_index_slice {
 	($($mut: tt)?) => {
-		impl<'a, T, U: StaticVec<T, LEN> + 'a, B: Backend<T>, const NDIM: usize, const LEN: usize>
-            Tensor<T, U, B, NDIM, LEN>
+		impl<'a, T, U: StaticVec<T, LEN> + 'a, S: Shape<NDIM>, B: Backend<T>, const NDIM: usize, const LEN: usize>
+            Tensor<T, U, B, NDIM, LEN, S>
         where
             [(); NDIM - 1]: Sized,
             &'a $($mut)? U: StaticVec<T, LEN>,
@@ -221,7 +316,7 @@ macro_rules! impl_index_slice {
                             .add(i * (self.shape.volume() / self.shape.axis_len(NDIM - 1))),
                     )
                     .[<reshape_unchecked_ref $(_$mut)? >](
-                        transmute::<*const usize, &[usize; NDIM - 1]>(
+                        *transmute::<*const usize, &[usize; NDIM - 1]>(
                             self.shape.slice()[0..NDIM - 1].as_ptr(),
                         ),
                         B::default(),
@@ -240,16 +335,20 @@ impl<
         U: StaticVec<T, LEN>,
         B: Backend<T> + operations::MatrixMul<T>,
         const LEN: usize,
-    > Matrix<T, U, B, LEN>
+        const IS_TRANS_1: bool,
+        S1: Shape<2>,
+    > Matrix<T, U, B, LEN, IS_TRANS_1, S1>
 {
     pub fn matrix_mul_buffer<
         U2: StaticVec<T, LEN2>,
         U3: StaticVec<T, OLEN>,
         const LEN2: usize,
         const OLEN: usize,
+        const IS_TRANS_2: bool,
+        S2: Shape<2>,
     >(
         &self,
-        other: &Matrix<T, U2, B, LEN2>,
+        other: &Matrix<T, U2, B, LEN2, IS_TRANS_2, S2>,
         buffer: &mut U3,
     ) {
         let m = self.shape.axis_len(1);
@@ -268,14 +367,20 @@ impl<
             m,
             n,
             k,
-            false,
-            false,
+            IS_TRANS_1,
+            IS_TRANS_2,
         );
     }
 
-    pub fn matrix_mul<U2: StaticVec<T, LEN2>, const LEN2: usize, const OLEN: usize>(
+    pub fn matrix_mul<
+        U2: StaticVec<T, LEN2>,
+        const LEN2: usize,
+        const OLEN: usize,
+        const IS_TRANS_2: bool,
+        S2: Shape<2>,
+    >(
         &self,
-        other: &Matrix<T, U2, B, LEN2>,
+        other: &Matrix<T, U2, B, LEN2, IS_TRANS_2, S2>,
     ) -> [T; OLEN] {
         let mut buffer = [num::num!(0); OLEN];
         <Self>::matrix_mul_buffer(self, other, &mut buffer);
@@ -300,7 +405,8 @@ pub struct Matrix<
     B: Backend<T>,
     const LEN: usize,
     const IS_TRANS: bool = false,
->(Tensor<T, U, B, 2, LEN>);
+    S: Shape<2> = [usize; 2],
+>(Tensor<T, U, B, 2, LEN, S>);
 
 impl<T, U: StaticVec<T, LEN>, B: Backend<T>, const LEN: usize, const IS_TRANS: bool>
     Matrix<T, U, B, LEN, IS_TRANS>
@@ -324,10 +430,16 @@ impl<T, U: StaticVec<T, LEN>, B: Backend<T>, const LEN: usize, const IS_TRANS: b
     }
 }
 
-impl<T, U: StaticVec<T, LEN>, B: Backend<T>, const LEN: usize, const IS_TRANS: bool> const
-    std::ops::Deref for Matrix<T, U, B, LEN, IS_TRANS>
+impl<
+        T,
+        U: StaticVec<T, LEN>,
+        B: Backend<T>,
+        const LEN: usize,
+        const IS_TRANS: bool,
+        S: Shape<2>,
+    > const std::ops::Deref for Matrix<T, U, B, LEN, IS_TRANS, S>
 {
-    type Target = Tensor<T, U, B, 2, LEN>;
+    type Target = Tensor<T, U, B, 2, LEN, S>;
     fn deref(&self) -> &Self::Target {
         if IS_TRANS {
             panic!("Cannot deref lazily transposed matrix immutably. Try using &self.deref_mut() instead")
@@ -337,8 +449,14 @@ impl<T, U: StaticVec<T, LEN>, B: Backend<T>, const LEN: usize, const IS_TRANS: b
     }
 }
 
-impl<T, U: StaticVec<T, LEN>, B: Backend<T>, const LEN: usize, const IS_TRANS: bool> const
-    std::ops::DerefMut for Matrix<T, U, B, LEN, IS_TRANS>
+impl<
+        T,
+        U: StaticVec<T, LEN>,
+        B: Backend<T>,
+        const LEN: usize,
+        const IS_TRANS: bool,
+        S: Shape<2>,
+    > const std::ops::DerefMut for Matrix<T, U, B, LEN, IS_TRANS, S>
 {
     fn deref_mut(&mut self) -> &mut Self::Target {
         if IS_TRANS {
@@ -349,10 +467,16 @@ impl<T, U: StaticVec<T, LEN>, B: Backend<T>, const LEN: usize, const IS_TRANS: b
     }
 }
 
-impl<T, U: StaticVec<T, LEN>, B: Backend<T>, const LEN: usize, const IS_TRANS: bool> const
-    From<Tensor<T, U, B, 2, LEN>> for Matrix<T, U, B, LEN, IS_TRANS>
+impl<
+        T,
+        U: StaticVec<T, LEN>,
+        B: Backend<T>,
+        const LEN: usize,
+        const IS_TRANS: bool,
+        S: Shape<2>,
+    > const From<Tensor<T, U, B, 2, LEN, S>> for Matrix<T, U, B, LEN, IS_TRANS, S>
 {
-    fn from(t: Tensor<T, U, B, 2, LEN>) -> Self {
+    fn from(t: Tensor<T, U, B, 2, LEN, S>) -> Self {
         Matrix(t)
     }
 }

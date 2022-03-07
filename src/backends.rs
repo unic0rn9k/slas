@@ -151,19 +151,21 @@ impl<T, U: StaticVec<T, LEN>, B: Backend<T>, const LEN: usize> StaticVec<T, LEN>
 }
 
 impl<T, U: StaticVec<T, LEN>, B: Backend<T>, const LEN: usize> WithStaticBackend<T, U, B, LEN> {
-    pub fn matrix<const M: usize, const K: usize>(self) -> crate::tensor::Matrix<T, U, B, LEN>
+    pub fn matrix<const M: usize, const K: usize>(
+        self,
+    ) -> crate::tensor::Matrix<T, U, B, LEN, false, MatrixShape<M, K>>
     where
         Self: Sized,
     {
         self.data
-            .reshape(&MatrixShape::<M, K>, self.backend)
+            .reshape(MatrixShape::<M, K>, self.backend)
             .matrix()
     }
 
     pub fn reshape<S: crate::tensor::Shape<NDIM>, const NDIM: usize>(
         self,
-        shape: &'static S,
-    ) -> crate::tensor::Tensor<T, U, B, NDIM, LEN>
+        shape: S,
+    ) -> crate::tensor::Tensor<T, U, B, NDIM, LEN, S>
     where
         Self: Sized,
     {
