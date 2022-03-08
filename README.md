@@ -123,7 +123,7 @@ use slas_backend::*;
 
 let a = moo![f32: 1..=6].matrix::<Blas, 2, 3>();
 
-assert_eq!(a[[0, 1]], a[m![1, 0]]);
+// assert_eq!(a[&[0, 1]], a[(1, 0)]); // Dyn index removed
 ```
 
 ### Tensor example
@@ -135,7 +135,7 @@ assert_eq!(t[&[0, 0, 1]], 9.);
 
 let mut s = t.index_slice(1).matrix();
 
-assert_eq!(s[m![0, 0]], 9.);
+assert_eq!(s[(0, 0)], 9.);
 ```
 That's pretty much it for now...
 
