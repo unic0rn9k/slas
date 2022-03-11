@@ -77,12 +77,6 @@ macro_rules! impl_norm {
     };
 }
 
-//macro_rules! impl_transpose {
-//	($t: ty) => {
-//
-//	};
-//}
-
 impl<T: Copy> Transpose<T> for Rust {
     fn transpose_inplace<const LEN: usize>(
         &self,

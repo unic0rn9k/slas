@@ -249,6 +249,8 @@ mod tensors {
         let m = moo![f32: 1..=6].matrix::<Rust, 2, 3>();
         assert_eq!(m[(0, 1)], m.transpose()[(1, 0)]);
         assert_eq!(m[(0, 2)], m.transpose()[(2, 0)]);
+
+        m.index_slice(0);
     }
 
     #[test]
