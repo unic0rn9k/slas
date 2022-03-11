@@ -242,6 +242,16 @@ mod tensors {
     }
 
     #[test]
+    fn trans_matrix() {
+        use slas::prelude::*;
+        use slas_backend::*;
+
+        let m = moo![f32: 1..=6].matrix::<Rust, 2, 3>();
+        assert_eq!(m[(0, 1)], m.transpose()[(1, 0)]);
+        assert_eq!(m[(0, 2)], m.transpose()[(2, 0)]);
+    }
+
+    #[test]
     #[should_panic]
     fn wrong_size() {
         use slas::prelude::*;

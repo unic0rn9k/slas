@@ -1,6 +1,6 @@
 //! <div align="center">
 //!
-//! <img src="logo.png" width="300"/>
+//! <img src="https://raw.githubusercontent.com/unic0rn9k/slas/master/logo.png" width="300"/>
 //!
 //! *Static Linear Algebra System*
 //!
@@ -115,7 +115,7 @@
 //! ```
 //!
 //! Indexing into matricies can be done both with columns and rows first.
-//! When indexing with `[usize; 2]` it will take columns first, where as using `m!` will be rows first.
+//! When indexing with `[usize; 2]` it will take columns first, where as using `(usize, usize)` will be rows first.
 //!
 //! ```rust
 //! use slas::prelude::*;
@@ -123,7 +123,7 @@
 //!
 //! let a = moo![f32: 1..=6].matrix::<Blas, 2, 3>();
 //!
-//! // assert_eq!(a[&[0, 1]], a[(1, 0)]); // Dyn index removed
+//! assert_eq!((*a)[[0, 1]], a[(1, 0)]); // Dyn index removed
 //! ```
 //!
 //! ## Tensor example
@@ -131,11 +131,12 @@
 //! ```
 //! use slas::prelude::*;
 //! let t = moo![f32: 0..27].reshape(&[3, 3, 3], slas_backend::Rust);
-//! assert_eq!(t[&[0, 0, 1]], 9.);
+//! assert_eq!(t[[0, 0, 1]], 9.);
 //!
 //! let mut s = t.index_slice(1).matrix();
 //!
 //! assert_eq!(s[(0, 0)], 9.);
+//! assert_eq!(s.transpose()[(1, 0)], 10.);
 //! ```
 //! That's pretty much it for now...
 //!

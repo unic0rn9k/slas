@@ -83,16 +83,31 @@ macro_rules! impl_norm {
 //	};
 //}
 
-impl Transpose<f32> for Rust {
-    fn transpose_inplace<const LEN: usize>(&self, _a: &mut impl StaticVec<f32, LEN>) -> () {
-        todo!()
+impl<T: Copy> Transpose<T> for Rust {
+    fn transpose_inplace<const LEN: usize>(
+        &self,
+        a: &mut impl StaticVec<T, LEN>,
+        columns: usize,
+    ) -> () {
+        let mut buffer = **(a.moo_ref());
+        <Self as Transpose<T>>::transpose(self, a, &mut buffer, columns);
+        **(a.mut_moo_ref()) = buffer
     }
 
     fn transpose<const LEN: usize>(
         &self,
-        _a: &impl StaticVec<f32, LEN>,
-        _buffer: &mut impl StaticVec<f32, LEN>,
+        a: &impl StaticVec<T, LEN>,
+        buffer: &mut impl StaticVec<T, LEN>,
+        columns: usize,
     ) -> () {
+        for column in 0..columns {
+            for row in 0..LEN / columns {
+                unsafe {
+                    *buffer.get_unchecked_mut(columns * column + row) =
+                        *a.get_unchecked(columns * row + column)
+                }
+            }
+        }
     }
 }
 

@@ -173,7 +173,7 @@ fn debug_shape<const NDIM: usize>(s: &dyn Shape<NDIM>) -> String {
 }
 
 #[inline(always)]
-fn tensor_index<T: Shape<NDIM>, const NDIM: usize>(s: &dyn Shape<NDIM>, o: &T) -> usize {
+fn tensor_index<T: Shape<NDIM>, const NDIM: usize>(s: &T, o: &[usize; NDIM]) -> usize {
     let mut sum = 0;
     let mut product = 1;
     for n in 0..NDIM {
@@ -198,12 +198,12 @@ impl<
         S: Shape<NDIM>,
         const NDIM: usize,
         const LEN: usize,
-    > std::ops::Index<S> for Tensor<T, U, B, NDIM, LEN, S>
+    > std::ops::Index<[usize; NDIM]> for Tensor<T, U, B, NDIM, LEN, S>
 {
     type Output = T;
 
     #[inline(always)]
-    fn index(&self, i: S) -> &T {
+    fn index(&self, i: [usize; NDIM]) -> &T {
         unsafe { self.data.data.get_unchecked(tensor_index(&self.shape, &i)) }
     }
 }
@@ -214,11 +214,11 @@ impl<
         S: Shape<NDIM>,
         const NDIM: usize,
         const LEN: usize,
-    > std::ops::IndexMut<S> for Tensor<T, U, B, NDIM, LEN, S>
+    > std::ops::IndexMut<[usize; NDIM]> for Tensor<T, U, B, NDIM, LEN, S>
 where
     T: Copy,
 {
-    fn index_mut(&mut self, i: S) -> &mut T {
+    fn index_mut(&mut self, i: [usize; NDIM]) -> &mut T {
         unsafe {
             self.data
                 .data
@@ -268,12 +268,12 @@ impl<
 
     #[inline(always)]
     fn index(&self, i: (usize, usize)) -> &T {
-        unsafe {
-            self.0
-                .data
-                .data
-                .get_unchecked(tensor_index(&self.0.shape, &[i.1, i.0]))
-        }
+        let i = if IS_TRANS {
+            self.columns() * i.1 + i.0
+        } else {
+            self.columns() * i.0 + i.1
+        };
+        unsafe { self.0.data.data.get_unchecked(i) }
     }
 }
 impl<
@@ -288,12 +288,12 @@ where
     T: Copy,
 {
     fn index_mut(&mut self, i: (usize, usize)) -> &mut T {
-        unsafe {
-            self.0
-                .data
-                .data
-                .get_unchecked_mut(tensor_index(&self.0.shape, &[i.1, i.0]))
-        }
+        let i = if IS_TRANS {
+            self.columns() * i.1 + i.0
+        } else {
+            self.columns() * i.0 + i.1
+        };
+        unsafe { self.0.data.data.get_unchecked_mut(i) }
     }
 }
 
@@ -408,8 +408,14 @@ pub struct Matrix<
     S: Shape<2> = [usize; 2],
 >(Tensor<T, U, B, 2, LEN, S>);
 
-impl<T, U: StaticVec<T, LEN>, B: Backend<T>, const LEN: usize, const IS_TRANS: bool>
-    Matrix<T, U, B, LEN, IS_TRANS>
+impl<
+        T,
+        U: StaticVec<T, LEN>,
+        B: Backend<T>,
+        S: Shape<2>,
+        const LEN: usize,
+        const IS_TRANS: bool,
+    > Matrix<T, U, B, LEN, IS_TRANS, S>
 {
     #[inline(always)]
     pub fn rows(&self) -> usize {
@@ -427,6 +433,14 @@ impl<T, U: StaticVec<T, LEN>, B: Backend<T>, const LEN: usize, const IS_TRANS: b
         } else {
             self.0.shape.axis_len(0)
         }
+    }
+
+    pub fn transpose(&self) -> &Matrix<T, U, B, LEN, { !IS_TRANS }> {
+        unsafe { transmute(self) }
+    }
+
+    pub fn transpose_mut(&mut self) -> &mut Matrix<T, U, B, LEN, { !IS_TRANS }> {
+        unsafe { transmute(self) }
     }
 }
 
@@ -450,17 +464,20 @@ impl<
 }
 
 impl<
-        T,
+        T: Copy,
         U: StaticVec<T, LEN>,
         B: Backend<T>,
         const LEN: usize,
         const IS_TRANS: bool,
         S: Shape<2>,
-    > const std::ops::DerefMut for Matrix<T, U, B, LEN, IS_TRANS, S>
+    > std::ops::DerefMut for Matrix<T, U, B, LEN, IS_TRANS, S>
+where
+    crate::backends::Rust: crate::backends::Backend<T>,
 {
     fn deref_mut(&mut self) -> &mut Self::Target {
         if IS_TRANS {
-            todo!()
+            Rust.transpose_inplace(&mut self.0.data.data, self.0.shape.axis_len(0));
+            &mut self.0
         } else {
             &mut self.0
         }

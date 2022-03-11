@@ -120,8 +120,8 @@ impl_operations!(T
         ) -> ();
 
     Transpose
-        transpose_inplace(const LEN: usize)()(a: &mut impl StaticVec<T, LEN>) where () -> (),
-        transpose(const LEN: usize)()(a: &impl StaticVec<T, LEN>, buffer: &mut impl StaticVec<T, LEN>) where () -> ();
+        transpose_inplace(const LEN: usize)()(a: &mut impl StaticVec<T, LEN>, columns: usize) where () -> (),
+        transpose(const LEN: usize)()(a: &impl StaticVec<T, LEN>, buffer: &mut impl StaticVec<T, LEN>, columns: usize) where () -> ();
 );
 
 /// Perform opertaions on a [`StaticVec`] with a static backend.
