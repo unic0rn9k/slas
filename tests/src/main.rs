@@ -246,11 +246,16 @@ mod tensors {
         use slas::prelude::*;
         use slas_backend::*;
 
-        let m = moo![f32: 1..=6].matrix::<Rust, 2, 3>();
-        assert_eq!(m[(0, 1)], m.transpose()[(1, 0)]);
-        assert_eq!(m[(0, 2)], m.transpose()[(2, 0)]);
+        let mut m = moo![f32: 1..=6].matrix::<Rust, 2, 3>();
 
-        m.index_slice(0);
+        assert_eq!(m[(1, 0)], m.as_transposed()[(0, 1)]);
+        assert_eq!(m[(0, 2)], m.as_transposed()[(2, 0)]);
+
+        m.as_transposed_mut()[(0, 1)] = 0.;
+        assert_eq!(m[(1, 0)], 0.);
+
+        let n = m.transpose();
+        assert_eq!(n[(0, 1)], 0.);
     }
 
     #[test]

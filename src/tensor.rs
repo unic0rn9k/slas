@@ -66,6 +66,7 @@ impl<const LEN: usize> Shape<LEN> for [usize] {
 }
 
 /// Static matrix shape.
+#[derive(Clone, Copy)]
 pub struct MatrixShape<const M: usize, const K: usize>;
 
 impl<const M: usize, const K: usize> const Shape<2> for MatrixShape<M, K> {
@@ -176,6 +177,7 @@ fn debug_shape<const NDIM: usize>(s: &dyn Shape<NDIM>) -> String {
 fn tensor_index<T: Shape<NDIM>, const NDIM: usize>(s: &T, o: &[usize; NDIM]) -> usize {
     let mut sum = 0;
     let mut product = 1;
+    println!("NDIM= {}", NDIM);
     for n in 0..NDIM {
         let i = o.axis_len(n);
         let j = s.axis_len(n);
@@ -185,6 +187,7 @@ fn tensor_index<T: Shape<NDIM>, const NDIM: usize>(s: &T, o: &[usize; NDIM]) -> 
             debug_shape(o),
             debug_shape(s)
         );
+        println!("{}, {}", i, j);
         sum += i * product;
         product *= j;
     }
@@ -268,11 +271,8 @@ impl<
 
     #[inline(always)]
     fn index(&self, i: (usize, usize)) -> &T {
-        let i = if IS_TRANS {
-            self.columns() * i.1 + i.0
-        } else {
-            self.columns() * i.0 + i.1
-        };
+        let i = if IS_TRANS { [i.0, i.1] } else { [i.1, i.0] };
+        let i = tensor_index(&self.0.shape, &i);
         unsafe { self.0.data.data.get_unchecked(i) }
     }
 }
@@ -288,11 +288,8 @@ where
     T: Copy,
 {
     fn index_mut(&mut self, i: (usize, usize)) -> &mut T {
-        let i = if IS_TRANS {
-            self.columns() * i.1 + i.0
-        } else {
-            self.columns() * i.0 + i.1
-        };
+        let i = if IS_TRANS { [i.0, i.1] } else { [i.1, i.0] };
+        let i = tensor_index(&self.0.shape, &i);
         unsafe { self.0.data.data.get_unchecked_mut(i) }
     }
 }
@@ -435,11 +432,15 @@ impl<
         }
     }
 
-    pub fn transpose(&self) -> &Matrix<T, U, B, LEN, { !IS_TRANS }> {
+    pub fn transpose(self) -> Matrix<T, U, B, LEN, { !IS_TRANS }, S> {
+        Matrix(self.0)
+    }
+
+    pub fn as_transposed<'a>(&'a self) -> &'a Matrix<T, U, B, LEN, { !IS_TRANS }, S> {
         unsafe { transmute(self) }
     }
 
-    pub fn transpose_mut(&mut self) -> &mut Matrix<T, U, B, LEN, { !IS_TRANS }> {
+    pub fn as_transposed_mut<'a>(&'a mut self) -> &'a mut Matrix<T, U, B, LEN, { !IS_TRANS }, S> {
         unsafe { transmute(self) }
     }
 }
