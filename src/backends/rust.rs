@@ -1,5 +1,5 @@
 /// A pure rust slas backend with simd support.
-#[derive(Default)]
+#[derive(Default, Clone, Copy)]
 pub struct Rust;
 use super::*;
 use operations::*;

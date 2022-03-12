@@ -226,6 +226,8 @@ mod moo {
 
 #[cfg(test)]
 mod tensors {
+    use std::ops::DerefMut;
+
     #[test]
     fn matrix() {
         use slas::prelude::*;
@@ -248,6 +250,8 @@ mod tensors {
 
         let mut m = moo![f32: 1..=6].matrix::<Rust, 2, 3>();
 
+        assert_eq!(m.rows(), 2);
+        assert_eq!(m.columns(), 3);
         assert_eq!(m[(1, 0)], m.as_transposed()[(0, 1)]);
         assert_eq!(m[(0, 2)], m.as_transposed()[(2, 0)]);
 
@@ -256,6 +260,27 @@ mod tensors {
 
         let n = m.transpose();
         assert_eq!(n[(0, 1)], 0.);
+        assert_eq!(n.rows(), 3);
+        assert_eq!(n.columns(), 2);
+    }
+
+    #[test]
+    #[should_panic]
+    fn trans_invalid_deref() {
+        use slas::prelude::*;
+        use slas_backend::*;
+
+        let m = moo![f32: 1..=6].matrix::<Rust, 2, 3>().transpose();
+        format!("{:?}", m);
+    }
+
+    #[test]
+    fn trans_fixed_deref() {
+        use slas::prelude::*;
+        use slas_backend::*;
+
+        let m = moo![f32: 1..=6].matrix::<Rust, 2, 3>().transpose();
+        format!("{:?}", m.clone().deref_mut().matrix());
     }
 
     #[test]

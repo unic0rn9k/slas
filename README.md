@@ -25,7 +25,9 @@ let a = moo![f32: 1, 2, 3.2];
 let b = moo![f32: 3, 0.4, 5];
 println!("Dot product of {a:?} and {b:?} is {:?}", a.dot(&b));
 ```
-You can also choose a static backend yourself
+You can also choose a static backend yourself.
+More about what exactly a backend is [here](https://docs.rs/slas/latest/slas/backends/index.html).
+
 ```rust
 use slas::prelude::*;
 let a = moo![on slas_backend::Rust:f32: 1, 2, 3.2];
