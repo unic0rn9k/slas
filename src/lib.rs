@@ -182,8 +182,8 @@
 //!
 //! ## Variables and default values
 //!
-//! | SLAS_BLAS_IN_DOT_IF_LEN_GE | 750 |
-//! |                            |     |
+//! | SLAS_BLAS_IN_DOT_IF_LEN_GE | 750  |
+//! | test                       | test |
 //!
 //!
 //! ## Misc
