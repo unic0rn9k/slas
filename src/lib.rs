@@ -182,9 +182,9 @@
 //!
 //! ## Variables and default values
 //!
-//! | SLAS_BLAS_IN_DOT_IF_LEN_GE | 750  |
-//! | test                       | test |
-//!
+//! ```
+//! SLAS_BLAS_IN_DOT_IF_LEN_GE = 750
+//! ```
 //!
 //! ## Misc
 //! - Slas is still in very early days, and is subject to a lot of breaking changes.
