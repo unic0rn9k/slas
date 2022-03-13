@@ -189,6 +189,7 @@
     const_mut_refs
 )]
 
+pub mod config;
 pub mod prelude;
 pub mod tensor;
 
