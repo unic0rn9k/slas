@@ -11,6 +11,7 @@ fn main() {
     let mut f = File::create(&dest_path).unwrap();
 
     for (var, default_value) in slas_env_vars {
+        println!("cargo:rerun-if-env-changed={var}");
         let value = env::var(&format!("SLAS_{}", var)).unwrap_or(default_value.to_string());
         f.write_all(
             format!(

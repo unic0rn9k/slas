@@ -182,7 +182,7 @@
 //!
 //! ## Variables and default values
 //!
-//! ```
+//! ```shell
 //! SLAS_BLAS_IN_DOT_IF_LEN_GE = 750
 //! ```
 //!

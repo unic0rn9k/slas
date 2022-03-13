@@ -182,7 +182,7 @@ Again, this is only applicable when no backend is not specified for a vector (fx
 
 ### Variables and default values
 
-```rust
+```shell
 SLAS_BLAS_IN_DOT_IF_LEN_GE = 750
 ```
 
