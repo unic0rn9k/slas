@@ -26,7 +26,7 @@
 //! println!("Dot product of {a:?} and {b:?} is {:?}", a.dot(&b));
 //! ```
 //! You can also choose a static backend yourself.
-//! More about what exactly a backend is [here](https://docs.rs/slas/latest/slas/backends/index.html).
+//! [More about what exactly a backend is and how to configure it.](https://docs.rs/slas/latest/slas/backends/index.html)
 //!
 //! ```rust
 //! use slas::prelude::*;
@@ -40,7 +40,8 @@
 //! // This will always use blas for all operations on a
 //! ```
 //!
-//! By default slas will choose the backend that is assumed to be the fastest, given the amount of elements in the vector.
+//! By default slas will choose the backend that is assumed to be the fastest, given options set in environment during build
+//! ([more about that here](https://github.com/unic0rn9k/slas#Enviroments%svariables)).
 //!
 //! The `StaticCowVec` dereferences to `StaticVecUnion`, which in turn dereferences to `[T; LEN]`,
 //! so any method implemented for `[T;LEN]` can also be called on `StaticCowVec` and `StaticVecUnion`.
@@ -169,6 +170,21 @@
 //! - On Windows [openblas-src](https://github.com/blas-lapack-rs/openblas-src) has been tested.
 //! This mean you will need to disable slas default features,
 //! follow the installation instructions in the openblas readme and add `extern crate openblas_src` to your main file.
+//!
+//! # Enviroments variables
+//!
+//! The backend being chosen to use when none is specified, depends on environments variables set.
+//!
+//! For example `SLAS_BLAS_IN_DOT_IF_LEN_GE=50`, will use blas by default,
+//! for any dot product operation performned on vectors with more than or equal to 50 elements.
+//!
+//! Again, this is only applicable when no backend is not specified for a vector (fx `moo![f32: 1, 2].dot(moo![2, 1])`).
+//!
+//! ## Variables and default values
+//!
+//! | SLAS_BLAS_IN_DOT_IF_LEN_GE | 750 |
+//! |                            |     |
+//!
 //!
 //! ## Misc
 //! - Slas is still in very early days, and is subject to a lot of breaking changes.

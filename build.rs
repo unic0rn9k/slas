@@ -4,7 +4,7 @@ use std::io::Write;
 use std::path::Path;
 
 fn main() {
-    let slas_env_vars = [("USE_BLAS_IF_LEN_GE", "750")];
+    let slas_env_vars = [("BLAS_IN_DOT_IF_LEN_GE", "750")];
 
     let out_dir = env::var("OUT_DIR").unwrap();
     let dest_path = Path::new(&out_dir).join("config.rs");

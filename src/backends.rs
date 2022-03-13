@@ -196,7 +196,7 @@ macro_rules! impl_default_ops {
             /// assert!(moo![f32: 0..4].dot([1.2; 4].moo_ref()) - 7.2 < 0.000003)
             /// ```
             pub fn dot(&self, other: &Self) -> $t {
-                if LEN >= crate::config::USE_BLAS_IF_LEN_GE {
+                if LEN >= crate::config::BLAS_IN_DOT_IF_LEN_GE {
                     Blas.dot(self, other)
                 } else {
                     Rust.dot(self, other)
