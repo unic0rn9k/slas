@@ -41,7 +41,7 @@ let a = moo![on slas_backend::Blas:f32: 1, 2, 3.2];
 ```
 
 By default slas will choose the backend that is assumed to be the fastest, given options set in environment during build
-([more about that here](https://github.com/unic0rn9k/slas#Enviroments%svariables)).
+([more about that here](https://github.com/unic0rn9k/slas#Enviroments-variables)).
 
 The `StaticCowVec` dereferences to `StaticVecUnion`, which in turn dereferences to `[T; LEN]`,
 so any method implemented for `[T;LEN]` can also be called on `StaticCowVec` and `StaticVecUnion`.
