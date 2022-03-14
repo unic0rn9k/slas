@@ -134,9 +134,11 @@
 //!
 //! ## Tensor example
 //! At the moment tensors can't do much
+//! Note that tensors (and therefore also matricies) always need to have a associated backend.
+//!
 //! ```
 //! use slas::prelude::*;
-//! let t = moo![f32: 0..27].reshape(&[3, 3, 3], slas_backend::Rust);
+//! let t = moo![f32: 0..27].reshape([3, 3, 3], slas_backend::Rust);
 //! assert_eq!(t[[0, 0, 1]], 9.);
 //!
 //! let mut s = t.index_slice(1).matrix();

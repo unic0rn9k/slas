@@ -170,24 +170,22 @@ fn debug_shape<const NDIM: usize>(s: &dyn Shape<NDIM>) -> String {
     (0..NDIM)
         .map(|n| s.axis_len(n).to_string())
         .collect::<Vec<_>>()
-        .join(",")
+        .join(", ")
 }
 
 #[inline(always)]
 fn tensor_index<T: Shape<NDIM>, const NDIM: usize>(s: &T, o: &[usize; NDIM]) -> usize {
     let mut sum = 0;
     let mut product = 1;
-    println!("NDIM= {}", NDIM);
     for n in 0..NDIM {
         let i = o.axis_len(n);
         let j = s.axis_len(n);
         assert!(
             i < j,
-            "Index {} out of bounds {}",
+            "Index [{}] out of bounds [{}]",
             debug_shape(o),
             debug_shape(s)
         );
-        println!("{}, {}", i, j);
         sum += i * product;
         product *= j;
     }
