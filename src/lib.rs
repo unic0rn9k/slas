@@ -202,7 +202,6 @@
 #![feature(
     generic_const_exprs,
     portable_simd,
-    const_fn_trait_bound,
     const_trait_impl,
     const_ptr_as_ref,
     const_option,

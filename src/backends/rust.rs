@@ -30,7 +30,7 @@ macro_rules! impl_dot {
                             * Simd::from_slice(b.static_slice_unchecked::<LANES>(n * LANES))
                     }
                 }
-                let mut sum = sum.horizontal_sum();
+                let mut sum = sum.reduce_sum();
                 for n in LEN - (LEN % LANES)..LEN {
                     sum += unsafe { a.get_unchecked(n) * b.get_unchecked(n) }
                 }
@@ -63,7 +63,7 @@ macro_rules! impl_norm {
                     .iter()
                     .map(|n| Simd::<$t, 2>::from_array([n.re.powi_(2), n.im.powi_(2)]))
                     .sum::<Simd<$t, 2>>()
-                    .horizontal_sum()
+                    .reduce_sum()
                     .sqrt()
             }
 
