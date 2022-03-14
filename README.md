@@ -117,8 +117,11 @@ assert_eq!(c, [22., 28., 49., 64.]);
 println!("{a:.0?} * {b:.0?} = {:.0?}", c.matrix::<Blas, 2, 2>());
 ```
 
-Indexing into matricies can be done both with columns and rows first.
-When indexing with `[usize; 2]` it will take columns first, where as using `(usize, usize)` will be rows first.
+In slas there is a `Matrix` type and a `Tensor` type. A 2D tensor can be used instead of a Matrix for most operations.
+A matrix dereferences into a 2D tensor and 2D tensors implement `Into<Matrix>`, both operations have no overhead, as only changes type information.
+The matrix type has some additional optional generic arguments, including IS_TRANS, which will be true if the matrix has been lazily transposed at compiletime.
+If this information is not needed for a matrix operation, it should be implemented for a 2D tensor.
+When indexing into a 2D tensor `[usize; 2]` will be used, which takes columns first, where as using `(usize, usize)` for the matricies, will be rows first.
 
 ```rust
 use slas::prelude::*;
@@ -126,7 +129,7 @@ use slas_backend::*;
 
 let a = moo![f32: 1..=6].matrix::<Blas, 2, 3>();
 
-assert_eq!((*a)[[0, 1]], a[(1, 0)]); // Dyn index removed
+assert_eq!((*a)[[0, 1]], a[(1, 0)]);
 ```
 
 ### Tensor example
