@@ -122,11 +122,11 @@ mod moo {
         let c = Complex::<f32> { re: 1.2, im: 2.3 };
 
         let a = moo![c; 2].static_backend::<slas_backend::Blas>();
-        assert_eq!(a.norm(), 3.668787265568828);
+        assert_eq!(a.norm(), 3.668_787_2);
 
         // More accurate on rust, but much slower.
         let a = moo![c; 2].static_backend::<slas_backend::Rust>();
-        assert_eq!(a.norm(), 3.668787265568828);
+        assert_eq!(a.norm(), 3.668_787_2);
     }
 
     #[test]
@@ -160,6 +160,16 @@ mod moo {
         assert_eq!(&t[..], &[1., 2., 3.]);
         t.mut_moo_ref()[0] = 0.;
         assert_eq!(&t[..], &[0., 2., 3.]);
+    }
+
+    #[test]
+    #[should_panic]
+    fn human_transmutation() {
+        use slas::prelude::*;
+        let a = moo![f32: 0..4];
+        unsafe {
+            a.transmute_elements::<Complex<f32>>();
+        }
     }
 
     #[test]
