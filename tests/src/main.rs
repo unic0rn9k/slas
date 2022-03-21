@@ -157,7 +157,9 @@ mod moo {
         assert!(t.is_borrowed());
         t[0] = 1.;
         assert!(t.is_owned());
-        assert_eq!(&t[..], &[1., 2., 3.])
+        assert_eq!(&t[..], &[1., 2., 3.]);
+        t.mut_moo_ref()[0] = 0.;
+        assert_eq!(&t[..], &[0., 2., 3.]);
     }
 
     #[test]

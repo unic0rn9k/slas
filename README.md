@@ -182,6 +182,7 @@ The backend being chosen to use when none is specified, depends on environments 
 
 For example `SLAS_BLAS_IN_DOT_IF_LEN_GE=50`, will use blas by default,
 for any dot product operation performned on vectors with more than or equal to 50 elements.
+`SLAS_BLAS_IN_DOT_IF_LEN_GE` can be found as a constant in `slas::config::BLAS_IN_DOT_IF_LEN_GE`.
 
 Again, this is only applicable when no backend is not specified for a vector (fx `moo![f32: 1, 2].dot(moo![2, 1])`).
 
