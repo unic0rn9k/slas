@@ -212,6 +212,7 @@
 
 pub mod config;
 pub mod prelude;
+pub mod simd_lanes;
 pub mod tensor;
 
 pub mod backends;
@@ -252,6 +253,7 @@ impl<'a, T: Copy, const LEN: usize> StaticVecUnion<'a, T, LEN> {
         unsafe { &*(self.as_ptr() as *const [T; LEN]) }
     }
 
+    /// Change type of elements. Can for example be used to convert between regular and fast floats.
     pub const unsafe fn transmute_elements<U: Copy>(&'a self) -> &'a StaticVecUnion<'a, U, LEN> {
         if size_of::<T>() != size_of::<U>() {
             panic!("Cannot transmute between vectors of different sizes")

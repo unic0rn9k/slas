@@ -22,7 +22,8 @@ macro_rules! impl_dot {
                 a: &impl StaticVec<$t, LEN>,
                 b: &impl StaticVec<$t, LEN>,
             ) -> $t {
-                const LANES: usize = 4;
+                const LANES: usize = crate::simd_lanes::max_for_type::<$t>();
+
                 let mut sum = Simd::<$t, LANES>::from_array([0.; LANES]);
                 for n in 0..LEN / LANES {
                     sum += unsafe {
