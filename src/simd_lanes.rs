@@ -35,3 +35,8 @@ pub const MAX: usize = if LANES_16 {
 pub const fn max_for_type<T>() -> usize {
     MAX / (size_of::<T>() / size_of::<f32>())
 }
+
+#[test]
+fn lanes() {
+    max_for_type::<f32>();
+}
