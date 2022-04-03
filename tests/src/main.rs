@@ -277,7 +277,6 @@ mod tensors {
     }
 
     #[test]
-    #[should_panic]
     fn trans_invalid_deref() {
         use slas::prelude::*;
         use slas_backend::*;
@@ -291,8 +290,28 @@ mod tensors {
         use slas::prelude::*;
         use slas_backend::*;
 
-        let m = moo![f32: 1..=6].matrix::<Rust, 2, 3>().transpose();
-        format!("{:?}", m.clone().deref_mut().matrix());
+        let m = moo![f32: 1..=6].reshape([3, 2], Rust).matrix().transpose();
+        assert_eq!(
+            format!("{:?}", m),
+            "[\n   [1.0, 4.0],\n   [2.0, 5.0],\n   [3.0, 6.0],\n]"
+        );
+        assert_eq!(
+            **m.clone().deref_mut().matrix().data.data,
+            [1., 4., 2., 5., 3., 6.,]
+        );
+    }
+
+    #[test]
+    fn rust_transpose() {
+        use slas::prelude::*;
+        use slas_backend::*;
+
+        let a = [1., 4., 2., 5., 3., 6.];
+
+        let mut b = [0.; 6];
+        Rust.transpose(&a, &mut b, 3);
+
+        assert_eq!(b, [1., 2., 3., 4., 5., 6.]);
     }
 
     #[test]

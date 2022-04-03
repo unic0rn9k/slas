@@ -65,6 +65,25 @@ impl<const LEN: usize> Shape<LEN> for [usize] {
     }
 }
 
+impl Shape<2> for (usize, usize) {
+    #[inline(always)]
+    fn axis_len(&self, n: usize) -> usize {
+        match n {
+            0 => self.1,
+            1 => self.0,
+            _ => panic!(
+                "{}",
+                format!("Index {n} out of range 2 (when trying to index into Shape)")
+            ),
+        }
+    }
+
+    #[inline(always)]
+    fn slice(&self) -> &[usize; 2] {
+        unimplemented!()
+    }
+}
+
 /// Static matrix shape.
 #[derive(Clone, Copy)]
 pub struct MatrixShape<const M: usize, const K: usize>;
@@ -150,14 +169,14 @@ impl<
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str("[\n")?;
-        let m = self.shape.axis_len(1);
-        let k = self.shape.axis_len(0);
+        let m = self.rows();
+        let k = self.columns();
         debug_assert_eq!(m * k, LEN);
 
-        for n in 0..m {
+        for r in 0..m {
             f.write_str("   ")?;
             f.debug_list()
-                .entries((n * k..(n + 1) * k).map(|n| unsafe { self.data.data.get_unchecked(n) }))
+                .entries((0..k).map(|c| self[(r, c)]))
                 .finish()?;
             f.write_str(",\n")?;
         }
@@ -462,20 +481,19 @@ impl<
     }
 }
 
-impl<
-        T: Copy,
-        U: StaticVec<T, LEN>,
-        B: Backend<T>,
-        const LEN: usize,
-        const IS_TRANS: bool,
-        S: Shape<2>,
-    > std::ops::DerefMut for Matrix<T, U, B, LEN, IS_TRANS, S>
+impl<T: Copy, U: StaticVec<T, LEN>, B: Backend<T>, const LEN: usize, const IS_TRANS: bool>
+    std::ops::DerefMut for Matrix<T, U, B, LEN, IS_TRANS, [usize; 2]>
 where
     crate::backends::Rust: crate::backends::Backend<T>,
 {
     fn deref_mut(&mut self) -> &mut Self::Target {
         if IS_TRANS {
-            Rust.transpose_inplace(&mut self.0.data.data, self.0.shape.axis_len(0));
+            Rust.transpose_inplace(self.0.data.data.mut_moo_ref(), self.0.shape.axis_len(1));
+            {
+                let tmp = self.0.shape[0];
+                self.0.shape[0] = self.0.shape[1];
+                self.0.shape[1] = tmp;
+            }
             &mut self.0
         } else {
             &mut self.0

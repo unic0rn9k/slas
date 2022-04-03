@@ -5,7 +5,6 @@ use super::*;
 use operations::*;
 use std::simd::Simd;
 
-// TODO: This needs to check if SIMD is available at compile time.
 macro_rules! impl_dot {
     ($t: ty) => {
         /// Pure rust implementation of dot product. This is more performant for smaller vectors,
@@ -84,7 +83,7 @@ impl<T: Copy> Transpose<T> for Rust {
         a: &mut impl StaticVec<T, LEN>,
         columns: usize,
     ) -> () {
-        let mut buffer = **(a.moo_ref());
+        let mut buffer: [T; LEN] = unsafe { std::mem::MaybeUninit::zeroed().assume_init() };
         <Self as Transpose<T>>::transpose(self, a, &mut buffer, columns);
         **(a.mut_moo_ref()) = buffer
     }
@@ -98,8 +97,8 @@ impl<T: Copy> Transpose<T> for Rust {
         for column in 0..columns {
             for row in 0..LEN / columns {
                 unsafe {
-                    *buffer.get_unchecked_mut(columns * column + row) =
-                        *a.get_unchecked(columns * row + column)
+                    *buffer.get_unchecked_mut(columns * row + column) =
+                        *a.get_unchecked(LEN / columns * column + row)
                 }
             }
         }
