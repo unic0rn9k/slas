@@ -132,6 +132,23 @@ pub struct WithStaticBackend<T, U: StaticVec<T, LEN>, B: Backend<T>, const LEN: 
     pub _pd: PhantomData<T>,
 }
 
+impl<T, U: StaticVec<T, LEN>, B: Backend<T>, const LEN: usize> std::ops::Deref
+    for WithStaticBackend<T, U, B, LEN>
+{
+    type Target = U;
+    fn deref(&self) -> &Self::Target {
+        &self.data
+    }
+}
+
+impl<T, U: StaticVec<T, LEN>, B: Backend<T>, const LEN: usize> std::ops::DerefMut
+    for WithStaticBackend<T, U, B, LEN>
+{
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.data
+    }
+}
+
 impl<T, U: StaticVec<T, LEN>, B: Backend<T>, const LEN: usize> WithStaticBackend<T, U, B, LEN> {
     pub const fn from_static_vec(v: U, b: B) -> Self {
         Self {

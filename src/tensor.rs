@@ -462,6 +462,8 @@ impl<
     }
 }
 
+/// # Panics
+/// Will panic when attempting to deref immutably and Matrix is lazily transposed.
 impl<
         T,
         U: StaticVec<T, LEN>,
