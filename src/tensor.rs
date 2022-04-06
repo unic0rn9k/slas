@@ -365,22 +365,29 @@ impl<
         other: &Matrix<T, U2, B, LEN2, IS_TRANS_2, S2>,
         buffer: &mut U3,
     ) {
-        let m = self.shape.axis_len(1);
-        let k = self.shape.axis_len(0);
-        let n = other.shape.axis_len(0);
+        let m = self.rows();
+        let k = other.rows();
+        let n = other.columns();
 
-        debug_assert_eq!(self.shape.volume(), LEN);
-        debug_assert_eq!(other.shape.volume(), LEN2);
+        let lda = self.0.shape.axis_len(0);
+        let ldb = other.0.shape.axis_len(0);
+        let ldc = n;
+
+        debug_assert_eq!(self.0.shape.volume(), LEN);
+        debug_assert_eq!(other.0.shape.volume(), LEN2);
         debug_assert_eq!(m * n, OLEN);
 
         <B as Backend<T>>::matrix_mul(
-            &self.data.backend,
-            &self.data.data,
-            &other.data.data,
+            &self.0.data.backend,
+            &self.0.data.data,
+            &other.0.data.data,
             buffer,
             m,
             n,
             k,
+            lda,
+            ldb,
+            ldc,
             IS_TRANS_1,
             IS_TRANS_2,
         );
@@ -397,7 +404,7 @@ impl<
         other: &Matrix<T, U2, B, LEN2, IS_TRANS_2, S2>,
     ) -> [T; OLEN] {
         let mut buffer = [num::num!(0); OLEN];
-        <Self>::matrix_mul_buffer(self, other, &mut buffer);
+        self.matrix_mul_buffer(other, &mut buffer);
         buffer
     }
 }

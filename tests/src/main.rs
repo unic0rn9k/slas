@@ -113,8 +113,6 @@ mod numbers {
 
 #[cfg(test)]
 mod moo {
-    use slas::StaticVecUnion;
-
     use crate::*;
 
     #[test]
@@ -241,18 +239,69 @@ mod tensors {
     use std::ops::DerefMut;
 
     #[test]
-    fn matrix() {
+    fn matrix_mul() {
         use slas::prelude::*;
         use slas_backend::*;
         let a = moo![f32: 1..=6].matrix::<Blas, 2, 3>();
         let b = moo![f32: 1..=6].matrix::<Blas, 3, 2>();
 
-        // TODO: Use buffer here (type StaticVec),
-        // and implement multiplication for matricies without a buffer.
-        // Also tensor should implement StaticVec.
         let c = a.matrix_mul(&b);
-
         assert_eq!(c, [22., 28., 49., 64.]);
+    }
+
+    #[test]
+    fn matrix_mul_trans() {
+        use slas::prelude::*;
+        use slas_backend::*;
+        let a = moo![f32: 1..=6].matrix::<Blas, 2, 3>();
+        let b = moo![f32: 1..=6].matrix::<Blas, 3, 2>();
+
+        let c = a.transpose().matrix_mul(&b.transpose());
+        assert_eq!(c, [9., 19., 29., 12., 26., 40., 15., 33., 51.]);
+    }
+
+    #[test]
+    fn matrix_mul_trans_b() {
+        use slas::prelude::*;
+        use slas_backend::*;
+        let a = moo![f32: 1..=6].matrix::<Blas, 3, 2>();
+        let b = moo![f32: 1..=6].matrix::<Blas, 3, 2>();
+
+        let c = a.matrix_mul(&b.transpose());
+        assert_eq!(c, [5., 11., 17., 11., 25., 39., 17., 39., 61.,]);
+    }
+
+    #[test]
+    fn matrix_mul_trans_a() {
+        use slas::prelude::*;
+        use slas_backend::*;
+        let a = moo![f32: 1..=6].matrix::<Blas, 2, 3>();
+        let b = moo![f32: 1..=6].matrix::<Blas, 2, 3>();
+
+        let c = a.transpose().matrix_mul(&b);
+        assert_eq!(c, [17., 22., 27., 22., 29., 36., 27., 36., 45.,]);
+    }
+
+    #[test]
+    fn matrix_mul_trans_a2() {
+        use slas::prelude::*;
+        use slas_backend::*;
+        let a = moo![f32: 1..=6].matrix::<Blas, 2, 3>();
+        let b = moo![f32: 1..=6].matrix::<Blas, 2, 3>();
+
+        let c = a.matrix_mul(&b.transpose());
+        assert_eq!(c, [14., 32., 32., 77.]);
+    }
+
+    #[test]
+    fn matrix_mul_trans_b2() {
+        use slas::prelude::*;
+        use slas_backend::*;
+        let a = moo![f32: 1..=6].matrix::<Blas, 3, 2>();
+        let b = moo![f32: 1..=6].matrix::<Blas, 3, 2>();
+
+        let c = a.transpose().matrix_mul(&b);
+        assert_eq!(c, [35., 44., 44., 56.]);
     }
 
     #[test]

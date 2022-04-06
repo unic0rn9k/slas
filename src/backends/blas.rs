@@ -80,6 +80,9 @@ macro_rules! impl_gemm {
                 m: usize,
                 n: usize,
                 k: usize,
+                lda: usize,
+                ldb: usize,
+                ldc: usize,
                 a_trans: bool,
                 b_trans: bool,
             ) where
@@ -88,7 +91,6 @@ macro_rules! impl_gemm {
             {
                 use cblas_sys::CBLAS_TRANSPOSE::*;
                 unsafe {
-                    // TODO: gemv should be used here when other's dimensions are a transpose of self.
                     cblas_sys::$f(
                         cblas_sys::CBLAS_LAYOUT::CblasRowMajor,
                         if a_trans { CblasTrans } else { CblasNoTrans },
@@ -96,14 +98,59 @@ macro_rules! impl_gemm {
                         m as i32,
                         n as i32,
                         k as i32,
+                        1.,                         // alpha
+                        a.as_ptr(),                 // a
+                        lda as i32,                 // lda
+                        b.as_ptr(),                 // b
+                        ldb as i32,                 // ldb
+                        0.,                         // beta
+                        buffer.as_ptr() as *mut $t, // c
+                        ldc as i32,                 // ldc
+                    )
+                }
+            }
+        }
+    };
+}
+
+macro_rules! impl_gemv {
+    ($t: ty, $f: ident) => {
+        /// Matrix-vector multiplication using gemv.
+        impl operations::MatrixVectorMul<$t> for Blas {
+            fn matrix_vector_mul<
+                A: StaticVec<$t, ALEN>,
+                B: StaticVec<$t, BLEN>,
+                C: StaticVec<$t, CLEN>,
+                const ALEN: usize,
+                const BLEN: usize,
+                const CLEN: usize,
+            >(
+                &self,
+                a: &A,
+                b: &B,
+                buffer: &mut C,
+                m: usize,
+                n: usize,
+                a_trans: bool,
+            ) where
+                A: Sized,
+                B: Sized,
+            {
+                use cblas_sys::CBLAS_TRANSPOSE::*;
+                unsafe {
+                    cblas_sys::$f(
+                        cblas_sys::CBLAS_LAYOUT::CblasRowMajor,
+                        if a_trans { CblasTrans } else { CblasNoTrans },
+                        m as i32,
+                        n as i32,
                         1.,
                         a.as_ptr(),
-                        k as i32,
-                        b.as_ptr(),
                         n as i32,
+                        b.as_ptr(),
+                        1,
                         0.,
                         buffer.as_ptr() as *mut $t,
-                        n as i32,
+                        1,
                     )
                 }
             }
@@ -129,6 +176,11 @@ macro_rules! impl_norm {
 
 impl_gemm!(f32, cblas_sgemm);
 impl_gemm!(f64, cblas_dgemm);
+//impl_gemm!(Complex<f32>, cblas_cgemm);
+
+impl_gemv!(f32, cblas_sgemv);
+impl_gemv!(f64, cblas_dgemv);
+//impl_gemv!(Complex<f32>, cblas_cgemv);
 
 impl_dot!(f32, cblas_sdot);
 impl_dot!(f64, cblas_ddot);
