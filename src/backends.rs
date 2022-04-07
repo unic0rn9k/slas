@@ -117,22 +117,20 @@ impl_operations!(T
             B: Sized,
             C: Sized,
             T: Copy
-        ) -> ();
-
-    Transpose
-        transpose_inplace(const LEN: usize)()(a: &mut impl StaticVec<T, LEN>, columns: usize) where () -> (),
-        transpose(const LEN: usize)()(a: &impl StaticVec<T, LEN>, buffer: &mut impl StaticVec<T, LEN>, columns: usize) where () -> ();
-
-    MatrixVectorMul
+        ) -> (),
         matrix_vector_mul(A: StaticVec<T, ALEN>, B: StaticVec<T, BLEN>, C: StaticVec<T, CLEN>, const ALEN: usize, const BLEN: usize, const CLEN: usize)
         (A, B, C, ALEN, BLEN, CLEN)
-        (a: &A, b: &B, buffer: &mut C, m: usize, n: usize, a_trans: bool)
+        (a: &A, b: &B, buffer: &mut C, m: usize, n: usize, lda: usize, a_trans: bool)
         where (
             A: Sized,
             B: Sized,
             C: Sized,
             T: Copy
         ) -> ();
+
+    Transpose
+        transpose_inplace(const LEN: usize)()(a: &mut impl StaticVec<T, LEN>, columns: usize) where () -> (),
+        transpose(const LEN: usize)()(a: &impl StaticVec<T, LEN>, buffer: &mut impl StaticVec<T, LEN>, columns: usize) where () -> ();
 );
 
 /// Perform opertaions on a [`StaticVec`] with a static backend.

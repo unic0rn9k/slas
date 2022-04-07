@@ -305,6 +305,48 @@ mod tensors {
     }
 
     #[test]
+    fn matrix_vector_mul() {
+        use slas::prelude::*;
+        use slas_backend::*;
+
+        let a = moo![f32: 1..=6].matrix::<Blas, 2, 3>();
+        let b = moo![f32: 1..=3].matrix::<Blas, 3, 1>();
+
+        let c: [f32; 2] = a.matrix_mul(&b);
+        let d: [f32; 2] = a.vector_mul(b.vec_ref());
+
+        assert_eq!(c, d);
+    }
+
+    #[test]
+    fn matrix_vector_mul_trans() {
+        use slas::prelude::*;
+        use slas_backend::*;
+
+        let a = moo![f32: 1..=6].matrix::<Blas, 3, 2>();
+        let b = moo![f32: 1..=3].matrix::<Blas, 3, 1>();
+
+        let c: [f32; 2] = a.transpose().matrix_mul(&b);
+        let d: [f32; 2] = a.transpose().vector_mul(b.vec_ref());
+
+        assert_eq!(c, d);
+    }
+
+    #[test]
+    fn matrix_vector_mul_trans_2() {
+        use slas::prelude::*;
+        use slas_backend::*;
+
+        let a = moo![f32: 2..=13].matrix::<Blas, 4, 3>();
+        let b = moo![f32: 2..=5].matrix::<Blas, 4, 1>();
+
+        let c: [f32; 3] = a.transpose().matrix_mul(&b);
+        let d: [f32; 3] = a.transpose().vector_mul(b.vec_ref());
+
+        assert_eq!(c, d);
+    }
+
+    #[test]
     fn trans_matrix() {
         use slas::prelude::*;
         use slas_backend::*;

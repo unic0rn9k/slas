@@ -375,7 +375,13 @@ impl<
 
         debug_assert_eq!(self.0.shape.volume(), LEN);
         debug_assert_eq!(other.0.shape.volume(), LEN2);
-        debug_assert_eq!(m * n, OLEN);
+        debug_assert_eq!(
+            m * n,
+            OLEN,
+            "Expected buffer of {} elements, found one of {}",
+            m * n,
+            OLEN
+        );
 
         <B as Backend<T>>::matrix_mul(
             &self.0.data.backend,
@@ -393,6 +399,30 @@ impl<
         );
     }
 
+    pub fn vector_mul_buffer<
+        U2: StaticVec<T, LEN2>,
+        U3: StaticVec<T, OLEN>,
+        const LEN2: usize,
+        const OLEN: usize,
+    >(
+        &self,
+        other: &U2,
+        buffer: &mut U3,
+    ) {
+        debug_assert_eq!(self.rows(), OLEN);
+
+        <B as Backend<T>>::matrix_vector_mul(
+            &self.0.data.backend,
+            &self.0.data.data,
+            other,
+            buffer,
+            self.0.shape.axis_len(0),
+            LEN2,
+            self.0.shape.axis_len(0),
+            IS_TRANS_1,
+        );
+    }
+
     pub fn matrix_mul<
         U2: StaticVec<T, LEN2>,
         const LEN2: usize,
@@ -407,6 +437,15 @@ impl<
         self.matrix_mul_buffer(other, &mut buffer);
         buffer
     }
+
+    pub fn vector_mul<U2: StaticVec<T, LEN2>, const LEN2: usize, const OLEN: usize>(
+        &self,
+        other: &U2,
+    ) -> [T; OLEN] {
+        let mut buffer = [num::num!(0); OLEN];
+        self.vector_mul_buffer(other, &mut buffer);
+        buffer
+    }
 }
 
 #[macro_export]
@@ -416,9 +455,7 @@ macro_rules! m {
     };
 }
 
-/// Just a type alias for a 2D tensor.
-/// pub type Matrix<T, U, B, const LEN: usize> = Tensor<T, U, B, 2, LEN>;
-
+/// A wrapper around a 2D tensor, which allows for lazy transposing
 #[derive(Clone, Copy)]
 pub struct Matrix<
     T,

@@ -55,7 +55,7 @@ macro_rules! impl_dot_comp {
 }
 
 macro_rules! impl_gemm {
-    ($t: ty, $f: ident) => {
+    ($t: ty : $gemm: ident $gemv: ident) => {
         /// This is matrix multiplication, **NOT** element wise multiplication.
         /// Take a look at
         /// [wiki](https://en.wikipedia.org/wiki/Matrix_multiplication),
@@ -91,7 +91,7 @@ macro_rules! impl_gemm {
             {
                 use cblas_sys::CBLAS_TRANSPOSE::*;
                 unsafe {
-                    cblas_sys::$f(
+                    cblas_sys::$gemm(
                         cblas_sys::CBLAS_LAYOUT::CblasRowMajor,
                         if a_trans { CblasTrans } else { CblasNoTrans },
                         if b_trans { CblasTrans } else { CblasNoTrans },
@@ -109,14 +109,8 @@ macro_rules! impl_gemm {
                     )
                 }
             }
-        }
-    };
-}
 
-macro_rules! impl_gemv {
-    ($t: ty, $f: ident) => {
-        /// Matrix-vector multiplication using gemv.
-        impl operations::MatrixVectorMul<$t> for Blas {
+            /// Matrix-vector multiplication using gemv.
             fn matrix_vector_mul<
                 A: StaticVec<$t, ALEN>,
                 B: StaticVec<$t, BLEN>,
@@ -131,6 +125,7 @@ macro_rules! impl_gemv {
                 buffer: &mut C,
                 m: usize,
                 n: usize,
+                lda: usize,
                 a_trans: bool,
             ) where
                 A: Sized,
@@ -138,14 +133,14 @@ macro_rules! impl_gemv {
             {
                 use cblas_sys::CBLAS_TRANSPOSE::*;
                 unsafe {
-                    cblas_sys::$f(
+                    cblas_sys::$gemv(
                         cblas_sys::CBLAS_LAYOUT::CblasRowMajor,
                         if a_trans { CblasTrans } else { CblasNoTrans },
-                        m as i32,
                         n as i32,
+                        m as i32,
                         1.,
                         a.as_ptr(),
-                        n as i32,
+                        lda as i32,
                         b.as_ptr(),
                         1,
                         0.,
@@ -174,12 +169,12 @@ macro_rules! impl_norm {
     };
 }
 
-impl_gemm!(f32, cblas_sgemm);
-impl_gemm!(f64, cblas_dgemm);
+impl_gemm!(f32: cblas_sgemm cblas_sgemv);
+impl_gemm!(f64: cblas_dgemm cblas_dgemv);
 //impl_gemm!(Complex<f32>, cblas_cgemm);
 
-impl_gemv!(f32, cblas_sgemv);
-impl_gemv!(f64, cblas_dgemv);
+//impl_gemv!(f32, cblas_sgemv);
+//impl_gemv!(f64, cblas_dgemv);
 //impl_gemv!(Complex<f32>, cblas_cgemv);
 
 impl_dot!(f32, cblas_sdot);
