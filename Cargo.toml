@@ -14,7 +14,7 @@ categories = ["data-structures", "science", "mathematics"]
 readme = "README.md"
 
 [dependencies]
-blis-src = { version = "0.2.0", features = ["system"], optional = true}
+blis-src = { version = "0.2.0", default-features = false, optional = true}
 cblas-sys = { version = "0.1.4", optional = true }
 num = { git = "https://github.com/unic0rn9k/num" }
 paste = "1.0.6"
@@ -27,6 +27,7 @@ members = ["tests"]
 
 [features]
 default = ["blis-sys", "fast-floats"]
-blis-sys = ["blis-src", "blas"]
+blis-sys = ["blis-src", "blis-src/system", "blas"]
+blis-static = ["blis-src", "blis-src/static", "blas"]
 blas = ["cblas-sys"]
 fast-floats = ["num/fast-floats"]

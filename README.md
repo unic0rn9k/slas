@@ -15,6 +15,18 @@
 A linear algebra system with a focus on performance, static allocation, statically shaped data and copy-on-write (aka cow) behavior.
 Safe and fast bindings for blas/blis are also provided out of the box.
 
+### The mission
+The goal of slas is to provide the best perfomance given the most amount of information that can be known at compile time.
+This mainly includes shapes and sizes of algebraic objects,
+target architecture and available hardware features/devices.
+
+Please keep in mind that slas specializes in cases where binaries are compiled and executed on the same system and thus is primarily intended for native compilation.
+*NOTE:* Slas might still be very broken when *not* using native comiplation.
+This will be done by utilizing link-time-optimization (LTO), static allocation, static profiling and analysis using build scripts.
+
+This is attempted to be done with the [modular backend system](https://docs.rs/slas/latest/slas/backends/index.html),
+which will support custom allocators in the future.
+
 [What is BLAS?](http://www.netlib.org/blas/)
 
 ### Example
@@ -163,6 +175,7 @@ will cause a panic in ndarray and a compiletime error in slas.
 
 ### Installation
 By default slas will assume you have blis installed on your system.
+You can pretty easily statically link and compile blis, by disabeling default-features and enabelig the `blis-static` feature.
 If you want tos choose your own blas provider please set `dependencies.slas.default-features = false` in your `Cargo.toml`,
 and refer to [blas-src](https://lib.rs/crates/blas-src) for further instructions.
 Remember to add `extern crate blas_src;` if you use blas-src as a blas provider.
