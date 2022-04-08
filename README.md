@@ -24,7 +24,7 @@ Please keep in mind that slas specializes in cases where binaries are compiled a
 
 **NOTE:** Slas might still be very broken when **not** using native comiplation.
 
-Specialization in native compilation will be done by utilizing link-time-optimization (LTO), static allocation, static profiling and analysis using build scripts.
+Specialization in native compilation will be done by utilizing link-time-optimization (LTO), static allocation and static profiling/analysis using build scripts.
 
 Specialization in hardware and usecases is attempted to be done with the [modular backend system](https://docs.rs/slas/latest/slas/backends/index.html),
 which will support custom allocators in the future.
