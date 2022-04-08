@@ -21,10 +21,12 @@ This mainly includes shapes and sizes of algebraic objects,
 target architecture and available hardware features/devices.
 
 Please keep in mind that slas specializes in cases where binaries are compiled and executed on the same system and thus is primarily intended for native compilation.
-*NOTE:* Slas might still be very broken when *not* using native comiplation.
-This will be done by utilizing link-time-optimization (LTO), static allocation, static profiling and analysis using build scripts.
 
-This is attempted to be done with the [modular backend system](https://docs.rs/slas/latest/slas/backends/index.html),
+**NOTE:** Slas might still be very broken when **not** using native comiplation.
+
+Specialization in native compilation will be done by utilizing link-time-optimization (LTO), static allocation, static profiling and analysis using build scripts.
+
+Specialization in hardware and usecases is attempted to be done with the [modular backend system](https://docs.rs/slas/latest/slas/backends/index.html),
 which will support custom allocators in the future.
 
 [What is BLAS?](http://www.netlib.org/blas/)
