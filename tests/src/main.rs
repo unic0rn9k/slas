@@ -232,6 +232,17 @@ mod moo {
             assert_eq!(a[0], *b[0]);
         }
     }
+
+    #[test]
+    fn add() {
+        use slas::prelude::*;
+
+        let mut a = moo![f32: 1, 2, 3];
+        let b = moo![f32: 1..4];
+
+        slas_backend::Rust.add(&mut a, &b);
+        assert_eq!(*a.add(&b), [3., 6., 9.,]);
+    }
 }
 
 #[cfg(test)]

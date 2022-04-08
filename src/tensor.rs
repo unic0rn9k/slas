@@ -409,7 +409,12 @@ impl<
         other: &U2,
         buffer: &mut U3,
     ) {
-        debug_assert_eq!(self.rows(), OLEN);
+        debug_assert_eq!(
+            self.rows(),
+            OLEN,
+            "Matrix::vector_mul_buffer expected buffer of length {}, found one of {OLEN}",
+            self.rows()
+        );
 
         <B as Backend<T>>::matrix_vector_mul(
             &self.0.data.backend,

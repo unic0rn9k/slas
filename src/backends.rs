@@ -25,9 +25,16 @@
 //! Should normalize self (devide each element by the norm of the vector)
 //!
 //! ### [`operations::MatrixMul`]
-//! Implemented for real floats on [`slas_backend::Blas`].
+//! Implemented for f32 and f64 -floats on [`slas_backend::Blas`].
 //!
 //! #### matrix_mul
+//! Matrix-Matrix multiplication
+//!
+//! #### vector_mul
+//! Matrix-Vector multiplication
+//!
+//! ### [`operations::Transpose`]
+//!
 //!
 //! ## How to specify backend
 //!
@@ -131,6 +138,12 @@ impl_operations!(T
     Transpose
         transpose_inplace(const LEN: usize)()(a: &mut impl StaticVec<T, LEN>, columns: usize) where () -> (),
         transpose(const LEN: usize)()(a: &impl StaticVec<T, LEN>, buffer: &mut impl StaticVec<T, LEN>, columns: usize) where () -> ();
+
+    Addition
+        add(const LEN: usize)()(
+            a: &mut impl StaticVec<T, LEN>,
+            b: &impl StaticVec<T, LEN>
+        ) where () -> ();
 );
 
 /// Perform opertaions on a [`StaticVec`] with a static backend.
@@ -227,6 +240,12 @@ macro_rules! impl_default_ops {
                 } else {
                     Rust.dot(self, other)
                 }
+            }
+
+            /// Vector addidion.
+            pub fn add(mut self, other: &Self) -> Self {
+                Rust.add(&mut self, other);
+                self
             }
         }
     };

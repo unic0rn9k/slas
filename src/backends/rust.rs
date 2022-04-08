@@ -40,6 +40,35 @@ macro_rules! impl_dot {
     };
 }
 
+macro_rules! impl_add {
+    ($t: ty) => {
+        impl Addition<$t> for Rust {
+            fn add<const LEN: usize>(
+                &self,
+                a: &mut impl StaticVec<$t, LEN>,
+                b: &impl StaticVec<$t, LEN>,
+            ) -> () {
+                const LANES: usize = crate::simd_lanes::max_for_type::<$t>();
+
+                let a = a.mut_moo_ref();
+
+                for n in 0..LEN / LANES {
+                    unsafe {
+                        *std::mem::transmute::<_, *mut Simd<$t, LANES>>(a.as_mut_ptr())
+                            .add(n * LANES) +=
+                            Simd::from_slice(a.static_slice_unchecked::<LANES>(n * LANES))
+                                + Simd::from_slice(b.static_slice_unchecked::<LANES>(n * LANES))
+                    }
+                }
+
+                for n in LEN - (LEN % LANES)..LEN {
+                    unsafe { *a.get_unchecked_mut(n) += b.get_unchecked(n) };
+                }
+            }
+        }
+    };
+}
+
 macro_rules! impl_norm {
     ($t: ty) => {
         impl Normalize<$t> for Rust {
@@ -110,6 +139,8 @@ impl_norm!(f64);
 
 impl_dot!(f32);
 impl_dot!(f64);
+impl_add!(f32);
+impl_add!(f64);
 
 impl Backend<f32> for Rust {}
 impl Backend<f64> for Rust {}
