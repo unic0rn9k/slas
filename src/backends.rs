@@ -141,8 +141,30 @@ impl_operations!(T
 
     Addition
         add(const LEN: usize)()(
-            a: &mut impl StaticVec<T, LEN>,
-            b: &impl StaticVec<T, LEN>
+            a: &impl StaticVec<T, LEN>,
+            b: &impl StaticVec<T, LEN>,
+            c: &mut impl StaticVec<T, LEN>
+        ) where () -> ();
+
+    Subtraction
+        sub(const LEN: usize)()(
+            a: &impl StaticVec<T, LEN>,
+            b: &impl StaticVec<T, LEN>,
+            c: &mut impl StaticVec<T, LEN>
+        ) where () -> ();
+
+     Multiplication
+        mul(const LEN: usize)()(
+            a: &impl StaticVec<T, LEN>,
+            b: &impl StaticVec<T, LEN>,
+            c: &mut impl StaticVec<T, LEN>
+        ) where () -> ();
+
+     Divition
+        div(const LEN: usize)()(
+            a: &impl StaticVec<T, LEN>,
+            b: &impl StaticVec<T, LEN>,
+            c: &mut impl StaticVec<T, LEN>
         ) where () -> ();
 );
 
@@ -240,12 +262,6 @@ macro_rules! impl_default_ops {
                 } else {
                     Rust.dot(self, other)
                 }
-            }
-
-            /// Vector addidion.
-            pub fn add(mut self, other: &Self) -> Self {
-                Rust.add(&mut self, other);
-                self
             }
         }
     };

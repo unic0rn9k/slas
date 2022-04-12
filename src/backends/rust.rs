@@ -3,6 +3,7 @@
 pub struct Rust;
 use super::*;
 use operations::*;
+use std::mem::transmute;
 use std::simd::Simd;
 
 macro_rules! impl_dot {
@@ -40,33 +41,60 @@ macro_rules! impl_dot {
     };
 }
 
-macro_rules! impl_add {
-    ($t: ty) => {
-        impl Addition<$t> for Rust {
-            fn add<const LEN: usize>(
+macro_rules! impl_basic_op {
+    ($op: ident, $fn: ident, $float_op: tt, $op_assign: ident, $($t: ty),*) => {$(
+        /// Basic element wise operators are implemented for all vectors on the rust backend.
+        /// This means you can call `a.add(&b)` to add two vectors together.
+        /// Whis ofcourse also works with `.sub`, `.mul` and `.div`.
+        impl $op<$t> for Rust {
+            fn $fn<const LEN: usize>(
                 &self,
-                a: &mut impl StaticVec<$t, LEN>,
+                a: &impl StaticVec<$t, LEN>,
                 b: &impl StaticVec<$t, LEN>,
+                c: &mut impl StaticVec<$t, LEN>,
             ) -> () {
                 const LANES: usize = crate::simd_lanes::max_for_type::<$t>();
 
-                let a = a.mut_moo_ref();
+                let out_ptr: *mut [$t; LANES] = unsafe{transmute(c.as_mut_ptr())};
 
                 for n in 0..LEN / LANES {
                     unsafe {
-                        *std::mem::transmute::<_, *mut Simd<$t, LANES>>(a.as_mut_ptr())
-                            .add(n * LANES) +=
-                            Simd::from_slice(a.static_slice_unchecked::<LANES>(n * LANES))
-                                + Simd::from_slice(b.static_slice_unchecked::<LANES>(n * LANES))
+                            *out_ptr.add(n) = transmute(
+                                Simd::<$t, LANES>::from_slice(a.static_slice_unchecked::<LANES>(n * LANES)) $float_op
+                                Simd::<$t, LANES>::from_slice(b.static_slice_unchecked::<LANES>(n * LANES)))
                     }
                 }
 
                 for n in LEN - (LEN % LANES)..LEN {
-                    unsafe { *a.get_unchecked_mut(n) += b.get_unchecked(n) };
+                    unsafe { *c.get_unchecked_mut(n) = *a.get_unchecked(n) $float_op *b.get_unchecked(n) };
                 }
             }
         }
-    };
+
+        impl<'a, const LEN: usize> StaticVecUnion<'a, $t, LEN> {
+            /// Basic vector operations, implemented automatically with macro.
+            #[inline(always)]
+            pub fn $fn(&self, other: &Self) -> Self{
+                unsafe{
+                    let mut buffer: Self = std::mem::MaybeUninit::uninit().assume_init();
+                    $op::$fn(&Rust, self, other, &mut buffer);
+                    buffer
+                }
+            }
+        }
+
+        paste!{
+            #[test]
+            fn [< basic_ $fn _ $t >](){
+                let a = moo![$t: 1..13];
+                let b = a.$fn(&a);
+
+                for n in 0..12{
+                    assert_eq!(a[n] $float_op a[n], b[n])
+                }
+            }
+        }
+    )*};
 }
 
 macro_rules! impl_norm {
@@ -139,8 +167,11 @@ impl_norm!(f64);
 
 impl_dot!(f32);
 impl_dot!(f64);
-impl_add!(f32);
-impl_add!(f64);
+
+impl_basic_op!(Addition, add, +, add_assign, f32, f64);
+impl_basic_op!(Multiplication, mul, *, mul_assign, f32, f64);
+impl_basic_op!(Divition, div, /, div_assign, f32, f64);
+impl_basic_op!(Subtraction, sub, -, sub_assign, f32, f64);
 
 impl Backend<f32> for Rust {}
 impl Backend<f64> for Rust {}

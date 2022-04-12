@@ -1,6 +1,6 @@
 [package]
 name = "slas"
-version = "0.2.1"
+version = "0.3.0"
 edition = "2018"
 authors = ["Aksel Mannstaedt <unic0rn9k@protonmail.com>"]
 license = "Apache-2.0"
@@ -8,7 +8,7 @@ license = "Apache-2.0"
 repository = "https://github.com/unic0rn9k/slas"
 description = "Static Linear Algebra System"
 
-keywords = ["matrix", "blas", "linearalgebra", "matrix", "vectors"]
+keywords = ["matrix", "blas", "linearalgebra", "vectors"]
 categories = ["data-structures", "science", "mathematics"]
 
 readme = "README.md"
