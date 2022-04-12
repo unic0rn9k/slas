@@ -13,6 +13,8 @@ All benchmarks are for 32-bit real floats using blis as a blas provider.
 Allocations are not being benchmarked, only the actual dot product function. 
 Benchmarks have been run for vectors of multiple different sizes, the most relevant results are shown bellow.
 
+![](./dot_product.png)
+
 ## 100
 ```
 test versus::nalgebra::dot     ... bench:          18 ns/iter (+/- 2)
