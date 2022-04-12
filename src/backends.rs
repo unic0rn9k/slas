@@ -7,7 +7,7 @@
 //!
 //! The possible operations that can be implemented for a backend and its associated functions are:
 //!
-//! ### [`operations::DotProduct`]
+//! ### operations::DotProduct
 //! Implemented for complex and real floats on [`slas_backend::Blas`].
 //!
 //! Implemented for real floats on [`slas_backend::Rust`].
@@ -15,7 +15,7 @@
 //! #### dot
 //! Should take two vectors of equal length, and return their dot product.
 //!
-//! ### [`operations::Normalize`]
+//! ### operations::Normalize
 //! Implemented for real floats on [`slas_backend::Rust`].
 //!
 //! #### norm
@@ -24,7 +24,7 @@
 //! #### normalize
 //! Should normalize self (devide each element by the norm of the vector)
 //!
-//! ### [`operations::MatrixMul`]
+//! ### operations::MatrixMul
 //! Implemented for f32 and f64 -floats on [`slas_backend::Blas`].
 //!
 //! #### matrix_mul
@@ -33,8 +33,22 @@
 //! #### vector_mul
 //! Matrix-Vector multiplication
 //!
-//! ### [`operations::Transpose`]
+//! ### operations::Transpose
+//! Operation for transposing **matricies**, not general tensors.
+//! Implemented for all floats on [`slas_backend::Rust`]
 //!
+//! #### transpose
+//! Transpose matrix into buffer
+//!
+//! #### transpose_inplace
+//! Transpose matrix into self
+//!
+//! ### Addition, Subtraction, Multiplication and Divition
+//! Basic element-wise vector operations implemented on [`slas_backend::Rust`] for f32 and f64 floats.
+//!
+//! Addition has one method, `add`,
+//! which takes two input vectors and a buffer,
+//! same applies to other element-wise operations.
 //!
 //! ## How to specify backend
 //!
