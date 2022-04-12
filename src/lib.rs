@@ -234,7 +234,7 @@ pub mod simd_lanes;
 pub mod tensor;
 
 pub mod backends;
-pub use num;
+pub use levitate as num;
 
 use std::{
     mem::{size_of, transmute},

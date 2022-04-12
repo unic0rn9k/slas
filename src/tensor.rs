@@ -441,7 +441,7 @@ impl<
         &self,
         other: &Matrix<T, U2, B, LEN2, IS_TRANS_2, S2>,
     ) -> [T; OLEN] {
-        let mut buffer = [num::num!(0); OLEN];
+        let mut buffer = [num!(0); OLEN];
         self.matrix_mul_buffer(other, &mut buffer);
         buffer
     }
@@ -451,7 +451,7 @@ impl<
         &self,
         other: &U2,
     ) -> [T; OLEN] {
-        let mut buffer = [num::num!(0); OLEN];
+        let mut buffer = [num!(0); OLEN];
         self.vector_mul_buffer(other, &mut buffer);
         buffer
     }
