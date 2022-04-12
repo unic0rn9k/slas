@@ -14,6 +14,7 @@ Allocations are not being benchmarked, only the actual dot product function.
 Benchmarks have been run for vectors of multiple different sizes, the most relevant results are shown bellow.
 
 ![](./dot_product.png)
+*Lower points are better*
 
 ## 100
 ```
