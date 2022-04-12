@@ -125,8 +125,10 @@ use slas_backend::*;
 let a = moo![f32: 1..=6].matrix::<Blas, 2, 3>();
 let b = moo![f32: 1..=6].matrix::<Blas, 3, 2>();
 let c = a.matrix_mul(&b);
+let d = b.vector_mul(&[1., 2.]);
 
 assert_eq!(c, [22., 28., 49., 64.]);
+assert_eq!(d, [5., 11., 17.]);
 
 println!("{a:.0?} * {b:.0?} = {:.0?}", c.matrix::<Blas, 2, 2>());
 ```

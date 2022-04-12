@@ -353,6 +353,7 @@ impl<
         S1: Shape<2>,
     > Matrix<T, U, B, LEN, IS_TRANS_1, S1>
 {
+    #[inline(always)]
     pub fn matrix_mul_buffer<
         U2: StaticVec<T, LEN2>,
         U3: StaticVec<T, OLEN>,
@@ -373,14 +374,13 @@ impl<
         let ldb = other.0.shape.axis_len(0);
         let ldc = n;
 
-        debug_assert_eq!(self.0.shape.volume(), LEN);
-        debug_assert_eq!(other.0.shape.volume(), LEN2);
-        debug_assert_eq!(
+        assert_eq!(self.0.shape.volume(), LEN);
+        assert_eq!(other.0.shape.volume(), LEN2);
+        assert_eq!(
             m * n,
             OLEN,
-            "Expected buffer of {} elements, found one of {}",
+            "Matrix::matrix_mul_buffer expected buffer of {} elements, found one of {OLEN}",
             m * n,
-            OLEN
         );
 
         <B as Backend<T>>::matrix_mul(
@@ -399,6 +399,7 @@ impl<
         );
     }
 
+    #[inline(always)]
     pub fn vector_mul_buffer<
         U2: StaticVec<T, LEN2>,
         U3: StaticVec<T, OLEN>,
@@ -409,12 +410,13 @@ impl<
         other: &U2,
         buffer: &mut U3,
     ) {
-        debug_assert_eq!(
+        assert_eq!(
             self.rows(),
             OLEN,
-            "Matrix::vector_mul_buffer expected buffer of length {}, found one of {OLEN}",
+            "Matrix::vector_mul_buffer expected buffer of {} elements, found one of {OLEN}",
             self.rows()
         );
+        assert_eq!(LEN2, self.columns());
 
         <B as Backend<T>>::matrix_vector_mul(
             &self.0.data.backend,
@@ -422,12 +424,13 @@ impl<
             other,
             buffer,
             self.0.shape.axis_len(0),
-            LEN2,
+            self.0.shape.axis_len(1),
             self.0.shape.axis_len(0),
             IS_TRANS_1,
         );
     }
 
+    #[inline(always)]
     pub fn matrix_mul<
         U2: StaticVec<T, LEN2>,
         const LEN2: usize,
@@ -443,6 +446,7 @@ impl<
         buffer
     }
 
+    #[inline(always)]
     pub fn vector_mul<U2: StaticVec<T, LEN2>, const LEN2: usize, const OLEN: usize>(
         &self,
         other: &U2,
