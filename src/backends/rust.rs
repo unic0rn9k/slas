@@ -72,7 +72,7 @@ macro_rules! impl_basic_op {
         }
 
         impl<'a, const LEN: usize> StaticVecUnion<'a, $t, LEN> {
-            /// Basic vector operations, implemented automatically with macro.
+            /// Basic element-wise vector operations, implemented automatically with macro.
             #[inline(always)]
             pub fn $fn(&self, other: &Self) -> Self{
                 unsafe{
