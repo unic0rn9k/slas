@@ -22,7 +22,7 @@
 //!
 //! Please keep in mind that slas specializes in cases where binaries are compiled and executed on the same system and thus is primarily intended for native compilation.
 //!
-//! **NOTE:** Slas might still be very broken when **not** using native comiplation.
+//! **NOTE:** Slas might still be very broken when **not** using native compilation.
 //!
 //! Specialization in native compilation will be done by utilizing link-time-optimization (LTO), static allocation and static profiling/analysis using build scripts.
 //!
@@ -150,8 +150,9 @@
 //! ```
 //!
 //! ## Tensor example
-//! At the moment tensors can't do much
-//! Note that tensors (and therefore also matricies) always need to have a associated backend.
+//! At the moment tensors can't do much.
+//!
+//! **NOTE:** that tensors (and therefore also matricies) always need to have a associated backend.
 //!
 //! ```
 //! use slas::prelude::*;
