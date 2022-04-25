@@ -239,6 +239,16 @@ mod tensors {
     use std::ops::DerefMut;
 
     #[test]
+    fn make_matrix_ref() {
+        use slas::prelude::*;
+        use slas_backend::*;
+        [0f32; 2].moo_ref().reshape_ref([2], Blas);
+        [0f32; 2].moo_ref().matrix_ref::<Blas, 1, 2>();
+        [0f32; 2].mut_moo_ref().reshape_mut_ref([2], Blas);
+        [0f32; 2].mut_moo_ref().matrix_mut_ref::<Blas, 1, 2>();
+    }
+
+    #[test]
     fn matrix_mul() {
         use slas::prelude::*;
         use slas_backend::*;

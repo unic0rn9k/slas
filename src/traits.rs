@@ -55,6 +55,67 @@ macro_rules! impl_reshape_unchecked_ref {
 	};
 }
 
+macro_rules! impl_reshape {
+    ($($pub: ident $name_suffix: ident $($t:tt)*)?) => {paste!{
+        /// Return [`crate::tensor::Tensor`] with shape [`crate::tensor::MatrixShape::<M, K>`].
+        $($pub)? fn [<matrix $($name_suffix)?>]<B: crate::backends::Backend<T>, const M: usize, const K: usize>(
+            $($($t)*)? self,
+        ) -> crate::tensor::Matrix<T, $($($t)*)? Self, B, LEN, false, MatrixShape<M, K>>
+        where
+            Self: Sized,
+        {
+            assert_eq!(
+                M * K,
+                LEN,
+                "Cannot reshape vector of {} elements as matrix of {}",
+                LEN,
+                M * K
+            );
+            crate::tensor::Tensor {
+                data: crate::backends::WithStaticBackend::from_static_vec(self, B::default()),
+                shape: crate::tensor::MatrixShape::<M, K>,
+            }
+            .into()
+        }
+
+        /// ## Example
+        /// ```rust
+        /// use slas::prelude::*;
+        ///
+        /// let a = moo![f32: 0..6].reshape(&[3, 2], slas_backend::Blas);
+        /// let b = [0.; 6].reshape(&[2, 3], slas_backend::Blas);
+        ///
+        /// assert_eq!(a.matrix().matrix_mul(&b.matrix()), [0.; 4]);
+        /// ```
+        /// In this example the matricies `a` and `b` have dynamic shapes.
+        /// If you wan't to create matricies with static shapes, you should use [`StaticVec::matrix`].
+        $($pub)? fn [<reshape $($name_suffix)?>]<
+            B: crate::backends::Backend<T>,
+            S: crate::tensor::Shape<NDIM>,
+            const NDIM: usize,
+        >(
+            $($($t)*)? self,
+            shape: S,
+            backend: B,
+        ) -> crate::tensor::Tensor<T, $($($t)*)? Self, B, NDIM, LEN, S>
+        where
+            Self: Sized,
+        {
+            assert_eq!(
+                shape.volume(),
+                LEN,
+                "Cannot reshape vector with lenght {} as {:?}",
+                LEN,
+                shape.slice()
+            );
+            Tensor {
+                data: crate::backends::WithStaticBackend::from_static_vec(self, backend),
+                shape,
+            }
+        }
+    }};
+}
+
 /// Trait for statically shaped, contiguous vectors.
 pub trait StaticVec<T, const LEN: usize> {
     /// Return pointer to first element.
@@ -148,61 +209,14 @@ pub trait StaticVec<T, const LEN: usize> {
         }
     }
 
-    /// Return [`crate::tensor::Tensor`] with shape [`crate::tensor::MatrixShape::<M, K>`].
-    fn matrix<B: crate::backends::Backend<T>, const M: usize, const K: usize>(
-        self,
-    ) -> crate::tensor::Matrix<T, Self, B, LEN, false, MatrixShape<M, K>>
-    where
-        Self: Sized,
-    {
-        assert_eq!(
-            M * K,
-            LEN,
-            "Cannot reshape vector of {} elements as matrix of {}",
-            LEN,
-            M * K
-        );
-        crate::tensor::Tensor {
-            data: crate::backends::WithStaticBackend::from_static_vec(self, B::default()),
-            shape: crate::tensor::MatrixShape::<M, K>,
-        }
-        .into()
-    }
-
-    /// ## Example
-    /// ```rust
-    /// use slas::prelude::*;
-    ///
-    /// let a = moo![f32: 0..6].reshape(&[3, 2], slas_backend::Blas);
-    /// let b = [0.; 6].reshape(&[2, 3], slas_backend::Blas);
-    ///
-    /// assert_eq!(a.matrix().matrix_mul(&b.matrix()), [0.; 4]);
-    /// ```
-    /// In this example the matricies `a` and `b` have dynamic shapes.
-    /// If you wan't to create matricies with static shapes, you should use [`StaticVec::matrix`].
-    fn reshape<B: crate::backends::Backend<T>, S: crate::tensor::Shape<NDIM>, const NDIM: usize>(
-        self,
-        shape: S,
-        backend: B,
-    ) -> crate::tensor::Tensor<T, Self, B, NDIM, LEN, S>
-    where
-        Self: Sized,
-    {
-        assert_eq!(
-            shape.volume(),
-            LEN,
-            "Cannot reshape vector with lenght {} as {:?}",
-            LEN,
-            shape.slice()
-        );
-        Tensor {
-            data: crate::backends::WithStaticBackend::from_static_vec(self, backend),
-            shape,
-        }
-    }
-
+    impl_reshape!();
     impl_reshape_unchecked_ref!(mut);
     impl_reshape_unchecked_ref!();
+}
+
+impl<'a, T: Copy, const LEN: usize> StaticVecUnion<'a, T, LEN> {
+    impl_reshape!(pub _ref &'a);
+    impl_reshape!(pub _mut_ref &'a mut);
 }
 
 macro_rules! dyn_cast_panic {
