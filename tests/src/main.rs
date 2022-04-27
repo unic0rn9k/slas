@@ -249,6 +249,28 @@ mod tensors {
     }
 
     #[test]
+    fn make_matrix_ref_mutations() {
+        use slas::prelude::*;
+        use slas_backend::*;
+
+        let mut a = [0f32; 2];
+        let mut b = a.mut_moo_ref().reshape_mut_ref([2], Blas);
+        b[[0]] = 1.;
+        assert_eq!(a[0], 1.);
+
+        let mut a = [0f32; 2];
+        let mut b = a.mut_moo_ref().matrix_mut_ref::<Blas, 1, 2>();
+        b[(0, 0)] = 1.;
+        assert_eq!(a[0], 1.);
+
+        let mut a = [0f32; 4];
+        let mut b = a.mut_moo_ref().matrix_mut_ref::<Blas, 2, 2>();
+        let b = b.as_transposed_mut();
+        b[(1, 0)] = 1.;
+        assert_eq!(a[1], 1.);
+    }
+
+    #[test]
     fn matrix_mul() {
         use slas::prelude::*;
         use slas_backend::*;

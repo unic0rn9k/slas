@@ -186,6 +186,17 @@ pub trait StaticVec<T, const LEN: usize> {
         &*(self.as_ptr().add(i) as *const [T; SLEN])
     }
 
+    /// Returns a mutable static slice spanning from index i to i+SLEN.
+    ///
+    /// # Safety
+    /// is safe as long as `i+SLEN < self.len()`
+    unsafe fn mut_static_slice_unchecked<'a, const SLEN: usize>(
+        &'a mut self,
+        i: usize,
+    ) -> &'a mut [T; SLEN] {
+        &mut *(self.as_ptr().add(i) as *mut [T; SLEN])
+    }
+
     /// Copies self into a StaticVecUnion.
     fn moo_owned(&self) -> StaticVecUnion<'static, T, LEN>
     where
