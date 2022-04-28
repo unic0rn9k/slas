@@ -230,9 +230,11 @@
 )]
 
 pub mod config;
+mod nullvec;
 pub mod prelude;
 pub mod simd_lanes;
 pub mod tensor;
+pub use nullvec::*;
 
 pub mod backends;
 pub use levitate as num;
