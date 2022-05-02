@@ -31,8 +31,9 @@ which will support custom allocators in the future.
 
 ### Example
 
-`StaticCowVecs` can be created both with the `moo` and the `cow_vec` macro.
+A `StaticCowVec` can be created both with the `moo` and the `cow_vec` macro.
 They have the exact same syntax, but the cow_vec macro is a great choice for the serious programmer.
+Better documentation for the moo macro can be found [here](https://docs.rs/slas/latest/slas/macro.moo.html).
 
 ```rust
 use slas::prelude::*;
@@ -199,7 +200,7 @@ For now, if you want to use the newest version of slas, you need to install blis
 This mean you will need to disable slas default features,
 follow the installation instructions in the openblas readme and add `extern crate openblas_src` to your main file.
 
-## Enviroments variables
+## Enviroment variables
 
 The backend being chosen to use when none is specified, depends on environments variables set.
 
