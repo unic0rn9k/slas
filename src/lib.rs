@@ -202,10 +202,10 @@
 //!
 //! # Enviroment variables
 //!
-//! The backend being chosen to use when none is specified, depends on environments variables set.
+//! The backend being chosen to use when none is specified, depends on environment variables.
 //!
 //! For example `SLAS_BLAS_IN_DOT_IF_LEN_GE=50`, will use blas by default,
-//! for any dot product operation performned on vectors with more than or equal to 50 elements.
+//! for any dot product operation performned on vectors with greater than or equal to 50 elements.
 //! `SLAS_BLAS_IN_DOT_IF_LEN_GE` can be found as a constant in `slas::config::BLAS_IN_DOT_IF_LEN_GE`.
 //!
 //! Again, this is only applicable when no backend is not specified for a vector (fx `moo![f32: 1, 2].dot(moo![2, 1])`).
@@ -240,6 +240,8 @@ pub mod prelude;
 pub mod simd_lanes;
 pub mod tensor;
 pub use nullvec::*;
+mod dynamic_vec;
+mod static_vec;
 
 pub mod backends;
 pub use levitate as num;
@@ -251,7 +253,6 @@ use std::{
 #[cfg(feature = "blis-sys")]
 extern crate blis_src;
 extern crate cblas_sys;
-mod traits;
 use prelude::*;
 
 /// StaticVectorUnion is always owned when it is not found in a StaticCowVec,
@@ -261,11 +262,59 @@ pub type StaticVecRef<'a, T, const LEN: usize> = &'a StaticVecUnion<'a, T, LEN>;
 /// Same as [`StaticVecRef`], but mutable.
 pub type MutStaticVecRef<'a, T, const LEN: usize> = &'a mut StaticVecUnion<'a, T, LEN>;
 
-// /// [`StaticVecRef`], but with the ability to overwrite mutability at compiletime.
-// #[derive(Clone, Copy)]
-// pub struct MayebeMutStaticVecRef<'a, T, const LEN: usize, const IS_MUT: bool = false>(
-//     StaticVecRef<'a, T, LEN>,
-// );
+/// Macro for creating [`StaticCowVec`]s
+///
+/// ## Example
+/// ```rust
+/// use slas::prelude::*;
+/// assert_eq!(**moo![f32: 1, 2, 3.5], [1., 2., 3.5]);
+/// assert_eq!(**moo![f32: 1..4], [1., 2., 3.]);
+/// assert_eq!(**moo![f32: 1..=3], [1., 2., 3.]);
+/// assert_eq!(**moo![0f32; 4], [0.; 4]);
+///
+/// let mut tmp = [0.; 100];
+/// for n in 0..100{
+///     tmp[n] = (n as f32).sin()
+/// }
+///
+/// assert_eq!(**moo![|n|-> f32 { (n as f32).sin() }; 100], tmp);
+/// assert_eq!(**moo![|n| (n as f32).sin(); 100], tmp);
+/// ```
+#[macro_export]
+macro_rules! moo {
+    (|$n: ident| -> $t: ty $do: block ; $len: expr) => {{
+        let mut tmp = StaticCowVec::<$t, $len>::from([num!(0); $len]);
+        (0..$len).map(|$n| -> f32 {$do}).enumerate().for_each(|(n, v)| tmp[n]=v);
+        tmp
+    }};
+    (|$n: ident| $do: expr ; $len: expr) => {{
+        moo![|$n| -> _ {$do}; $len]
+    }};
+    (on $backend:ty : $($v: tt)*) => {{
+        moo![$($v)*].static_backend::<$backend>()
+    }};
+    (_ $($v: tt)*) => {{
+        StaticCowVec::from($($v)*)
+    }};
+    ($t: ty: $a: literal .. $b: literal) => {{
+        let mut tmp = StaticCowVec::from([num!(0); $b - $a]);
+        tmp.iter_mut().zip($a..$b).for_each(|(o, i)| *o = i as $t);
+        tmp
+    }};
+    ($t: ty: $a: literal ..= $b: literal) => {{
+        let mut tmp = StaticCowVec::from([num!(0); $b - $a+1]);
+        tmp.iter_mut().zip($a..=$b).for_each(|(o, i)| *o = i as $t);
+        tmp
+    }};
+    ($t: ty: $($v: expr),* $(,)?) => {{
+        StaticCowVec::from([$( $v as $t ),*])
+    }};
+    ($($v: tt)*) => {{
+        StaticCowVec::from([$($v)*])
+    }};
+}
+
+pub use moo as cow_vec;
 
 /// Will always be owned, unless inside a [`StaticCowVec`]
 #[derive(Clone, Copy, Eq)]
@@ -275,6 +324,7 @@ pub union StaticVecUnion<'a, T: Copy, const LEN: usize> {
 }
 
 impl<'a, T: Copy, const LEN: usize> StaticVecUnion<'a, T, LEN> {
+    #[inline(always)]
     pub fn slice(&'a self) -> &'a [T; LEN] {
         unsafe { &*(self.as_ptr() as *const [T; LEN]) }
     }
@@ -286,6 +336,16 @@ impl<'a, T: Copy, const LEN: usize> StaticVecUnion<'a, T, LEN> {
         }
         transmute(self)
     }
+
+    #[inline(always)]
+    pub const fn len(&self) -> usize {
+        LEN
+    }
+
+    #[inline(always)]
+    pub const fn is_empty(&self) -> bool {
+        LEN == 0
+    }
 }
 
 impl<'a, T: Copy + PartialEq, const LEN: usize> std::cmp::PartialEq<StaticVecUnion<'a, T, LEN>>
@@ -293,6 +353,28 @@ impl<'a, T: Copy + PartialEq, const LEN: usize> std::cmp::PartialEq<StaticVecUni
 {
     fn eq(&self, other: &Self) -> bool {
         self.slice() == other.slice()
+    }
+}
+
+impl<'a, T: Copy, const LEN: usize> const Deref for StaticVecUnion<'a, T, LEN> {
+    type Target = [T; LEN];
+
+    fn deref(&self) -> &Self::Target {
+        unsafe { transmute::<&Self, &'a Self::Target>(self) }
+    }
+}
+
+impl<'a, T: Copy, const LEN: usize> const DerefMut for StaticVecUnion<'a, T, LEN> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        unsafe { transmute::<&mut Self, &'a mut Self::Target>(self) }
+    }
+}
+
+impl<'a, T: Copy + std::fmt::Debug, const LEN: usize> std::fmt::Debug
+    for StaticVecUnion<'a, T, LEN>
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.slice().fmt(f)
     }
 }
 
@@ -306,17 +388,12 @@ pub struct StaticCowVec<'a, T: Copy, const LEN: usize> {
 }
 
 impl<'a, T: Copy, const LEN: usize> StaticCowVec<'a, T, LEN> {
-    pub const fn len(&self) -> usize {
-        LEN
-    }
-    pub const fn is_empty(&self) -> bool {
-        self.len() == 0
-    }
-
+    #[inline(always)]
     pub const fn is_borrowed(&self) -> bool {
         !self.is_owned()
     }
 
+    #[inline(always)]
     pub const fn is_owned(&self) -> bool {
         self.is_owned
     }
@@ -340,20 +417,6 @@ impl<'a, T: Copy, const LEN: usize> StaticCowVec<'a, T, LEN> {
     /// Is safe as long as `*ptr` is contiguous, `*ptr` has a length of `LEN` and `ptr` is not NULL.
     pub const unsafe fn from_ptr_unchecked(ptr: *const T) -> Self {
         Self::from(&*(ptr as *const [T; LEN]))
-    }
-}
-
-impl<'a, T: Copy, const LEN: usize> const Deref for StaticVecUnion<'a, T, LEN> {
-    type Target = [T; LEN];
-
-    fn deref(&self) -> &Self::Target {
-        unsafe { transmute::<&Self, &'a Self::Target>(self) }
-    }
-}
-
-impl<'a, T: Copy, const LEN: usize> const DerefMut for StaticVecUnion<'a, T, LEN> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        unsafe { transmute::<&mut Self, &'a mut Self::Target>(self) }
     }
 }
 
@@ -416,65 +479,3 @@ impl<'a, T: Copy + std::fmt::Debug, const LEN: usize> std::fmt::Debug for Static
         f.debug_list().entries(self.iter()).finish()
     }
 }
-
-impl<'a, T: Copy + std::fmt::Debug, const LEN: usize> std::fmt::Debug
-    for StaticVecUnion<'a, T, LEN>
-{
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        self.slice().fmt(f)
-    }
-}
-
-/// Macro for creating [`StaticCowVec`]s
-///
-/// ## Example
-/// ```rust
-/// use slas::prelude::*;
-/// assert_eq!(**moo![f32: 1, 2, 3.5], [1., 2., 3.5]);
-/// assert_eq!(**moo![f32: 1..4], [1., 2., 3.]);
-/// assert_eq!(**moo![f32: 1..=3], [1., 2., 3.]);
-/// assert_eq!(**moo![0f32; 4], [0.; 4]);
-///
-/// let mut tmp = [0.; 100];
-/// for n in 0..100{
-///     tmp[n] = (n as f32).sin()
-/// }
-///
-/// assert_eq!(**moo![|n|-> f32 { (n as f32).sin() }; 100], tmp);
-/// assert_eq!(**moo![|n| (n as f32).sin(); 100], tmp);
-/// ```
-#[macro_export]
-macro_rules! moo {
-    (|$n: ident| -> $t: ty $do: block ; $len: expr) => {{
-        let mut tmp = StaticCowVec::<$t, $len>::from([num!(0); $len]);
-        (0..$len).map(|$n| -> f32 {$do}).enumerate().for_each(|(n, v)| tmp[n]=v);
-        tmp
-    }};
-    (|$n: ident| $do: expr ; $len: expr) => {{
-        moo![|$n| -> _ {$do}; $len]
-    }};
-    (on $backend:ty : $($v: tt)*) => {{
-        moo![$($v)*].static_backend::<$backend>()
-    }};
-    (_ $($v: tt)*) => {{
-        StaticCowVec::from($($v)*)
-    }};
-    ($t: ty: $a: literal .. $b: literal) => {{
-        let mut tmp = StaticCowVec::from([num!(0); $b - $a]);
-        tmp.iter_mut().zip($a..$b).for_each(|(o, i)| *o = i as $t);
-        tmp
-    }};
-    ($t: ty: $a: literal ..= $b: literal) => {{
-        let mut tmp = StaticCowVec::from([num!(0); $b - $a+1]);
-        tmp.iter_mut().zip($a..=$b).for_each(|(o, i)| *o = i as $t);
-        tmp
-    }};
-    ($t: ty: $($v: expr),* $(,)?) => {{
-        StaticCowVec::from([$( $v as $t ),*])
-    }};
-    ($($v: tt)*) => {{
-        StaticCowVec::from([$($v)*])
-    }};
-}
-
-pub use moo as cow_vec;
