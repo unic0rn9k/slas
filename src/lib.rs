@@ -24,8 +24,6 @@
 //!
 //! **NOTE:** Slas might still be very broken when **not** using native compilation.
 //!
-//! Specialization in native compilation will be done by utilizing link-time-optimization (LTO), static allocation and static profiling/analysis using build scripts.
-//!
 //! Specialization in hardware and usecases is attempted to be done with the [modular backend system](https://docs.rs/slas/latest/slas/backends/index.html),
 //! which will support custom allocators in the future.
 //!
@@ -33,15 +31,21 @@
 //!
 //! ## Example
 //!
+//! `StaticCowVecs` can be created both with the `moo` and the `cow_vec` macro.
+//! They have the exact same syntax, but the cow_vec macro is a great choice for the serious programmer.
+//!
 //! ```rust
 //! use slas::prelude::*;
+//! use slas::cow_vec;
+//!
 //! let a = moo![f32: 1, 2, 3.2];
-//! let b = moo![f32: 3, 0.4, 5];
+//! let b = cow_vec![f32: 3, 0.4, 5];
+//!
 //! println!("Dot product of {a:?} and {b:?} is {:?}", a.dot(&b));
 //! println!("{a:?} + {b:?} = {:?}", a.add(&b));
 //! ```
-//! You can also choose a static backend yourself.
-//! [More about what exactly a backend is and how to configure it.](https://docs.rs/slas/latest/slas/backends/index.html)
+//! By default slas tries to select a backend for you, you can also choose a static backend yourself.
+//! ([More about what exactly a backend is and how to configure it.](https://docs.rs/slas/latest/slas/backends/index.html))
 //!
 //! ```rust
 //! use slas::prelude::*;
@@ -465,3 +469,5 @@ macro_rules! moo {
         StaticCowVec::from([$($v)*])
     }};
 }
+
+pub use moo as cow_vec;
