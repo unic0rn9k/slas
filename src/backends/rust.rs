@@ -84,13 +84,26 @@ macro_rules! impl_basic_op {
         }
 
         paste!{
+            impl<'a, const LEN: usize> StaticVecUnion<'a, $t, LEN> {
+                /// Basic element-wise vector operations (buffered), implemented automatically with macro.
+                #[inline(always)]
+                pub fn [<$fn _into>]<'b>(&self, other: &Self, buffer: MutStaticVecRef<'b, $t, LEN>){
+                    $op::$fn(&Rust, self, other, buffer);
+                }
+            }
+        }
+
+        paste!{
             #[test]
             fn [< basic_ $fn _ $t >](){
                 let a = moo![$t: 1..13];
                 let b = a.$fn(&a);
+                let mut c = [0.; 12];
+                a.[<$fn _into>](&a, c.mut_moo_ref());
 
                 for n in 0..12{
-                    assert_eq!(a[n] $float_op a[n], b[n])
+                    assert_eq!(a[n] $float_op a[n], b[n]);
+                    assert_eq!(a[n] $float_op a[n], c[n]);
                 }
             }
         }
