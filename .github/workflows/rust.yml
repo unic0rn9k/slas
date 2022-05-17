@@ -21,6 +21,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  RUSTFLAGS: "-lcblas"
 
 jobs:
   tests:
@@ -49,10 +50,10 @@ jobs:
           override: true
       - name: Install blis
         run: sudo apt install libblis-dev
-      - name: Run cargo-tarpaulin --features blis-sys
+      - name: Run cargo-tarpaulin
         uses: actions-rs/tarpaulin@v0.1
         with:
-          args: '--ignore-tests --out Lcov --output-dir target/tarpaulin'
+          args: '--ignore-tests --out Lcov --output-dir target/tarpaulin --features blis-sys'
       - name: Upload to Coveralls
         uses: coverallsapp/github-action@master
         with:

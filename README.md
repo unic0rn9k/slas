@@ -216,6 +216,11 @@ Again, this is only applicable when no backend is not specified for a vector (fx
 SLAS_BLAS_IN_DOT_IF_LEN_GE = 750
 ```
 
+### Possible issues during linking
+Settings `-lcblas` as flag to the linker, some possible errors during build can be fixed.
+This can be done by adding `-lcblas` to rustflags either in `.cargo/config`, `Cargo.toml` or by setting the enviroment variable `RUSTFLAGS`.
+On most unix shells this is done by prefixing the command used to invoke rustc with `RUSTFLAGS="-lcblas"`.
+
 ### Misc
 - Slas is still in very early days, and is subject to a lot of breaking changes.
 - [Benchmarks, tests and related](https://github.com/unic0rn9k/slas/tree/master/tests)
