@@ -95,6 +95,15 @@ pub trait DynamicVec<T> {
         unsafe { transmute(self.as_ptr()) }
     }
 
+    /// Get a mutable static vector reference from a dynamic vector.
+    fn mut_moo_ref<'b, const LEN: usize>(&'b mut self) -> MutStaticVecRef<'b, T, LEN>
+    where
+        T: Copy,
+    {
+        dyn_cast_panic!(self.len(), LEN);
+        unsafe { transmute(self.as_mut_ptr()) }
+    }
+
     fn moo<'a, const LEN: usize>(&'a self) -> StaticCowVec<'a, T, LEN>
     where
         T: Copy,

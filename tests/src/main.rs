@@ -7,6 +7,10 @@ use slas::prelude::*;
 #[macro_use]
 extern crate pretty_assertions;
 
+//extern crate openblas_src;
+//extern crate blas_src;
+//use blas_src::*;
+
 #[cfg(versus)]
 fn main() {
     extern crate test;
@@ -46,6 +50,17 @@ mod thin_blas {
         use slas::prelude::*;
 
         let a = vec![0f32, 1., 2., 3.];
+        let b = moo![f32: 0, -1, -2, 3];
+
+        assert_eq!(a.moo().dot(&b), 4.);
+    }
+
+    #[test]
+    #[should_panic]
+    fn casting_and_dot_too_long() {
+        use slas::prelude::*;
+
+        let a = vec![0f32, 1., 2., 3., 4.];
         let b = moo![f32: 0, -1, -2, 3];
 
         assert_eq!(a.moo().dot(&b), 4.);

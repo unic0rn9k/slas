@@ -15,6 +15,7 @@ readme = "README.md"
 
 [dependencies]
 blis-src = { version = "0.2.0", default-features = false, optional = true}
+openblas-src = { version = "0.10.4", default-features = false, optional = true }
 cblas-sys = { version = "0.1.4", optional = true }
 levitate = "0.1.1"
 paste = "1.0.6"
@@ -26,9 +27,11 @@ pretty_assertions = "1.0.0"
 members = ["tests"]
 
 [features]
-default = ["blis-sys", "fast-floats"]
+default = ["openblas-sys", "fast-floats"]
 blis-sys = ["blis-src", "blis-src/system", "blas"]
-blis-static = ["blis-src", "blis-src/static", "blas"]
+openblas-sys = ["openblas-src/system", "blas"]
+openblas-static = ["openblas-src/static", "blas"]
+blis-static = ["blis-src/static", "blis-src/openmp", "blas"]
 blas = ["cblas-sys"]
 fast-floats = ["levitate/fast-floats"]
 

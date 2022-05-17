@@ -32,7 +32,7 @@ jobs:
     - name: Install blis
       run: sudo apt install libblis-dev
     - name: Run tests
-      run: cargo +nightly t
+      run: cargo +nightly t --features blis-sys
 
   coverage:
     name: Code coverage
@@ -47,7 +47,7 @@ jobs:
           override: true
       - name: Install blis
         run: sudo apt install libblis-dev
-      - name: Run cargo-tarpaulin
+      - name: Run cargo-tarpaulin --features blis-sys
         uses: actions-rs/tarpaulin@v0.1
         with:
           args: '--ignore-tests --out Lcov --output-dir target/tarpaulin'

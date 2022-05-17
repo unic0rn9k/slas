@@ -4,13 +4,15 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+#openblas-src = {version = "0.10.4", features = ["system"]}
 lazy_static = {version = "1.4.0", optional = true}
 nalgebra = {version = "0.29.0", optional = true}
 ndarray = {version = "0.15.4", optional = true, features = ["blas"]}
 rand = {version = "0.8.4", optional = true}
-slas = {path = "../"}
+slas = {path = "../", default-features = false, features = ["blas"]}
 
 [dev-dependencies]
+openblas-src = "0.10.4"
 pretty_assertions = "1.0.0"
 
 [features]

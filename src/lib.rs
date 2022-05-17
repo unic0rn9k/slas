@@ -252,6 +252,7 @@ use std::{
 };
 #[cfg(feature = "blis-sys")]
 extern crate blis_src;
+#[cfg(feature = "blas")]
 extern crate cblas_sys;
 use prelude::*;
 
