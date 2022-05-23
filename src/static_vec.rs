@@ -244,13 +244,13 @@ impl<T, const LEN: usize> StaticVec<T, LEN> for [T; LEN] {
 }
 
 macro_rules! impl_vec_for_refs {
-	($($mut: tt)?) => {
-		impl<T, const LEN: usize> StaticVec<T, LEN> for & $($mut)? [T; LEN] {
+	($($t: tt)*) => {
+		impl<T, const LEN: usize> StaticVec<T, LEN> for $($t)* [T; LEN] {
             unsafe fn as_ptr(&self) -> *const T {
                 (**self).as_ptr()
             }
             unsafe fn as_mut_ptr(&mut self) -> *mut T {
-                if stringify!($($mut)?) == "mut"{
+                if stringify!($($t)*).contains("mut"){
                     (*self).as_mut_ptr()
                 }else{
                     panic!("Cannot get mutable pointer from &[T; LEN]. Maybe try &mut [T; LEN] instead.")
@@ -258,12 +258,12 @@ macro_rules! impl_vec_for_refs {
             }
         }
 
-        impl<'a, T: Copy, const LEN: usize> StaticVec<T, LEN> for paste!([<$($mut:camel)? StaticVecRef>]<'a, T, LEN>) {
+        impl<'a, T: Copy, const LEN: usize> StaticVec<T, LEN> for $($t)* StaticVecUnion<'a, T, LEN> {
             unsafe fn as_ptr(&self) -> *const T {
                 (**self).as_ptr()
             }
             unsafe fn as_mut_ptr(&mut self) -> *mut T {
-                if stringify!($($mut)?) == "mut"{
+                if stringify!($($t)*).contains("mut"){
                     (*self).as_mut_ptr()
                 }else{
                     panic!("Cannot get mutable pointer from StaticVecRef<'a, T, LEN>. Maybe try MutStaticVecRef<'a, T, LEN> instead.")
@@ -271,12 +271,12 @@ macro_rules! impl_vec_for_refs {
             }
         }
 
-        impl<'a, T: Copy, const LEN: usize> StaticVec<T, LEN> for & $($mut)? StaticCowVec<'a, T, LEN> {
+        impl<'a, T: Copy, const LEN: usize> StaticVec<T, LEN> for $($t)* StaticCowVec<'a, T, LEN> {
             unsafe fn as_ptr(&self) -> *const T {
                 (**self).as_ptr()
             }
             unsafe fn as_mut_ptr(&mut self) -> *mut T {
-                if stringify!($($mut)?) == "mut"{
+                if stringify!($($t)*).contains("mut"){
                     (*self).as_mut_ptr()
                 }else{
                     panic!("Cannot get mutable pointer from &StaticCowVec<'a, T, LEN>. Maybe try &mut StaticCowVec<'a, T, LEN> instead.")
@@ -286,8 +286,10 @@ macro_rules! impl_vec_for_refs {
 	};
 }
 
-impl_vec_for_refs!();
-impl_vec_for_refs!(mut);
+impl_vec_for_refs!(&);
+impl_vec_for_refs!(&mut);
+impl_vec_for_refs!(&&);
+impl_vec_for_refs!(&mut &mut);
 
 impl<'a, T: Copy, const LEN: usize> StaticVec<T, LEN> for StaticCowVec<'a, T, LEN> {
     unsafe fn as_ptr(&self) -> *const T {
