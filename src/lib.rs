@@ -289,7 +289,7 @@ pub type MutStaticVecRef<'a, T, const LEN: usize> = &'a mut StaticVecUnion<'a, T
 #[macro_export]
 macro_rules! moo {
     (|$n: ident| -> $t: ty $do: block ; $len: expr) => {{
-        let mut tmp = StaticCowVec::<$t, $len>::from([num!(0); $len]);
+        let mut tmp = StaticCowVec::<$t, $len>::from([<$t>::_0; $len]);
         (0..$len).map(|$n| -> f32 {$do}).enumerate().for_each(|(n, v)| tmp[n]=v);
         tmp
     }};
@@ -303,12 +303,12 @@ macro_rules! moo {
         StaticCowVec::from($($v)*)
     }};
     ($t: ty: $a: literal .. $b: literal) => {{
-        let mut tmp = StaticCowVec::from([num!(0); $b - $a]);
+        let mut tmp = StaticCowVec::from([<$t>::_0; $b - $a]);
         tmp.iter_mut().zip($a..$b).for_each(|(o, i)| *o = i as $t);
         tmp
     }};
     ($t: ty: $a: literal ..= $b: literal) => {{
-        let mut tmp = StaticCowVec::from([num!(0); $b - $a+1]);
+        let mut tmp = StaticCowVec::from([<$t>::_0; $b - $a+1]);
         tmp.iter_mut().zip($a..=$b).for_each(|(o, i)| *o = i as $t);
         tmp
     }};
