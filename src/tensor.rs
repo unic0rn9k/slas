@@ -4,6 +4,7 @@ use std::mem::transmute;
 
 /// Tensor shape with static dimensions but with optionally dynamic shape.
 /// To achive a static shape the trait should be const implemented.
+#[const_trait]
 pub trait Shape<const NDIM: usize> {
     /// Length in the nth dimension.
     ///
@@ -26,7 +27,13 @@ pub trait Shape<const NDIM: usize> {
     /// assert_eq!(s.volume(), 6);
     /// ```
     fn volume(&self) -> usize {
-        (0..NDIM).map(|n| self.axis_len(n)).product()
+        let mut prod = 1;
+        let mut n = 0;
+        while n < NDIM {
+            prod *= self.axis_len(n);
+            n += 1;
+        }
+        prod
     }
 
     fn slice(&self) -> &[usize; NDIM];

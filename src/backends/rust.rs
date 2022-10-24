@@ -5,6 +5,7 @@ use super::*;
 use operations::*;
 use std::mem::transmute;
 use std::simd::Simd;
+use std::simd::SimdFloat;
 
 macro_rules! impl_dot {
     ($t: ty) => {
