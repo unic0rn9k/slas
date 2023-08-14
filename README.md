@@ -1,9 +1,5 @@
 <div align="center">
 
-### This project is somewhat abandoned, in favor of unic0rn9k/metalmorphosis.
-Slas has overtime grovn to be very complicated and really isnt that much better than alternatives.
-So I'm building a linear algebra system with support for autodiff on top of <a href="https://github.com/unic0rn9k/metalmorphosis">metalmorphosis</a>.
-
 <img src="https://raw.githubusercontent.com/unic0rn9k/slas/master/logo.png" width="300"/>
 
 *Static Linear Algebra System*
